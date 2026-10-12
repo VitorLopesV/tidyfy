@@ -1,0 +1,104 @@
+@startuml presentation
+title Tidyfy — Apresentação e composição
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+set namespaceSeparator none
+hide empty members
+
+package "com.tidyfy" {
+
+  class Main {
+    + {static} main(args : String[]) : void
+  }
+
+  class AppContainer {
+    + saveHelper() : SaveHelperUseCase
+    + removeHelper() : RemoveHelperUseCase
+    + listHelpers() : ListHelpersUseCase
+    + runHelper() : RunHelperUseCase
+  }
+}
+
+package "com.tidyfy.presentation" {
+
+  class TidyfyApplication {
+    + start(stage : Stage) : void
+  }
+
+  class HelperListController {
+    - listHelpers : ListHelpersUseCase
+    - removeHelper : RemoveHelperUseCase
+    - saveHelper : SaveHelperUseCase
+  }
+
+  class FolderOrganizerFormController {
+    - saveHelper : SaveHelperUseCase
+  }
+
+  class CleanerFormController {
+    - saveHelper : SaveHelperUseCase
+  }
+}
+
+package "javafx.application" {
+  abstract class Application
+}
+
+package "com.tidyfy.application.usecase" {
+  class SaveHelperUseCase
+  class RemoveHelperUseCase
+  class ListHelpersUseCase
+  class RunHelperUseCase
+}
+
+Application <|-- TidyfyApplication
+
+Main --> AppContainer : cria
+Main ..> TidyfyApplication : sem argumentos
+Main ..> RunHelperUseCase : --run {id}
+
+TidyfyApplication --> HelperListController
+HelperListController ..> FolderOrganizerFormController : abre
+HelperListController ..> CleanerFormController : abre
+
+HelperListController --> ListHelpersUseCase
+HelperListController --> RemoveHelperUseCase
+HelperListController --> SaveHelperUseCase
+FolderOrganizerFormController --> SaveHelperUseCase
+CleanerFormController --> SaveHelperUseCase
+
+note right of Main
+  Dois modos de execução:
+  * sem argumentos → abre a interface JavaFX
+  * --run {id} → executa o ajudante e encerra,
+    sem abrir interface (chamado pelo
+    Agendador de Tarefas do Windows)
+end note
+
+note right of AppContainer
+  Composition root: instancia as
+  implementações da infraestrutura e
+  injeta nos casos de uso (por construtor).
+end note
+
+note bottom of HelperListController
+  Lista os ajudantes e permite ligar/desligar,
+  editar e remover. "Novo ajudante" pede o tipo
+  e abre o formulário correspondente.
+  Mostra o uso por tipo (ex.: 12/20) e bloqueia
+  a criação no limite; quem garante a regra
+  é o domínio.
+end note
+
+note bottom of FolderOrganizerFormController
+  Nome, uma pasta,
+  frequência e ligado/desligado.
+end note
+
+note bottom of CleanerFormController
+  Nome, alvo (lixeira ou uma pasta),
+  frequência e ligado/desligado.
+end note
+
+@enduml

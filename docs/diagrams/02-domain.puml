@@ -1,0 +1,167 @@
+@startuml domain
+title Tidyfy — Domínio
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+set namespaceSeparator none
+hide empty members
+
+package "com.tidyfy.domain" {
+
+  interface Helper <<sealed>> {
+    + id() : HelperId
+    + name() : HelperName
+    + type() : HelperType
+    + schedule() : Schedule
+    + enabled() : boolean
+  }
+
+  enum HelperType {
+    FOLDER_ORGANIZER
+    CLEANER
+    --
+    + {static} MAX_PER_TYPE : int = 20
+    + assertCanCreate(existingCount : int) : void
+  }
+
+  class FolderOrganizerHelper <<record>> {
+    + id : HelperId
+    + name : HelperName
+    + schedule : Schedule
+    + enabled : boolean
+    + folder : Path
+    + type() : HelperType
+  }
+
+  class CleanerHelper <<record>> {
+    + id : HelperId
+    + name : HelperName
+    + schedule : Schedule
+    + enabled : boolean
+    + target : CleanupTarget
+    + type() : HelperType
+  }
+
+  interface CleanupTarget <<sealed>> {
+  }
+
+  class RecycleBinTarget <<record>> {
+  }
+
+  class FolderTarget <<record>> {
+    + folder : Path
+  }
+
+  class HelperId <<record>> {
+    + value : UUID
+    + {static} newId() : HelperId
+  }
+
+  class HelperName <<record>> {
+    + value : String
+  }
+
+  class Schedule <<record>> {
+    + intervalDays : int
+    + times : List<LocalTime>
+  }
+
+  class FileCategory <<record>> {
+    + name : String
+    + targetFolderName : String
+    + extensions : Set<FileExtension>
+    + matches(file : Path) : boolean
+  }
+
+  class FileExtension <<record>> {
+    + value : String
+    + {static} of(fileName : String) : Optional<FileExtension>
+  }
+
+  class DefaultFileCategories {
+    + {static} all() : List<FileCategory>
+  }
+
+  class FileMove <<record>> {
+    + source : Path
+    + target : Path
+  }
+
+  class FolderOrganizationPlanner {
+    + {static} OTHERS_FOLDER : String = "Outros"
+    - categories : List<FileCategory>
+    + plan(folder : Path, files : List<Path>) : List<FileMove>
+  }
+
+  class DomainException <<exception>> {
+  }
+
+  class HelperLimitReachedException <<exception>> {
+  }
+}
+
+Helper <|.. FolderOrganizerHelper
+Helper <|.. CleanerHelper
+Helper --> "1" HelperId
+Helper --> "1" HelperName
+Helper --> "1" Schedule
+Helper ..> HelperType
+
+CleanerHelper --> "1" CleanupTarget
+CleanupTarget <|.. RecycleBinTarget
+CleanupTarget <|.. FolderTarget
+
+FileCategory "1" *-- "1..*" FileExtension
+DefaultFileCategories ..> FileCategory : cria
+FolderOrganizationPlanner --> "*" FileCategory
+FolderOrganizationPlanner ..> FileMove : cria
+
+DomainException <|-- HelperLimitReachedException
+HelperType ..> HelperLimitReachedException : lança
+
+note right of Helper
+  Interface selada (sealed): só os
+  ajudantes conhecidos. Cada ajudante
+  atua em um único alvo (uma pasta
+  ou a lixeira).
+end note
+
+note right of HelperType
+  Limite de 20 ajudantes por tipo.
+  assertCanCreate lança exceção quando
+  existingCount >= MAX_PER_TYPE.
+  Só é chamado na criação, nunca na edição.
+end note
+
+note bottom of CleanupTarget
+  O que a Limpeza vai limpar:
+  a lixeira do Windows ou uma pasta.
+end note
+
+note left of HelperName
+  Definido pelo usuário.
+  Obrigatório, sem espaços nas pontas.
+  Nomes repetidos: em aberto.
+end note
+
+note left of Schedule
+  A cada intervalDays dias (>= 1),
+  em cada um dos horários de times
+  (ao menos um, sem repetição).
+  Limites máximos: em aberto.
+end note
+
+note bottom of FolderOrganizationPlanner
+  Função pura, não acessa o disco:
+  * recebe só os arquivos diretos da pasta
+  * extensão conhecida → pasta / categoria / arquivo
+  * extensão desconhecida → pasta / Outros / arquivo
+end note
+
+note right of FileExtension
+  Normalizada: minúscula e sem ponto
+  (ex.: "Foto.JPG" → "jpg").
+  Uma extensão pertence a só uma categoria.
+end note
+
+@enduml

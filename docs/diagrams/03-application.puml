@@ -1,0 +1,134 @@
+@startuml application
+title Tidyfy — Aplicação (casos de uso e portas)
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+set namespaceSeparator none
+hide empty members
+
+package "com.tidyfy.application.usecase" {
+
+  class SaveHelperUseCase {
+    - repository : HelperRepository
+    - scheduler : TaskScheduler
+    + execute(helper : Helper) : void
+  }
+
+  class RemoveHelperUseCase {
+    - repository : HelperRepository
+    - scheduler : TaskScheduler
+    + execute(id : HelperId) : void
+  }
+
+  class ListHelpersUseCase {
+    - repository : HelperRepository
+    + execute() : List<Helper>
+  }
+
+  class RunHelperUseCase {
+    - repository : HelperRepository
+    - organizeFolder : OrganizeFolderUseCase
+    - cleanup : CleanupUseCase
+    + execute(id : HelperId) : void
+  }
+
+  class OrganizeFolderUseCase {
+    - fileSystem : FileSystem
+    - planner : FolderOrganizationPlanner
+    + execute(helper : FolderOrganizerHelper) : List<FileMove>
+  }
+
+  class CleanupUseCase {
+    - fileSystem : FileSystem
+    - recycleBin : RecycleBin
+    + execute(helper : CleanerHelper) : void
+  }
+}
+
+package "com.tidyfy.application.port" {
+
+  interface HelperRepository {
+    + save(helper : Helper) : void
+    + findById(id : HelperId) : Optional<Helper>
+    + findAll() : List<Helper>
+    + countByType(type : HelperType) : int
+    + delete(id : HelperId) : void
+  }
+
+  interface TaskScheduler {
+    + register(helper : Helper) : void
+    + unregister(id : HelperId) : void
+  }
+
+  interface FileSystem {
+    + listFiles(folder : Path) : List<Path>
+    + move(move : FileMove) : void
+    + discard(file : Path) : void
+  }
+
+  interface RecycleBin {
+    + empty() : void
+  }
+}
+
+package "com.tidyfy.domain" {
+  interface Helper
+  enum HelperType
+  class FolderOrganizerHelper
+  class CleanerHelper
+  class FolderOrganizationPlanner
+}
+
+SaveHelperUseCase --> HelperRepository
+SaveHelperUseCase --> TaskScheduler
+RemoveHelperUseCase --> HelperRepository
+RemoveHelperUseCase --> TaskScheduler
+ListHelpersUseCase --> HelperRepository
+RunHelperUseCase --> HelperRepository
+RunHelperUseCase --> OrganizeFolderUseCase
+RunHelperUseCase --> CleanupUseCase
+OrganizeFolderUseCase --> FileSystem
+OrganizeFolderUseCase --> FolderOrganizationPlanner
+CleanupUseCase --> FileSystem
+CleanupUseCase --> RecycleBin
+
+SaveHelperUseCase ..> Helper
+SaveHelperUseCase ..> HelperType : assertCanCreate
+RunHelperUseCase ..> Helper
+OrganizeFolderUseCase ..> FolderOrganizerHelper
+CleanupUseCase ..> CleanerHelper
+
+note right of SaveHelperUseCase
+  1. Ajudante novo (não existe no repositório)?
+     → type.assertCanCreate(repository.countByType(type))
+  2. Salva a configuração.
+  3. Ligado → (re)registra no agendador.
+     Desligado → remove do agendador.
+end note
+
+note right of RunHelperUseCase
+  Ponto de entrada da execução agendada.
+  Escolhe o caso de uso com pattern matching
+  no Helper selado. Ajudante desligado
+  ou inexistente → não faz nada.
+end note
+
+note bottom of OrganizeFolderUseCase
+  listFiles(pasta) → planner.plan → move.
+  Conflito de nome e arquivo em uso:
+  em aberto (ver README).
+end note
+
+note bottom of CleanupUseCase
+  RecycleBinTarget → recycleBin.empty()
+  FolderTarget → listFiles(pasta) → discard
+  Descartar = lixeira ou exclusão definitiva:
+  em aberto (ver README).
+end note
+
+note bottom of FileSystem
+  listFiles devolve só arquivos
+  diretos da pasta (sem subpastas).
+end note
+
+@enduml

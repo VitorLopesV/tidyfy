@@ -1,0 +1,65 @@
+@startuml layers
+title Tidyfy — Camadas (Clean Architecture)
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+set namespaceSeparator none
+
+package "com.tidyfy (composição)" as bootstrap {
+  class Main
+  class AppContainer
+}
+
+package "com.tidyfy.presentation" as presentation {
+}
+
+package "com.tidyfy.infrastructure" as infrastructure {
+}
+
+package "com.tidyfy.application" as application {
+}
+
+package "com.tidyfy.domain" as domain {
+}
+
+bootstrap ..> presentation : inicia a interface
+bootstrap ..> infrastructure : instancia
+bootstrap ..> application : monta casos de uso
+presentation ..> application : chama casos de uso
+infrastructure ..> application : implementa portas
+application ..> domain : usa entidades
+
+note as NDomain
+  <b>domain</b>
+  Regras de negócio puras.
+  Só Java, sem JavaFX e sem Windows.
+end note
+NDomain .. domain
+
+note as NApplication
+  <b>application</b>
+  Casos de uso + portas (interfaces)
+  para o mundo externo.
+end note
+NApplication .. application
+
+note as NInfrastructure
+  <b>infrastructure</b>
+  schtasks.exe, lixeira, disco,
+  persistência das configurações.
+end note
+NInfrastructure .. infrastructure
+
+note as NPresentation
+  <b>presentation</b>
+  Telas JavaFX.
+  Sem regra de negócio.
+end note
+NPresentation .. presentation
+
+legend bottom
+  As setas indicam dependência de código e sempre apontam para dentro (rumo ao domínio).
+  Somente a composição (Main / AppContainer) conhece todas as camadas.
+endlegend
+
+@enduml

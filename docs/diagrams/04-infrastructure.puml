@@ -1,0 +1,111 @@
+@startuml infrastructure
+title Tidyfy — Infraestrutura
+
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+set namespaceSeparator none
+hide empty members
+
+package "com.tidyfy.infrastructure.windows" {
+
+  class SchtasksTaskScheduler {
+    - commandRunner : CommandRunner
+    - launcher : Path
+    + register(helper : Helper) : void
+    + unregister(id : HelperId) : void
+    ~ createCommands(helper : Helper) : List<List<String>>
+    ~ deleteCommands(id : HelperId) : List<List<String>>
+  }
+
+  class PowerShellRecycleBin {
+    - commandRunner : CommandRunner
+    + empty() : void
+  }
+
+  interface CommandRunner {
+    + run(command : List<String>) : CommandResult
+  }
+
+  class ProcessCommandRunner {
+    + run(command : List<String>) : CommandResult
+  }
+
+  class CommandResult <<record>> {
+    + exitCode : int
+    + output : String
+    + succeeded() : boolean
+  }
+}
+
+package "com.tidyfy.infrastructure.filesystem" {
+  class NioFileSystem {
+    + listFiles(folder : Path) : List<Path>
+    + move(move : FileMove) : void
+    + discard(file : Path) : void
+  }
+}
+
+package "com.tidyfy.infrastructure.persistence" {
+  class JsonHelperRepository {
+    - storageFile : Path
+    + save(helper : Helper) : void
+    + findById(id : HelperId) : Optional<Helper>
+    + findAll() : List<Helper>
+    + countByType(type : HelperType) : int
+    + delete(id : HelperId) : void
+  }
+}
+
+package "com.tidyfy.application.port" {
+  interface TaskScheduler
+  interface RecycleBin
+  interface FileSystem
+  interface HelperRepository
+}
+
+TaskScheduler <|.. SchtasksTaskScheduler
+RecycleBin <|.. PowerShellRecycleBin
+FileSystem <|.. NioFileSystem
+HelperRepository <|.. JsonHelperRepository
+
+SchtasksTaskScheduler --> CommandRunner
+PowerShellRecycleBin --> CommandRunner
+CommandRunner <|.. ProcessCommandRunner
+CommandRunner ..> CommandResult
+
+note right of SchtasksTaskScheduler
+  Um comando por horário do Schedule, por exemplo:
+  schtasks /Create /TN "Tidyfy\{id}\{n}"
+    /TR "{launcher} --run {id}"
+    /SC DAILY /MO {intervalDays} /ST {hora} /F
+  (alternativa: uma tarefa com vários gatilhos
+  via XML; decisão em aberto)
+  Os testes verificam os comandos montados,
+  sem executar o schtasks de verdade.
+  launcher = executável do Tidyfy (a definir).
+end note
+
+note right of CommandRunner
+  Isola a execução de processos externos
+  para permitir testes com dublês.
+end note
+
+note bottom of PowerShellRecycleBin
+  Proposta: Clear-RecycleBin -Force.
+  Alternativa: API nativa do Windows.
+  Decisão em aberto.
+end note
+
+note bottom of NioFileSystem
+  discard: proposta de enviar à lixeira
+  (Desktop.moveToTrash) para permitir
+  recuperar. Decisão em aberto.
+end note
+
+note bottom of JsonHelperRepository
+  Proposta: arquivo JSON na pasta
+  AppData do usuário (Tidyfy/helpers.json).
+  Biblioteca JSON a definir.
+end note
+
+@enduml
