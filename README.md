@@ -30,25 +30,32 @@ O usuário cria quantos ajudantes quiser (dentro do limite abaixo), escolhendo o
 ### Regras que valem para todos os ajudantes
 
 - **Uma pasta por ajudante.** Cada ajudante cuida de um único lugar. Quer organizar *Downloads* e *Área de Trabalho*? Crie dois ajudantes.
-- **Nome definido pelo usuário.** Cada ajudante tem um nome que descreve o que ele faz, por exemplo *"Organizar Downloads"* ou *"Esvaziar lixeira toda semana"*.
+- **Nome definido pelo usuário.** Cada ajudante tem um nome que descreve o que ele faz, por exemplo *"Organizar Downloads"* ou *"Esvaziar lixeira toda semana"*. Dois ajudantes não podem ter o mesmo nome.
+- **Sem sobreposição.** Dois ajudantes do **mesmo tipo** não podem trabalhar na mesma pasta. Já um ajudante de organização e um de limpeza podem cuidar da mesma pasta. Na limpeza, a lixeira também conta como um lugar: só um ajudante de limpeza pode cuidar dela. Isso vale também para pastas uma dentro da outra: não pode haver um ajudante em `Downloads` e outro do mesmo tipo em `Downloads\Imagens`.
 - **Até 20 ajudantes de cada tipo.** São até 20 ajudantes de organização e até 20 de limpeza. Ao atingir o limite, é preciso remover um ajudante daquele tipo para criar outro.
 - **Liga e desliga.** Qualquer ajudante pode ser desligado sem ser apagado, e volta a trabalhar quando for ligado de novo.
-- **Frequência própria.** Cada ajudante tem sua própria rotina: a cada quantos dias ele trabalha e em quais horários do dia.
+- **Frequência própria.** Cada ajudante tem sua própria rotina: a cada quantos dias ele trabalha e em quais horários do dia. Tudo isso é configurado pelo usuário.
+- **Histórico.** Cada execução é registrada: quando o ajudante rodou e o que ele fez. O usuário pode consultar esse histórico, que é guardado por **30 dias**.
+- **Pastas sensíveis são recusadas.** O Tidyfy não deixa escolher estas pastas: `C:\Windows` (incluindo `System32`), `C:\Program Files`, `C:\Program Files (x86)`, `C:\ProgramData`, a raiz de qualquer disco (como `C:\`) e a pasta do usuário em si (`C:\Users\nome`; as pastas dentro dela, como Downloads, podem).
 
 ### Ajudante de Organização de pasta
 
-Pega os arquivos soltos em uma pasta e os separa em subpastas de acordo com o tipo de cada um.
+Pega os arquivos soltos em uma pasta e os separa em subpastas de acordo com o tipo de cada um. As pastas soltas também são arrumadas: vão todas para a subpasta **Pastas**.
 
-**Exemplo:** sua pasta *Downloads* tem fotos, PDFs, instaladores e planilhas misturados. Depois que o ajudante passa por ali, ela fica assim:
+**Exemplo:** sua pasta *Downloads* tem imagens, documentos, instaladores e vídeos misturados. Depois que o ajudante passa por ali, ela fica assim:
 
 ```
 Downloads/
-├── Fotos/
-├── PDFs/
+├── Compactados/
+├── Documentos/
 ├── Executáveis/
-├── Planilhas/
+├── Imagens/
+├── Vídeos/
+├── Pastas/
 └── Outros/
 ```
+
+As categorias são fixas (o usuário não cria as suas, talvez no futuro). Qualquer arquivo que não se encaixe em uma delas vai para **Outros**, e toda pasta que não foi criada nem é gerenciada pelo ajudante vai para **Pastas**.
 
 **O que o usuário configura:**
 
@@ -59,20 +66,27 @@ Downloads/
 
 **Regras importantes:**
 
-- O ajudante só organiza os arquivos que estão diretamente na pasta escolhida. O que já estiver dentro de outras pastas não é tocado.
+- O ajudante só olha o que está diretamente na pasta escolhida: os arquivos vão para a categoria deles e as pastas vão para **Pastas**. Ele não entra nas pastas: o que está dentro delas não é tocado, e elas são movidas inteiras.
+- As subpastas do próprio ajudante (as categorias, **Pastas** e **Outros**) ficam onde estão.
 - Arquivos de um tipo que o ajudante não conhece vão para **"Outros"**, uma pasta separada de todas as demais.
+- Se já existir um arquivo com o mesmo nome na pasta de destino:
+  - se for um **duplicado** (o mesmo arquivo), o arquivo de fora vai para a lixeira;
+  - senão, o arquivo que está sendo movido ganha um número no fim do nome, como `teste(1).pdf`, `teste(2).pdf`... (vale também para pastas em **Pastas**).
 
 ### Ajudante de Limpeza
 
 Faz a faxina de um lugar, para ele não acumular arquivos esquecidos ocupando espaço. O usuário escolhe **o que** será limpo:
 
-- **A lixeira do Windows**, que é esvaziada; ou
-- **Uma pasta**, cujos arquivos são removidos (por exemplo, uma pasta de arquivos temporários).
+- **A lixeira do Windows**, que é esvaziada: os arquivos são **removidos permanentemente**; ou
+- **Uma pasta**, cujos arquivos são **movidos para a lixeira** (por exemplo, uma pasta de arquivos temporários). Assim ainda dá para recuperá-los até a lixeira ser esvaziada.
+
+Nos dois casos o usuário escolhe **quanto limpar**: tudo, ou só o que está lá há mais de X dias. Na limpeza de pasta, só os **arquivos soltos** são limpos: as subpastas não são tocadas.
 
 **O que o usuário configura:**
 
 - **Nome do ajudante.**
 - **O que limpar:** a lixeira ou uma pasta (apenas uma).
+- **Quanto limpar:** tudo, ou só o que é mais antigo que X dias. Para uma pasta, o usuário também escolhe se a idade conta a partir da **criação** ou da **última modificação** do arquivo; na lixeira, conta a partir do dia em que o arquivo foi para lá.
 - **Com que frequência a limpeza acontece.**
 - **Se o ajudante está ligado ou não.**
 
@@ -91,29 +105,12 @@ O trabalho dos ajudantes é agendado através do **Agendador de Tarefas do Windo
 
 ---
 
-## Pontos para definir
-
-Algumas regras ainda não foram decididas e merecem atenção antes da implementação:
-
-- **Arquivos com o mesmo nome:** se já existir um arquivo com o mesmo nome na pasta de destino, o ajudante deve renomear, pular ou perguntar?
-- **Arquivos em uso:** o que fazer com arquivos abertos em outro programa ou ainda sendo baixados? (O ideal é deixar para a próxima rodada.)
-- **Tipos de arquivo padrão:** quais categorias e extensões já vêm prontas, e se o usuário poderá criar as suas.
-- **Frequências disponíveis:** qual o intervalo máximo de dias e quantas vezes por dia um ajudante pode rodar.
-- **Nomes repetidos:** dois ajudantes podem ter o mesmo nome?
-- **Mesma pasta em mais de um ajudante:** pode existir, por exemplo, um ajudante organizando e outro limpando a mesma pasta?
-- **Limpeza de pasta:** os arquivos vão para a lixeira (dá para recuperar) ou são apagados de vez? E as subpastas, também são limpas?
-- **Limpeza da lixeira:** apagar tudo ou só o que está lá há mais de X dias?
-- **Histórico:** se o usuário poderá ver o que cada ajudante já fez (quais arquivos foram movidos, quando a lixeira foi esvaziada).
-- **Segurança:** se o ajudante deve recusar pastas sensíveis do sistema (como `C:\Windows` ou `Program Files`).
-
----
-
 ## Ideias para o futuro
 
-Novos tipos de ajudante podem ser adicionados com o tempo, por exemplo:
+Ideias para as próximas rodadas, como novos tipos de ajudante:
 
-- Limpar só arquivos mais antigos que X dias.
 - Avisar quando o disco estiver ficando cheio.
+- Tratar arquivos em uso (abertos em outro programa ou ainda sendo baixados).
 
 ---
 

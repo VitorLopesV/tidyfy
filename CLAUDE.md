@@ -8,7 +8,7 @@ Aplicativo **somente Windows** que cria "ajudantes": tarefas de limpeza/organiza
 
 O usuário cria ajudantes escolhendo um **tipo** e dando um **nome**. Tipos iniciais:
 
-1. **Organização de pasta** (`FOLDER_ORGANIZER`): move os arquivos de **uma** pasta para subpastas por tipo (fotos, PDFs, executáveis...).
+1. **Organização de pasta** (`FOLDER_ORGANIZER`): move os arquivos de **uma** pasta para subpastas por tipo (imagens, documentos, executáveis...) e as pastas soltas para a subpasta "Pastas".
 2. **Limpeza** (`CLEANER`): esvazia a lixeira do Windows **ou** remove os arquivos de **uma** pasta.
 
 Todo ajudante tem: nome, tipo, frequência (a cada N dias, em um ou mais horários do dia) e estado ligado/desligado.
@@ -90,6 +90,7 @@ Os diagramas PlantUML em [docs/diagrams](docs/diagrams) são a referência do de
 | Sistema de arquivos | Listar, mover e descartar arquivos | `java.nio.file` (descarte: a definir, ex.: `Desktop.moveToTrash`) |
 | Lixeira | Esvaziar a lixeira do Windows | A definir (ex.: PowerShell `Clear-RecycleBin` ou chamada nativa) |
 | Repositório de ajudantes | Salvar/carregar a configuração dos ajudantes e contar por tipo | A definir (ex.: arquivo JSON em `%APPDATA%\Tidyfy`) |
+| Histórico de execuções | Registrar e consultar quando cada ajudante rodou e o que fez | A definir (ex.: arquivo em `%APPDATA%\Tidyfy`) |
 
 ## Funcionamento
 
@@ -118,21 +119,31 @@ Todas as regras são validadas no domínio, não só na UI.
 - Cada ajudante atua em **um único alvo**: uma pasta, ou a lixeira (só para Limpeza).
 - **Nome** definido pelo usuário: obrigatório e sem espaços nas pontas (`HelperName`).
 - **Máximo de 20 ajudantes por tipo** (`HelperType.MAX_PER_TYPE`). A checagem acontece só na **criação**; editar um ajudante existente não conta. A contagem vem do repositório (`countByType`) e quem decide é o domínio (`HelperType.assertCanCreate`), lançando `HelperLimitReachedException`.
-- **Frequência** (`Schedule`): a cada `intervalDays` dias (≥ 1), em um ou mais horários do dia, sem horários repetidos.
+- **Nome único:** dois ajudantes não podem ter o mesmo nome.
+- **Sem sobreposição:** dois ajudantes do **mesmo tipo** não podem atuar na mesma pasta (organização e limpeza podem). Para a limpeza, a lixeira conta como um lugar: só um `CLEANER` pode ter `RecycleBinTarget`. A regra vale também para pastas aninhadas: um ajudante do mesmo tipo não pode atuar numa pasta que contém ou está contida na pasta de outro (ex.: `Downloads` e `Downloads\Imagens`).
+- **Frequência** (`Schedule`): a cada `intervalDays` dias (≥ 1), em um ou mais horários do dia, sem horários repetidos. Sem limite máximo fixo: quem define é o usuário.
+- **Histórico:** toda execução é registrada (quando rodou e o que fez: arquivos movidos, removidos ou renomeados, lixeira esvaziada) e pode ser consultada. Os registros são guardados por **30 dias**.
+- **Pastas sensíveis** são recusadas pelo domínio. Recusadas **com tudo que há dentro**: `C:\Windows` (incluindo `System32`), `C:\Program Files`, `C:\Program Files (x86)` e `C:\ProgramData`. Recusadas **só elas mesmas**: a raiz de qualquer disco e a pasta do usuário (`C:\Users\nome`); as pastas dentro dela, como Downloads, são aceitas.
 - Ajudante **desligado** não fica registrado no Agendador do Windows e não executa.
 
 **Organização de pasta**
-- Organiza apenas arquivos diretamente na pasta; **não entra em subpastas**.
+- Olha apenas o que está diretamente na pasta; **não entra em subpastas**. Arquivos vão para a categoria deles; pastas que o ajudante não criou vão, inteiras, para a subpasta **"Pastas"**.
+- As subpastas do próprio ajudante (as categorias, `Pastas` e `Outros`) ficam onde estão; uma pasta do usuário com o mesmo nome de uma categoria conta como do ajudante.
 - Arquivos de extensão desconhecida vão para a subpasta **"Outros"**.
+- **Conflito de nome no destino:** arquivo duplicado (mesmo conteúdo) → o arquivo de fora vai para a lixeira; senão → o item movido ganha um número no fim do nome (`teste(1).pdf`, `teste(2).pdf`...), inclusive pastas em `Pastas`.
 - Cada extensão pertence a **uma única categoria** (evita ambiguidade no destino).
 - Extensões são comparadas normalizadas: minúsculas e sem ponto (`Foto.JPG` → `jpg`).
-- As categorias são um catálogo padrão (`DefaultFileCategories`), não configuradas por ajudante.
+- As categorias são um catálogo padrão (`DefaultFileCategories`), não configuradas por ajudante, e o usuário **não** cria categorias próprias (talvez no futuro). Pastas de destino: `Compactados`, `Documentos`, `Executáveis`, `Imagens`, `Vídeos`, `Pastas` e `Outros`.
+- **Extensões por categoria:** `Imagens`: jpg, jpeg, png, gif, bmp, webp, svg, heic, tiff, ico. `Vídeos`: mp4, mkv, avi, mov, wmv, flv, webm, m4v. `Documentos`: pdf, doc, docx, xls, xlsx, ppt, pptx, txt, rtf, odt, ods, odp, csv. `Compactados`: zip, rar, 7z, tar, gz. `Executáveis`: exe, msi, bat. O resto vai para `Outros` (inclusive músicas, que não têm categoria).
 - O cálculo de "o que mover para onde" é uma função pura do domínio (`FolderOrganizationPlanner`); a movimentação real fica na infraestrutura.
 
 **Limpeza**
 - O alvo (`CleanupTarget`) é a lixeira (`RecycleBinTarget`) **ou** uma pasta (`FolderTarget`).
+- Limpar a **lixeira** remove os arquivos de forma **permanente**; limpar uma **pasta** **move** os arquivos para a lixeira.
+- Nos dois casos o usuário configura o **quanto limpar**: tudo, ou só o que é mais antigo que X dias. Para pasta, o usuário também escolhe se a idade conta da **criação** ou da **última modificação**; na lixeira, conta do dia em que o arquivo foi para lá.
+- A limpeza de pasta atua **só nos arquivos soltos**; subpastas não são tocadas.
 
-**Em aberto**: conflito de nome de arquivo, arquivo em uso, nomes de ajudante repetidos, mesma pasta em mais de um ajudante, limpeza de pasta (lixeira ou exclusão definitiva, subpastas), limites da frequência, pastas protegidas e histórico. Estão listados no README; **decida e registre aqui antes de implementar**.
+**Fora desta rodada:** arquivos em uso (abertos em outro programa ou ainda sendo baixados).
 
 ## Testes
 
