@@ -19,12 +19,12 @@ Todo ajudante tem: nome, tipo, frequência (a cada N dias, em um ou mais horári
 |---|---|
 | Linguagem | Java 21 (JDK 21) |
 | Build | Maven (3.8+) |
-| Interface | JavaFX |
+| Interface | JavaFX 21 (FXML + CSS) |
 | Testes | JUnit 5 (adicionar Mockito quando houver necessidade de dublês) |
 | Agendamento | Agendador de Tarefas do Windows (`schtasks.exe`) |
 | Plataforma | Windows apenas |
 
-Estado atual do `pom.xml`: Java 21 + JUnit 5. **JavaFX ainda não foi adicionado**; incluir as dependências `org.openjfx` (e o `javafx-maven-plugin`) ao começar a camada de apresentação.
+Estado atual do `pom.xml`: Java 21, JavaFX 21 (`javafx-controls` e `javafx-fxml`, mais o `javafx-maven-plugin` para rodar a interface) e JUnit 5.
 
 ## Regras do projeto (obrigatórias)
 
@@ -32,6 +32,7 @@ Estado atual do `pom.xml`: Java 21 + JUnit 5. **JavaFX ainda não foi adicionado
 2. **Arquitetura limpa** (Clean Architecture). A regra de dependência nunca pode ser quebrada (veja abaixo).
 3. **Somente Windows.** Código que depende do Windows deve ficar isolado na camada de infraestrutura, atrás de interfaces, para que o restante seja testável em qualquer ambiente.
 4. Mantenha o código simples: sem abstrações ou configurações que nenhuma regra de negócio atual exija.
+5. **Siga as [boas práticas de código](docs/BOAS-PRATICAS.md).** Resumo: todo tipo, método, construtor, atributo e constante tem Javadoc (blocos de várias linhas para tipos e métodos, `/** Texto */` para variáveis); nenhuma `String` solta, todas em constantes da própria classe; as constantes ficam depois do último atributo, sob o comentário `// Constantes`.
 
 ## Arquitetura
 
@@ -47,8 +48,12 @@ com.tidyfy                  Main + AppContainer (composition root)
 │   ├── windows             schtasks, lixeira, execução de processos
 │   ├── filesystem          Acesso ao disco (java.nio.file)
 │   └── persistence         Configuração dos ajudantes
-└── presentation            Interface JavaFX (views, controllers)
+└── presentation            Interface JavaFX: TidyfyApplication, controllers das telas e diálogos
+    ├── model               Modelos de tela (o que a interface exibe; Java puro, sem JavaFX)
+    └── component           Componentes visuais reutilizáveis (cartão, interruptor, ícones, animações...)
 ```
+
+FXML e CSS ficam em `src/main/resources/com/tidyfy/presentation` (mesmo pacote das classes que os carregam).
 
 **Regra de dependência:** as dependências apontam sempre para dentro.
 
@@ -73,7 +78,7 @@ Os diagramas PlantUML em [docs/diagrams](docs/diagrams) são a referência do de
 | [02-domain.puml](docs/diagrams/02-domain.puml) | Ajudantes, tipos e limite, alvo da limpeza, agendamento, categorias e planejador de organização |
 | [03-application.puml](docs/diagrams/03-application.puml) | Casos de uso e portas |
 | [04-infrastructure.puml](docs/diagrams/04-infrastructure.puml) | Implementações das portas (schtasks, disco, lixeira, persistência) |
-| [05-presentation.puml](docs/diagrams/05-presentation.puml) | Telas JavaFX, `Main` e `AppContainer` |
+| [05-presentation.puml](docs/diagrams/05-presentation.puml) | Telas JavaFX, modelos de tela, componentes, `Main` e `AppContainer` |
 
 **Mantenha os diagramas atualizados:** ao criar, renomear ou remover classes/relacionamentos relevantes, atualize o `.puml` correspondente no mesmo commit.
 
@@ -94,6 +99,16 @@ Os diagramas PlantUML em [docs/diagrams](docs/diagrams) são a referência do de
 4. O Tidyfy carrega a configuração do ajudante, executa o caso de uso e encerra.
 
 Por isso a execução dos ajudantes **não pode depender da interface gráfica**: o `Main` deve distinguir "abrir a interface" de "executar o ajudante X".
+
+## Interface (presentation)
+
+- **Telas em FXML sem `fx:controller`.** O controller é criado no código e entregue ao `FXMLLoader` por `Fxml.load` (componentes `fx:root` usam `Fxml.loadRoot`). Assim os casos de uso poderão ser injetados por construtor.
+- **Tema escuro único** em `tidyfy.css`. As cores são *looked-up colors* no `.root` (`-tf-bg`, `-tf-ink`, `-tf-org`, `-tf-clean`...); FXML e Java não usam cores fixas, só classes CSS. A cor de cada tipo vem das classes `kind-org` / `kind-clean`.
+- **Fontes do Windows:** Segoe UI (texto) e Consolas (caminhos, horários e números). Nada é embutido no jar.
+- **Regras de tela:** editar só com **um** ajudante selecionado; remover com um ou vários (`HelperSelection`). O tipo que atingiu o limite aparece bloqueado em "Novo ajudante", mas quem garante o limite é o domínio.
+- **A tela principal não rola.** Cabeçalho, contadores e filtro ficam fixos e os cartões (compactos) ocupam o espaço restante: na janela padrão (1280 × 900) cabem 9 sem barra de rolagem. Só a área dos cartões (`cardsScroll`) rola, e apenas quando há mais ajudantes do que cabem. Com seleção, as ações aparecem **no lugar do filtro**, na mesma linha, para não cobrir nem empurrar os cartões. Os testes de `HelperListControllerTest` verificam isso; ao mexer no layout, mantenha-os passando.
+- **Diálogos** (`Dialogs.showModal`): janela modal sem moldura, arrastável pelo nó com a classe `drag-handle`, fecha com Esc e escurece a lista enquanto está aberta.
+- **Estado atual:** os casos de uso ainda não existem. A lista começa vazia (`HelperListController.showHelpers` recebe os dados quando o `ListHelpersUseCase` existir); Salvar e Remover só fecham os diálogos; o `Main` só abre a interface (o modo `--run {id}` chega com o `RunHelperUseCase`).
 
 ## Regras de negócio que o código deve garantir
 
@@ -125,6 +140,7 @@ Todas as regras são validadas no domínio, não só na UI.
 - `domain` e `application` são testados sem tocar no disco nem no Windows (use dublês das portas).
 - Testes que precisem do sistema de arquivos devem usar diretórios temporários (`@TempDir`) e nunca pastas reais do usuário.
 - Código que chama `schtasks.exe`/lixeira real não deve rodar em testes unitários; teste o comando montado e o tratamento da resposta, não a execução real.
+- Testes de tela usam `JavaFx` (em `src/test`): ele inicia o toolkit uma vez, executa o teste na thread da interface (`JavaFx.run` / `JavaFx.call`) e monta a tela numa janela não exibida (`JavaFx.mount`). Precisam de sessão gráfica do Windows. Encontre os nós por `fx:id` (`lookup("#saveButton")`). Diálogos (`showAndWait`) e o seletor de pastas não são abertos nos testes.
 - Nomes de teste descrevem o comportamento esperado.
 
 ## Convenções
@@ -137,5 +153,6 @@ Todas as regras são validadas no domínio, não só na UI.
 
 ```bash
 mvn clean test       # compila e roda os testes
+mvn javafx:run       # abre a interface
 mvn clean package    # gera target/tidyfy-1.0-SNAPSHOT.jar
 ```
