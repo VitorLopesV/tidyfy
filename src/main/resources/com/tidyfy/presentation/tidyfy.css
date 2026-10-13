@@ -1,0 +1,1397 @@
+/*
+ * Tidyfy — tema escuro.
+ * As cores ficam em "looked-up colors" no .root; o resto da folha só as referencia.
+ */
+
+.root {
+    -tf-bg: #0D1210;
+    -tf-surface: #151C19;
+    -tf-surface-2: #1B2420;
+    -tf-surface-3: #222C28;
+    -tf-sunken: #101613;
+    -tf-paused: #111714;
+    -tf-line: #26302C;
+    -tf-line-soft: #222B27;
+    -tf-line-strong: #34403B;
+    -tf-field: #5F6C66;
+    -tf-ink: #E9EFEC;
+    -tf-muted: #9AA6A0;
+    -tf-on-ink: #0D1210;
+    -tf-org: #46C9A1;
+    -tf-org-tint: #0F2C24;
+    -tf-org-soft: #6FDDB9;
+    -tf-clean: #F0A35E;
+    -tf-clean-tint: #33200F;
+    -tf-clean-soft: #F6B57A;
+    -tf-danger: #F2877B;
+    -tf-danger-tint: #3A1714;
+    -tf-danger-strong: #C9342B;
+    -tf-mint: #3FD0A5;
+
+    -fx-base: #1B2420;
+    -fx-background: #0D1210;
+    -fx-control-inner-background: #101613;
+    -fx-text-background-color: -tf-ink;
+    -fx-text-base-color: -tf-ink;
+    -fx-text-inner-color: -tf-ink;
+    -fx-accent: -tf-org;
+    -fx-focus-color: -tf-org;
+    -fx-faint-focus-color: transparent;
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 14px;
+    -fx-background-color: -tf-bg;
+}
+
+.root.dialog-shell {
+    -fx-background-color: transparent;
+}
+
+/* ---------- Texto ---------- */
+
+.label {
+    -fx-text-fill: -tf-ink;
+}
+
+.muted {
+    -fx-text-fill: -tf-muted;
+}
+
+.wordmark {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.h1 {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.lead {
+    -fx-font-size: 15px;
+    -fx-text-fill: -tf-muted;
+}
+
+.lead-small {
+    -fx-font-size: 14px;
+    -fx-text-fill: -tf-muted;
+}
+
+.h2 {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+.h3 {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.eyebrow {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tf-muted;
+}
+
+.field-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.subfield-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tf-muted;
+}
+
+.help {
+    -fx-font-size: 13px;
+    -fx-text-fill: -tf-muted;
+}
+
+.help.error {
+    -fx-text-fill: -tf-danger;
+    -fx-font-weight: 600;
+}
+
+.kind-org .kind-text {
+    -fx-text-fill: -tf-org;
+}
+
+.kind-clean .kind-text {
+    -fx-text-fill: -tf-clean;
+}
+
+/* ---------- Ícones ---------- */
+
+.icon-shape {
+    -fx-fill: transparent;
+    -fx-stroke: -tf-muted;
+    -fx-stroke-width: 1.8;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.ink-icon .icon-shape,
+.tree-root .icon-shape,
+.arrow-icon .icon-shape {
+    -fx-stroke: -tf-ink;
+}
+
+.arrow-icon .icon-shape {
+    -fx-stroke-width: 2;
+}
+
+.kind-badge {
+    -fx-background-radius: 11;
+}
+
+.kind-org .kind-badge {
+    -fx-background-color: -tf-org-tint;
+}
+
+.kind-clean .kind-badge {
+    -fx-background-color: -tf-clean-tint;
+}
+
+.kind-org .kind-badge .icon-shape {
+    -fx-stroke: -tf-org;
+}
+
+.kind-clean .kind-badge .icon-shape {
+    -fx-stroke: -tf-clean;
+}
+
+.badge-30 { -fx-min-width: 30; -fx-min-height: 30; -fx-max-width: 30; -fx-max-height: 30; -fx-background-radius: 9; }
+.badge-34 { -fx-min-width: 34; -fx-min-height: 34; -fx-max-width: 34; -fx-max-height: 34; -fx-background-radius: 10; }
+.badge-36 { -fx-min-width: 36; -fx-min-height: 36; -fx-max-width: 36; -fx-max-height: 36; -fx-background-radius: 11; }
+.badge-40 { -fx-min-width: 40; -fx-min-height: 40; -fx-max-width: 40; -fx-max-height: 40; -fx-background-radius: 12; }
+.badge-42 { -fx-min-width: 42; -fx-min-height: 42; -fx-max-width: 42; -fx-max-height: 42; -fx-background-radius: 12; }
+.badge-44 { -fx-min-width: 44; -fx-min-height: 44; -fx-max-width: 44; -fx-max-height: 44; -fx-background-radius: 13; }
+.badge-52 { -fx-min-width: 52; -fx-min-height: 52; -fx-max-width: 52; -fx-max-height: 52; -fx-background-radius: 15; }
+.badge-56 { -fx-min-width: 56; -fx-min-height: 56; -fx-max-width: 56; -fx-max-height: 56; -fx-background-radius: 16; }
+
+/* ---------- Botões ---------- */
+
+.btn {
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 0 18;
+    -fx-min-height: 44;
+    -fx-pref-height: 44;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-graphic-text-gap: 8;
+    -fx-cursor: hand;
+}
+
+.btn-compact {
+    -fx-background-radius: 10;
+    -fx-padding: 0 16;
+}
+
+.btn-tall {
+    -fx-min-height: 48;
+    -fx-pref-height: 48;
+    -fx-padding: 0 22;
+}
+
+.btn-large {
+    -fx-min-height: 50;
+    -fx-pref-height: 50;
+    -fx-background-radius: 14;
+    -fx-font-size: 15px;
+    -fx-padding: 0 22 0 18;
+    -fx-graphic-text-gap: 10;
+}
+
+.btn-primary {
+    -fx-background-color: -tf-ink;
+    -fx-text-fill: -tf-on-ink;
+    -fx-effect: dropshadow(gaussian, rgba(233, 239, 236, 0.16), 20, 0, 0, 8);
+}
+
+.btn-primary:hover {
+    -fx-background-color: #FFFFFF;
+}
+
+.btn-primary:pressed {
+    -fx-background-color: #D6DED9;
+}
+
+.btn-primary .icon-shape {
+    -fx-stroke: -tf-on-ink;
+    -fx-stroke-width: 2.2;
+}
+
+.btn-primary:disabled {
+    -fx-opacity: 1;
+    -fx-background-color: #2A3430;
+    -fx-text-fill: #7C8882;
+    -fx-effect: null;
+}
+
+.btn-primary:disabled .icon-shape {
+    -fx-stroke: #7C8882;
+}
+
+.btn-ghost {
+    -fx-background-color: -tf-line-strong, -tf-surface-2;
+    -fx-background-insets: 0, 1;
+    -fx-text-fill: -tf-ink;
+}
+
+.btn-ghost:hover {
+    -fx-background-color: -tf-field, -tf-surface-3;
+}
+
+.btn-danger {
+    -fx-background-color: -tf-danger-strong;
+    -fx-text-fill: #FFFFFF;
+    -fx-effect: dropshadow(gaussian, rgba(201, 52, 43, 0.5), 20, 0, 0, 8);
+}
+
+.btn-danger:hover {
+    -fx-background-color: #B52D25;
+}
+
+.btn-danger .icon-shape {
+    -fx-stroke: #FFFFFF;
+}
+
+.btn-dashed {
+    -fx-background-color: transparent;
+    -fx-border-color: -tf-field;
+    -fx-border-style: segments(5, 4);
+    -fx-border-width: 1.5;
+    -fx-text-fill: -tf-ink;
+    -fx-padding: 0 14;
+}
+
+.btn-dashed .icon-shape {
+    -fx-stroke: -tf-ink;
+    -fx-stroke-width: 2.2;
+}
+
+.btn-dashed:hover {
+    -fx-background-color: -tf-surface-2;
+    -fx-border-color: -tf-ink;
+}
+
+.icon-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 12;
+    -fx-min-width: 44;
+    -fx-min-height: 44;
+    -fx-pref-width: 44;
+    -fx-pref-height: 44;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.icon-btn:hover {
+    -fx-background-color: -tf-surface-3;
+}
+
+.icon-btn:hover .icon-shape {
+    -fx-stroke: -tf-ink;
+}
+
+.icon-btn:disabled {
+    -fx-opacity: 0.35;
+}
+
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.bar-btn:focus-visible,
+.seg:focus-visible,
+.type-card:focus-visible,
+.choice-card:focus-visible {
+    -fx-border-color: -tf-org;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-border-style: solid;
+}
+
+/* ---------- Cartões de estatística ---------- */
+
+.stat-card {
+    -fx-background-color: -tf-line, -tf-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 16, 15;
+    -fx-padding: 14 18;
+    -fx-spacing: 12;
+}
+
+.stat-card.live {
+    -fx-background-color: #1D3A31, #0F211B;
+}
+
+.stat-title {
+    -fx-font-weight: bold;
+}
+
+.stat-sub {
+    -fx-font-size: 12px;
+    -fx-text-fill: -tf-muted;
+}
+
+.stat-count {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.stat-max {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 13px;
+    -fx-text-fill: -tf-muted;
+}
+
+.meter-count {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.live-count {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.live-sub {
+    -fx-font-size: 12px;
+    -fx-text-fill: #A5C3B8;
+}
+
+/* ---------- Medidor de limite ---------- */
+
+.usage-meter {
+    -fx-spacing: 3;
+    -fx-min-height: 10;
+    -fx-pref-height: 10;
+    -fx-max-height: 10;
+}
+
+.usage-meter.compact {
+    -fx-min-height: 8;
+    -fx-pref-height: 8;
+    -fx-max-height: 8;
+}
+
+.tick {
+    -fx-background-color: -tf-line;
+    -fx-background-radius: 3;
+}
+
+.kind-org .tick.on {
+    -fx-background-color: -tf-org;
+    -fx-effect: dropshadow(gaussian, rgba(70, 201, 161, 0.35), 8, 0, 0, 0);
+}
+
+.kind-clean .tick.on {
+    -fx-background-color: -tf-clean;
+    -fx-effect: dropshadow(gaussian, rgba(240, 163, 94, 0.3), 8, 0, 0, 0);
+}
+
+/* ---------- Pulso ---------- */
+
+.pulse-core,
+.pulse-ring {
+    -fx-fill: -tf-mint;
+}
+
+.kind-org .pulse-core,
+.kind-org .pulse-ring {
+    -fx-fill: -tf-org;
+}
+
+.kind-clean .pulse-core,
+.kind-clean .pulse-ring {
+    -fx-fill: -tf-clean;
+}
+
+/* ---------- Filtro por tipo ---------- */
+
+.segmented {
+    -fx-background-color: -tf-line-soft, -tf-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 14, 13;
+    -fx-padding: 4;
+}
+
+.seg {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-min-height: 40;
+    -fx-padding: 0 12 0 14;
+    -fx-cursor: hand;
+}
+
+.seg:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.04);
+}
+
+.seg:selected {
+    -fx-background-color: #2A3430;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 4, 0, 0, 1);
+}
+
+.seg-text {
+    -fx-text-fill: -tf-muted;
+    -fx-font-weight: bold;
+}
+
+.seg:hover .seg-text,
+.seg:selected .seg-text {
+    -fx-text-fill: -tf-ink;
+}
+
+.seg-count {
+    -fx-background-color: -tf-line;
+    -fx-background-radius: 999;
+    -fx-padding: 1 7;
+    -fx-min-width: 22;
+    -fx-alignment: center;
+    -fx-text-fill: #B5C0BA;
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+}
+
+.seg:selected .seg-count {
+    -fx-background-color: -tf-ink;
+    -fx-text-fill: -tf-on-ink;
+}
+
+.seg-dot {
+    -fx-min-width: 8;
+    -fx-min-height: 8;
+    -fx-max-width: 8;
+    -fx-max-height: 8;
+    -fx-background-radius: 4;
+}
+
+.kind-org .seg-dot {
+    -fx-background-color: -tf-org;
+}
+
+.kind-clean .seg-dot {
+    -fx-background-color: -tf-clean;
+}
+
+/* ---------- Caixa de seleção ---------- */
+
+.select-box {
+    -fx-padding: 0;
+    -fx-label-padding: 0 0 0 10;
+    -fx-cursor: hand;
+}
+
+.select-box > .box {
+    -fx-background-color: #6B7872, -tf-surface;
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 7, 5.5;
+    -fx-padding: 5;
+}
+
+.select-box > .box > .mark {
+    -fx-background-color: transparent;
+    -fx-padding: 6;
+    -fx-shape: "M4 12.6 5.6 11 9.5 14.9 18.4 6 20 7.6 9.5 18.1z";
+}
+
+.select-box:hover > .box {
+    -fx-background-color: -tf-ink, -tf-surface;
+}
+
+.select-box:selected > .box,
+.select-box:indeterminate > .box {
+    -fx-background-color: -tf-ink, -tf-ink;
+}
+
+.select-box:selected > .box > .mark {
+    -fx-background-color: -tf-on-ink;
+}
+
+.select-box:indeterminate > .box > .mark {
+    -fx-background-color: -tf-on-ink;
+    -fx-shape: "M5 11h14v2H5z";
+}
+
+.select-box:focus-visible > .box {
+    -fx-background-color: -tf-org, -tf-surface;
+}
+
+.select-all {
+    -fx-text-fill: -tf-muted;
+    -fx-font-weight: bold;
+}
+
+/* ---------- Interruptor ---------- */
+
+.toggle-switch {
+    -fx-background-color: transparent;
+    -fx-padding: 9 0;
+    -fx-cursor: hand;
+}
+
+.toggle-switch .track {
+    -fx-background-color: #3A4641;
+    -fx-background-radius: 13;
+    -fx-min-width: 44;
+    -fx-pref-width: 44;
+    -fx-max-width: 44;
+    -fx-min-height: 26;
+    -fx-pref-height: 26;
+    -fx-max-height: 26;
+    -fx-padding: 3;
+}
+
+.toggle-switch:hover .track {
+    -fx-background-color: #46534D;
+}
+
+.toggle-switch:selected .track {
+    -fx-background-color: -tf-ink;
+}
+
+.toggle-switch:selected:hover .track {
+    -fx-background-color: #FFFFFF;
+}
+
+.toggle-switch:focus-visible .track {
+    -fx-border-color: -tf-org;
+    -fx-border-width: 2;
+    -fx-border-radius: 13;
+    -fx-border-insets: -3;
+}
+
+.toggle-switch .knob {
+    -fx-background-color: #C9D2CD;
+    -fx-background-radius: 10;
+    -fx-min-width: 20;
+    -fx-min-height: 20;
+    -fx-max-width: 20;
+    -fx-max-height: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 4, 0, 0, 1);
+}
+
+.toggle-switch:selected .knob {
+    -fx-background-color: -tf-on-ink;
+}
+
+/* ---------- Cartão de ajudante ---------- */
+
+.helper-card {
+    -fx-background-color: -tf-surface;
+    -fx-background-radius: 16;
+    -fx-border-color: -tf-line;
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-padding: 12 16 14 16;
+    -fx-spacing: 10;
+    -fx-cursor: hand;
+}
+
+.helper-card:hover {
+    -fx-border-color: -tf-line-strong;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 18, 0, 0, 6);
+}
+
+.helper-card:paused {
+    -fx-background-color: -tf-paused;
+    -fx-border-color: -tf-line-strong;
+    -fx-border-style: segments(6, 5);
+}
+
+.helper-card:paused .kind-badge {
+    -fx-opacity: 0.55;
+}
+
+.helper-card:selected {
+    -fx-border-color: -tf-ink;
+    -fx-border-style: solid;
+    -fx-border-width: 2;
+    -fx-padding: 11 15 13 15;
+}
+
+.kind-label {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.card-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.target-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.target-detail {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+    -fx-text-fill: -tf-muted;
+}
+
+.every-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.time-chip {
+    -fx-background-color: -tf-surface-3;
+    -fx-background-radius: 7;
+    -fx-padding: 2 7;
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+}
+
+.time-chip.more {
+    -fx-text-fill: -tf-muted;
+}
+
+.schedule-text {
+    -fx-font-size: 13px;
+    -fx-text-fill: -tf-muted;
+}
+
+.next-value {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.progress-track {
+    -fx-background-color: -tf-surface-3;
+    -fx-background-radius: 999;
+    -fx-min-height: 4;
+    -fx-pref-height: 4;
+    -fx-max-height: 4;
+}
+
+.progress-fill {
+    -fx-background-radius: 999;
+    -fx-min-height: 4;
+}
+
+.kind-org .progress-fill {
+    -fx-background-color: -tf-org;
+}
+
+.kind-clean .progress-fill {
+    -fx-background-color: -tf-clean;
+}
+
+.no-results {
+    -fx-font-size: 14px;
+    -fx-text-fill: -tf-muted;
+    -fx-padding: 24 0;
+}
+
+/* ---------- Estado vazio ---------- */
+
+.empty-state {
+    -fx-background-color: -tf-paused;
+    -fx-background-radius: 24;
+    -fx-border-color: -tf-line-strong;
+    -fx-border-style: segments(7, 6);
+    -fx-border-width: 1.5;
+    -fx-border-radius: 24;
+    -fx-padding: 24;
+}
+
+.empty-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 0 0 0;
+}
+
+.empty-text {
+    -fx-font-size: 15px;
+    -fx-text-fill: -tf-muted;
+    -fx-text-alignment: center;
+}
+
+.illus-folder {
+    -fx-fill: -tf-surface;
+    -fx-stroke: -tf-ink;
+    -fx-stroke-width: 2;
+}
+
+.illus-lines {
+    -fx-fill: transparent;
+    -fx-stroke: -tf-ink;
+    -fx-stroke-width: 2.4;
+    -fx-stroke-line-cap: round;
+}
+
+.illus-dot {
+    -fx-fill: -tf-mint;
+}
+
+.illus-spark-clean {
+    -fx-fill: -tf-clean;
+}
+
+.illus-spark-org {
+    -fx-fill: -tf-org;
+}
+
+/* ---------- Seleção ---------- */
+
+.scrim {
+    -fx-background-color: rgba(5, 8, 7, 0.6);
+}
+
+.selection-bar {
+    -fx-background-color: -tf-line-strong, #1F2925;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 14, 13;
+    -fx-padding: 4 4 4 10;
+    -fx-min-height: 50;
+}
+
+.selection-count {
+    -fx-background-color: -tf-mint;
+    -fx-background-radius: 9;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-padding: 0 6;
+    -fx-alignment: center;
+    -fx-text-fill: #06261D;
+    -fx-font-family: "Consolas";
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.selection-text {
+    -fx-font-weight: 600;
+    -fx-padding: 0 10 0 0;
+}
+
+.bar-divider {
+    -fx-background-color: -tf-line-strong;
+    -fx-min-width: 1;
+    -fx-max-width: 1;
+    -fx-pref-height: 26;
+    -fx-max-height: 26;
+}
+
+.bar-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-min-height: 42;
+    -fx-padding: 0 14;
+    -fx-text-fill: -tf-ink;
+    -fx-font-weight: bold;
+    -fx-graphic-text-gap: 8;
+    -fx-cursor: hand;
+}
+
+.bar-btn .icon-shape {
+    -fx-stroke: -tf-ink;
+}
+
+.bar-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+}
+
+.bar-btn.danger {
+    -fx-text-fill: #FF9D91;
+}
+
+.bar-btn.danger .icon-shape {
+    -fx-stroke: #FF9D91;
+}
+
+.bar-btn.danger:hover {
+    -fx-background-color: rgba(242, 135, 123, 0.14);
+}
+
+.bar-btn.icon-only {
+    -fx-min-width: 44;
+    -fx-padding: 0;
+}
+
+.bar-btn.icon-only .icon-shape {
+    -fx-stroke: -tf-muted;
+}
+
+.bar-btn:disabled {
+    -fx-opacity: 1;
+    -fx-text-fill: #6B7872;
+}
+
+.bar-btn:disabled .icon-shape {
+    -fx-stroke: #6B7872;
+}
+
+.edit-hint {
+    -fx-font-size: 13px;
+    -fx-text-fill: -tf-muted;
+    -fx-graphic-text-gap: 8;
+}
+
+.edit-hint .icon-shape {
+    -fx-stroke: -tf-org;
+    -fx-stroke-width: 2;
+}
+
+/* ---------- Rolagem ---------- */
+
+.scroll-pane,
+.scroll-pane:focused,
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.scroll-pane > .corner {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical {
+    -fx-pref-width: 10;
+}
+
+.scroll-bar > .thumb {
+    -fx-background-color: -tf-line-strong;
+    -fx-background-radius: 5;
+    -fx-background-insets: 2;
+}
+
+.scroll-bar > .thumb:hover {
+    -fx-background-color: #46534D;
+}
+
+.scroll-bar > .track,
+.scroll-bar > .track-background {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar > .increment-button,
+.scroll-bar > .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.scroll-bar > .increment-button > .increment-arrow,
+.scroll-bar > .decrement-button > .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
+}
+
+/* ---------- Diálogos ---------- */
+
+.dialog {
+    -fx-background-color: -tf-surface;
+    -fx-background-radius: 20;
+    -fx-border-color: -tf-line-strong;
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.75), 24, 0, 0, 10);
+}
+
+.dialog-header {
+    -fx-padding: 0 20 0 28;
+    -fx-min-height: 76;
+    -fx-pref-height: 76;
+    -fx-border-color: transparent transparent -tf-line transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.dialog-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.chooser-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.kind-caption {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.dialog-footer {
+    -fx-padding: 12 28;
+    -fx-min-height: 80;
+    -fx-border-color: -tf-line transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.form-body {
+    -fx-padding: 24 28;
+}
+
+.preview-scroll,
+.preview-scroll:focused {
+    -fx-background-color: -tf-sunken;
+    -fx-border-color: transparent transparent transparent -tf-line;
+    -fx-border-width: 0 0 0 1;
+    -fx-min-width: 372;
+    -fx-pref-width: 372;
+    -fx-max-width: 372;
+}
+
+.preview-pane {
+    -fx-padding: 22;
+}
+
+.separator:horizontal .line {
+    -fx-border-color: -tf-line transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-border-insets: 0;
+}
+
+/* ---------- Campos ---------- */
+
+.input {
+    -fx-background-color: -tf-field, -tf-sunken;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 12, 11;
+    -fx-min-height: 48;
+    -fx-pref-height: 48;
+    -fx-padding: 0 14;
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+    -fx-text-fill: -tf-ink;
+    -fx-prompt-text-fill: #7C8882;
+    -fx-highlight-fill: rgba(70, 201, 161, 0.35);
+    -fx-highlight-text-fill: -tf-ink;
+}
+
+.input:hover {
+    -fx-background-color: #8A9690, -tf-sunken;
+}
+
+.input:focused {
+    -fx-background-color: -tf-ink, -tf-sunken;
+    -fx-prompt-text-fill: #7C8882;
+}
+
+.input.invalid,
+.input.invalid:focused {
+    -fx-background-color: -tf-danger, -tf-sunken;
+}
+
+.folder-field {
+    -fx-background-color: -tf-field, -tf-sunken;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 14, 13;
+    -fx-padding: 6 6 6 14;
+    -fx-min-height: 58;
+}
+
+.folder-name {
+    -fx-font-weight: bold;
+}
+
+.folder-path {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+    -fx-text-fill: -tf-muted;
+}
+
+.folder-empty {
+    -fx-text-fill: -tf-muted;
+}
+
+.kind-org .folder-field:chosen .folder-icon .icon-shape {
+    -fx-stroke: -tf-org;
+}
+
+.kind-clean .folder-field:chosen .folder-icon .icon-shape {
+    -fx-stroke: -tf-clean;
+}
+
+/* ---------- Frequência ---------- */
+
+.stepper {
+    -fx-background-color: -tf-field, -tf-sunken;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 14, 13;
+    -fx-padding: 3;
+}
+
+.stepper-value {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-min-width: 40;
+    -fx-alignment: center;
+}
+
+.time-chip-editable {
+    -fx-background-color: -tf-line-strong, -tf-surface-2;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 12, 11;
+    -fx-padding: 0 4 0 12;
+    -fx-min-height: 44;
+}
+
+.chip-text {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.kind-org .chip-clock .icon-shape {
+    -fx-stroke: -tf-org;
+    -fx-stroke-width: 2;
+}
+
+.kind-clean .chip-clock .icon-shape {
+    -fx-stroke: -tf-clean;
+    -fx-stroke-width: 2;
+}
+
+.chip-remove {
+    -fx-min-width: 34;
+    -fx-min-height: 34;
+    -fx-pref-width: 34;
+    -fx-pref-height: 34;
+    -fx-background-radius: 9;
+}
+
+.time-spinner {
+    -fx-background-color: -tf-field, -tf-sunken;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 12, 11;
+    -fx-min-height: 44;
+    -fx-pref-height: 44;
+}
+
+.time-spinner > .text-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: -tf-ink;
+    -fx-font-family: "Consolas";
+    -fx-font-size: 15px;
+    -fx-alignment: center;
+}
+
+.time-spinner > .increment-arrow-button,
+.time-spinner > .decrement-arrow-button {
+    -fx-background-color: transparent;
+    -fx-padding: 4 8;
+}
+
+.time-spinner > .increment-arrow-button > .increment-arrow,
+.time-spinner > .decrement-arrow-button > .decrement-arrow {
+    -fx-background-color: -tf-muted;
+}
+
+.time-colon {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+/* ---------- Calendário ---------- */
+
+.weekday {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -tf-muted;
+}
+
+.day {
+    -fx-background-color: -tf-line, -tf-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 10, 9;
+    -fx-min-height: 34;
+    -fx-pref-height: 34;
+    -fx-alignment: center;
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+    -fx-text-fill: -tf-muted;
+}
+
+.kind-org .day.run {
+    -fx-background-color: -tf-org;
+    -fx-text-fill: -tf-on-ink;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(70, 201, 161, 0.5), 12, 0, 0, 4);
+}
+
+.kind-clean .day.run {
+    -fx-background-color: -tf-clean;
+    -fx-text-fill: -tf-on-ink;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(240, 163, 94, 0.45), 12, 0, 0, 4);
+}
+
+.day.today {
+    -fx-border-color: -tf-ink;
+    -fx-border-width: 1.5;
+    -fx-border-insets: -3.5;
+    -fx-border-radius: 12;
+}
+
+.runs-badge {
+    -fx-background-radius: 999;
+    -fx-padding: 4 10;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.kind-org .runs-badge {
+    -fx-background-color: -tf-org-tint;
+    -fx-text-fill: -tf-org-soft;
+}
+
+.kind-clean .runs-badge {
+    -fx-background-color: -tf-clean-tint;
+    -fx-text-fill: -tf-clean-soft;
+}
+
+.summary {
+    -fx-font-weight: bold;
+}
+
+/* ---------- Prévia da organização ---------- */
+
+.tree-box,
+.preview-card {
+    -fx-background-color: -tf-line, -tf-surface;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 16, 15;
+}
+
+.tree-box {
+    -fx-padding: 14 16;
+}
+
+.preview-card {
+    -fx-padding: 16;
+}
+
+.tree-root-label {
+    -fx-font-weight: bold;
+}
+
+.tree-branch {
+    -fx-border-color: transparent transparent transparent -tf-line-strong;
+    -fx-border-width: 0 0 0 1.5;
+    -fx-padding: 0 0 0 14;
+}
+
+.tree-row {
+    -fx-min-height: 26;
+}
+
+.tree-row > .label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.tree-row > .tree-hint {
+    -fx-font-size: 12px;
+    -fx-font-weight: normal;
+    -fx-text-fill: -tf-muted;
+}
+
+.tree-tick {
+    -fx-background-color: -tf-line-strong;
+    -fx-min-width: 10;
+    -fx-max-width: 10;
+    -fx-min-height: 1.5;
+    -fx-max-height: 1.5;
+}
+
+.kind-org .tree-row .icon-shape {
+    -fx-stroke: -tf-org;
+}
+
+.kind-org .tree-row.others .icon-shape {
+    -fx-stroke: -tf-muted;
+}
+
+.tree-note {
+    -fx-font-size: 12px;
+    -fx-text-fill: -tf-muted;
+}
+
+.notice {
+    -fx-background-color: -tf-clean-tint;
+    -fx-background-radius: 12;
+    -fx-padding: 12 14;
+}
+
+.notice > .label {
+    -fx-text-fill: #F6C08E;
+    -fx-font-size: 13px;
+}
+
+.notice .icon-shape {
+    -fx-stroke: #F6C08E;
+    -fx-stroke-width: 2;
+}
+
+/* ---------- Escolha do alvo da limpeza ---------- */
+
+.choice-card {
+    -fx-background-color: -tf-line-strong, -tf-surface-2;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 14, 13;
+    -fx-padding: 12 14;
+    -fx-min-height: 72;
+    -fx-alignment: center-left;
+    -fx-cursor: hand;
+}
+
+.choice-card:hover {
+    -fx-background-color: -tf-field, -tf-surface-2;
+}
+
+.choice-card:selected,
+.choice-card:selected:hover {
+    -fx-background-color: -tf-ink, -tf-surface-2;
+    -fx-background-insets: 0, 2;
+}
+
+.choice-title {
+    -fx-font-weight: bold;
+}
+
+.choice-desc {
+    -fx-font-size: 12px;
+    -fx-text-fill: -tf-muted;
+}
+
+.radio-dot {
+    -fx-background-color: #6B7872, -tf-surface;
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 10;
+    -fx-min-width: 20;
+    -fx-min-height: 20;
+    -fx-max-width: 20;
+    -fx-max-height: 20;
+}
+
+.choice-card:selected .radio-dot {
+    -fx-background-color: -tf-ink, -tf-surface;
+    -fx-background-insets: 0, 6;
+}
+
+/* ---------- Novo ajudante: cartões de tipo ---------- */
+
+.type-card {
+    -fx-background-color: -tf-line, -tf-surface-2;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 18, 17;
+    -fx-padding: 22;
+    -fx-alignment: top-left;
+    -fx-cursor: hand;
+}
+
+.type-card:hover {
+    -fx-background-color: -tf-ink, -tf-surface-2;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.85), 40, 0, 0, 18);
+}
+
+.type-card:disabled {
+    -fx-opacity: 1;
+    -fx-background-color: -tf-line-strong, -tf-paused;
+}
+
+.type-card:disabled .label,
+.type-card:disabled .icon {
+    -fx-opacity: 1;
+}
+
+.type-card:disabled .kind-badge {
+    -fx-background-color: -tf-surface-3;
+}
+
+.type-card:disabled .kind-badge .icon-shape {
+    -fx-stroke: -tf-muted;
+}
+
+.type-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.type-desc {
+    -fx-text-fill: -tf-muted;
+}
+
+.category-chip {
+    -fx-background-color: -tf-surface-3;
+    -fx-background-radius: 8;
+    -fx-padding: 3 9;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}
+
+.category-chip.others {
+    -fx-text-fill: -tf-muted;
+}
+
+.limit-badge {
+    -fx-background-color: -tf-ink;
+    -fx-background-radius: 999;
+    -fx-padding: 4 10;
+    -fx-text-fill: -tf-on-ink;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-graphic-text-gap: 6;
+}
+
+.limit-badge .icon-shape {
+    -fx-stroke: -tf-on-ink;
+    -fx-stroke-width: 2;
+}
+
+/* ---------- Confirmação de remoção ---------- */
+
+.danger-badge {
+    -fx-background-color: -tf-danger-tint;
+    -fx-background-radius: 16;
+    -fx-min-width: 52;
+    -fx-min-height: 52;
+    -fx-max-width: 52;
+    -fx-max-height: 52;
+}
+
+.danger-badge .icon-shape {
+    -fx-stroke: -tf-danger;
+}
+
+.confirm-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+
+.remove-item {
+    -fx-background-color: -tf-surface-2;
+    -fx-background-radius: 12;
+    -fx-padding: 10 12;
+}
+
+.remove-item-name {
+    -fx-font-weight: bold;
+}
+
+.remove-item-kind {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* ---------- Dicas ---------- */
+
+.tooltip {
+    -fx-background-color: -tf-surface-3;
+    -fx-background-radius: 8;
+    -fx-text-fill: -tf-ink;
+    -fx-font-size: 12px;
+}

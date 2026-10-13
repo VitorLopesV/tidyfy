@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.tidyfy.presentation.component.Icon?>
+<?import com.tidyfy.presentation.component.UsageMeter?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="root" styleClass="dialog" prefWidth="680" prefHeight="560"
+      xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+
+    <HBox styleClass="drag-handle" alignment="TOP_LEFT" spacing="16">
+        <padding><Insets top="28" right="20" left="32"/></padding>
+        <VBox spacing="6" HBox.hgrow="ALWAYS">
+            <Label text="Novo ajudante" styleClass="chooser-title"/>
+            <Label text="Do que esse ajudante vai cuidar?" styleClass="lead"/>
+        </VBox>
+        <Button styleClass="icon-btn" accessibleText="Fechar" onAction="#onClose">
+            <graphic><Icon glyph="CLOSE" size="20"/></graphic>
+        </Button>
+    </HBox>
+
+    <GridPane hgap="16" VBox.vgrow="ALWAYS">
+        <padding><Insets top="24" right="32" bottom="24" left="32"/></padding>
+        <columnConstraints>
+            <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+            <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints vgrow="ALWAYS"/>
+        </rowConstraints>
+
+        <Button fx:id="organizerCard" styleClass="type-card, kind-org" maxWidth="Infinity" maxHeight="Infinity"
+                GridPane.columnIndex="0" onAction="#onOrganizer" accessibleText="Organização de pasta">
+            <graphic>
+                <VBox spacing="16">
+                    <HBox alignment="CENTER_LEFT">
+                        <StackPane styleClass="kind-badge, badge-52"><Icon glyph="FOLDER_SORTED" size="26"/></StackPane>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="organizerLimitBadge" text="Limite atingido" styleClass="limit-badge">
+                            <graphic><Icon glyph="LOCK" size="14"/></graphic>
+                        </Label>
+                        <Icon fx:id="organizerArrow" glyph="ARROW_RIGHT" size="22" styleClass="arrow-icon"/>
+                    </HBox>
+                    <VBox spacing="6">
+                        <Label text="Organização de pasta" styleClass="type-title"/>
+                        <Label fx:id="organizerDescription" text="Separa os arquivos de uma pasta em subpastas por tipo de arquivo."
+                               styleClass="type-desc" wrapText="true"/>
+                    </VBox>
+                    <FlowPane hgap="6" vgap="6">
+                        <Label text="Compactados" styleClass="category-chip"/>
+                        <Label text="Documentos" styleClass="category-chip"/>
+                        <Label text="Executáveis" styleClass="category-chip"/>
+                        <Label text="Imagens" styleClass="category-chip"/>
+                        <Label text="Vídeos" styleClass="category-chip"/>
+                        <Label text="Outros" styleClass="category-chip, others"/>
+                    </FlowPane>
+                    <Region VBox.vgrow="ALWAYS"/>
+                    <VBox spacing="8">
+                        <HBox alignment="BASELINE_LEFT">
+                            <Label text="Criados" styleClass="stat-sub"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="organizerCount" styleClass="meter-count"/>
+                            <Label text="/20" styleClass="stat-max"/>
+                        </HBox>
+                        <UsageMeter fx:id="organizerUsage" styleClass="compact"/>
+                    </VBox>
+                </VBox>
+            </graphic>
+        </Button>
+
+        <Button fx:id="cleanerCard" styleClass="type-card, kind-clean" maxWidth="Infinity" maxHeight="Infinity"
+                GridPane.columnIndex="1" onAction="#onCleaner" accessibleText="Limpeza">
+            <graphic>
+                <VBox spacing="16">
+                    <HBox alignment="CENTER_LEFT">
+                        <StackPane styleClass="kind-badge, badge-52"><Icon glyph="SPARKLES" size="26"/></StackPane>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="cleanerLimitBadge" text="Limite atingido" styleClass="limit-badge">
+                            <graphic><Icon glyph="LOCK" size="14"/></graphic>
+                        </Label>
+                        <Icon fx:id="cleanerArrow" glyph="ARROW_RIGHT" size="22" styleClass="arrow-icon"/>
+                    </HBox>
+                    <VBox spacing="6">
+                        <Label text="Limpeza" styleClass="type-title"/>
+                        <Label fx:id="cleanerDescription" text="Esvazia a lixeira do Windows ou limpa uma pasta escolhida."
+                               styleClass="type-desc" wrapText="true"/>
+                    </VBox>
+                    <FlowPane hgap="6" vgap="6">
+                        <Label text="Lixeira do Windows" styleClass="category-chip"/>
+                        <Label text="Uma pasta" styleClass="category-chip"/>
+                    </FlowPane>
+                    <Region VBox.vgrow="ALWAYS"/>
+                    <VBox spacing="8">
+                        <HBox alignment="BASELINE_LEFT">
+                            <Label text="Criados" styleClass="stat-sub"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="cleanerCount" styleClass="meter-count"/>
+                            <Label text="/20" styleClass="stat-max"/>
+                        </HBox>
+                        <UsageMeter fx:id="cleanerUsage" styleClass="compact"/>
+                    </VBox>
+                </VBox>
+            </graphic>
+        </Button>
+    </GridPane>
+
+    <HBox styleClass="dialog-footer" alignment="CENTER_LEFT" spacing="10">
+        <Icon glyph="INFO" size="18"/>
+        <Label text="Cada tipo permite até 20 ajudantes." styleClass="help"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Cancelar" styleClass="btn, btn-ghost" onAction="#onClose"/>
+    </HBox>
+</VBox>

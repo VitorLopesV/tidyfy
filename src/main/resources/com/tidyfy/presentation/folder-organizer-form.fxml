@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.tidyfy.presentation.component.FolderField?>
+<?import com.tidyfy.presentation.component.Icon?>
+<?import com.tidyfy.presentation.component.ScheduleEditor?>
+<?import com.tidyfy.presentation.component.ToggleSwitch?>
+<?import com.tidyfy.presentation.component.UpcomingRunsCalendar?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane fx:id="root" styleClass="dialog, kind-org" prefWidth="920" prefHeight="740"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+
+    <top>
+        <HBox styleClass="dialog-header, drag-handle" alignment="CENTER_LEFT" spacing="14">
+            <StackPane styleClass="kind-badge, badge-42"><Icon glyph="FOLDER_SORTED" size="22"/></StackPane>
+            <VBox alignment="CENTER_LEFT" spacing="2" HBox.hgrow="ALWAYS">
+                <Label fx:id="titleLabel" styleClass="dialog-title"/>
+                <Label text="Organização de pasta" styleClass="kind-caption, kind-text"/>
+            </VBox>
+            <Button styleClass="icon-btn" accessibleText="Fechar" onAction="#onClose">
+                <graphic><Icon glyph="CLOSE" size="20"/></graphic>
+            </Button>
+        </HBox>
+    </top>
+
+    <center>
+        <HBox>
+            <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="form-scroll" HBox.hgrow="ALWAYS">
+                <VBox styleClass="form-body" spacing="22">
+                    <VBox spacing="8">
+                        <Label fx:id="nameTitle" text="Nome do ajudante" styleClass="field-label"/>
+                        <TextField fx:id="nameField" promptText="Ex.: Organizar Downloads" styleClass="input"/>
+                        <Label fx:id="nameHelp" styleClass="help" wrapText="true"/>
+                    </VBox>
+
+                    <VBox spacing="8">
+                        <Label text="Pasta a organizar" styleClass="field-label"/>
+                        <FolderField fx:id="folderField" chooserTitle="Escolher a pasta a organizar"/>
+                        <Label text="Uma pasta por ajudante. Só os arquivos soltos nela são organizados."
+                               styleClass="help" wrapText="true"/>
+                    </VBox>
+
+                    <VBox spacing="14">
+                        <Label text="Frequência" styleClass="field-label"/>
+                        <ScheduleEditor fx:id="scheduleEditor"/>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+
+            <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="preview-scroll">
+                <VBox styleClass="preview-pane" spacing="14">
+                    <Label text="PRÉVIA" styleClass="eyebrow"/>
+                    <VBox spacing="10">
+                        <Label text="Como a pasta vai ficar" styleClass="h2"/>
+                        <VBox styleClass="tree-box" spacing="6">
+                            <HBox styleClass="tree-root" alignment="CENTER_LEFT" spacing="10">
+                                <Icon glyph="FOLDER" size="18"/>
+                                <Label fx:id="rootFolderLabel" styleClass="tree-root-label"/>
+                            </HBox>
+                            <VBox styleClass="tree-branch" spacing="2">
+                                <VBox.margin><Insets left="8"/></VBox.margin>
+                                <HBox styleClass="tree-row" alignment="CENTER_LEFT" spacing="10">
+                                    <Region styleClass="tree-tick"><HBox.margin><Insets left="-14"/></HBox.margin></Region>
+                                    <Icon glyph="FOLDER" size="16"/>
+                                    <Label text="Compactados"/>
+                                </HBox>
+                                <HBox styleClass="tree-row" alignment="CENTER_LEFT" spacing="10">
+                                    <Region styleClass="tree-tick"><HBox.margin><Insets left="-14"/></HBox.margin></Region>
+                                    <Icon glyph="FOLDER" size="16"/>
+                                    <Label text="Documentos"/>
+                                </HBox>
+                                <HBox styleClass="tree-row" alignment="CENTER_LEFT" spacing="10">
+                                    <Region styleClass="tree-tick"><HBox.margin><Insets left="-14"/></HBox.margin></Region>
+                                    <Icon glyph="FOLDER" size="16"/>
+                                    <Label text="Executáveis"/>
+                                </HBox>
+                                <HBox styleClass="tree-row" alignment="CENTER_LEFT" spacing="10">
+                                    <Region styleClass="tree-tick"><HBox.margin><Insets left="-14"/></HBox.margin></Region>
+                                    <Icon glyph="FOLDER" size="16"/>
+                                    <Label text="Imagens"/>
+                                </HBox>
+                                <HBox styleClass="tree-row" alignment="CENTER_LEFT" spacing="10">
+                                    <Region styleClass="tree-tick"><HBox.margin><Insets left="-14"/></HBox.margin></Region>
+                                    <Icon glyph="FOLDER" size="16"/>
+                                    <Label text="Vídeos"/>
+                                </HBox>
+                                <HBox styleClass="tree-row, others" alignment="CENTER_LEFT" spacing="10">
+                                    <Region styleClass="tree-tick"><HBox.margin><Insets left="-14"/></HBox.margin></Region>
+                                    <Icon glyph="FOLDER" size="16"/>
+                                    <Label text="Outros"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label text="extensões desconhecidas" styleClass="tree-hint"/>
+                                </HBox>
+                            </VBox>
+                        </VBox>
+                        <Label text="Exemplo com as categorias padrão. Arquivos dentro de subpastas não são tocados."
+                               styleClass="tree-note" wrapText="true" minHeight="-Infinity"/>
+                    </VBox>
+                    <Separator/>
+                    <UpcomingRunsCalendar fx:id="calendar"/>
+                </VBox>
+            </ScrollPane>
+        </HBox>
+    </center>
+
+    <bottom>
+        <HBox styleClass="dialog-footer" alignment="CENTER_LEFT" spacing="16">
+            <ToggleSwitch fx:id="enabledSwitch"/>
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label fx:id="enabledTitle" styleClass="field-label"/>
+                <Label fx:id="enabledHelp" styleClass="help"/>
+            </VBox>
+            <Button text="Cancelar" styleClass="btn, btn-ghost, btn-tall" onAction="#onClose"/>
+            <Button fx:id="saveButton" styleClass="btn, btn-primary, btn-tall" onAction="#onSave">
+                <graphic><Icon glyph="CHECK" size="18"/></graphic>
+            </Button>
+        </HBox>
+    </bottom>
+</BorderPane>

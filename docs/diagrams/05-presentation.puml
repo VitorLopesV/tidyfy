@@ -30,6 +30,24 @@ package "com.tidyfy.presentation" {
     - listHelpers : ListHelpersUseCase
     - removeHelper : RemoveHelperUseCase
     - saveHelper : SaveHelperUseCase
+    - selection : HelperSelection
+    - filter : TypeFilter
+    + createView() : Parent
+    + showHelpers(items : List<HelperItem>) : void
+  }
+
+  class HelperTypeChooserController {
+    + HelperTypeChooserController(organizers : int, cleaners : int)
+    + createView() : Parent
+    + chosenKind() : Optional<HelperKind>
+  }
+
+  abstract class HelperFormController {
+    - editing : HelperItem
+    + createView() : Parent
+    # {abstract} viewName() : String
+    # {abstract} targetMissing() : BooleanBinding
+    # {abstract} showTarget(item : HelperItem) : void
   }
 
   class FolderOrganizerFormController {
@@ -39,6 +57,80 @@ package "com.tidyfy.presentation" {
   class CleanerFormController {
     - saveHelper : SaveHelperUseCase
   }
+
+  class RemoveConfirmationController {
+    + RemoveConfirmationController(items : List<HelperItem>)
+    + createView() : Parent
+    + isConfirmed() : boolean
+  }
+
+  class Dialogs <<utility>> {
+    ~ {static} showModal(owner : Window, view : Parent, title : String) : void
+  }
+}
+
+package "com.tidyfy.presentation.model" {
+
+  class HelperItem <<record>> {
+    + id : String
+    + name : String
+    + kind : HelperKind
+    + folder : Path
+    + intervalDays : int
+    + times : List<LocalTime>
+    + enabled : boolean
+    + nextRun : String
+    + nextRunProgress : double
+    + targetsRecycleBin() : boolean
+    + withEnabled(value : boolean) : HelperItem
+  }
+
+  enum HelperKind {
+    ORGANIZER
+    CLEANER
+    --
+    + {static} LIMIT_PER_TYPE : int = 20
+  }
+
+  enum TypeFilter {
+    ALL
+    ORGANIZER
+    CLEANER
+    --
+    + matches(item : HelperItem) : boolean
+  }
+
+  class HelperSelection {
+    + set(id : String, selected : boolean) : void
+    + count() : int
+    + canEdit() : boolean
+    + canRemove() : boolean
+    + editableId() : Optional<String>
+  }
+
+  class SchedulePreview <<utility>> {
+    + {static} every(intervalDays : int) : String
+    + {static} summary(intervalDays : int, times : List<LocalTime>) : String
+    + {static} runCount(intervalDays : int, timesPerDay : int) : int
+  }
+}
+
+package "com.tidyfy.presentation.component" {
+  class HelperCard
+  class CardGrid
+  class UsageMeter
+  class ToggleSwitch
+  class FolderField
+  class ScheduleEditor
+  class UpcomingRunsCalendar
+  class Icon
+  enum Glyph
+  class Logo
+  class Pulse
+  class DotGrid
+  class Animations <<utility>>
+  class Fxml <<utility>>
+  class Nodes <<utility>>
 }
 
 package "javafx.application" {
@@ -59,8 +151,23 @@ Main ..> TidyfyApplication : sem argumentos
 Main ..> RunHelperUseCase : --run {id}
 
 TidyfyApplication --> HelperListController
+HelperListController ..> HelperTypeChooserController : "Novo ajudante"
 HelperListController ..> FolderOrganizerFormController : abre
 HelperListController ..> CleanerFormController : abre
+HelperListController ..> RemoveConfirmationController : "Remover"
+HelperListController ..> Dialogs
+HelperFormController <|-- FolderOrganizerFormController
+HelperFormController <|-- CleanerFormController
+
+HelperListController --> HelperSelection
+HelperListController --> TypeFilter
+HelperListController ..> HelperCard : um por ajudante
+HelperListController ..> HelperItem
+HelperFormController ..> ScheduleEditor
+HelperFormController ..> UpcomingRunsCalendar
+HelperCard ..> HelperItem
+UpcomingRunsCalendar ..> SchedulePreview
+HelperItem --> HelperKind
 
 HelperListController --> ListHelpersUseCase
 HelperListController --> RemoveHelperUseCase
@@ -74,31 +181,51 @@ note right of Main
   * --run {id} → executa o ajudante e encerra,
     sem abrir interface (chamado pelo
     Agendador de Tarefas do Windows)
+  Hoje só o primeiro existe.
 end note
 
 note right of AppContainer
   Composition root: instancia as
   implementações da infraestrutura e
   injeta nos casos de uso (por construtor).
+  Ainda não existe: chega junto com
+  os casos de uso.
 end note
 
 note bottom of HelperListController
   Lista os ajudantes e permite ligar/desligar,
   editar e remover. "Novo ajudante" pede o tipo
   e abre o formulário correspondente.
+  Edição só com um ajudante selecionado;
+  remoção com um ou vários. As ações da
+  seleção aparecem no lugar do filtro.
+  A página não rola: só a área dos cartões,
+  quando há mais ajudantes do que cabem.
   Mostra o uso por tipo (ex.: 12/20) e bloqueia
   a criação no limite; quem garante a regra
   é o domínio.
+  Os casos de uso ainda não existem: a lista
+  começa vazia e Salvar/Remover só fecham
+  os diálogos.
 end note
 
-note bottom of FolderOrganizerFormController
-  Nome, uma pasta,
-  frequência e ligado/desligado.
+note bottom of HelperFormController
+  Nome, frequência e ligado/desligado.
+  Organização: uma pasta.
+  Limpeza: lixeira ou uma pasta.
 end note
 
-note bottom of CleanerFormController
-  Nome, alvo (lixeira ou uma pasta),
-  frequência e ligado/desligado.
+note right of HelperItem
+  Modelo de tela: o que a interface exibe.
+  Será montado a partir do Helper do domínio.
+  folder nulo = lixeira do Windows.
+end note
+
+note bottom of "com.tidyfy.presentation.component"
+  Telas em FXML (src/main/resources/com/tidyfy/presentation)
+  com tema escuro em tidyfy.css. Os controllers são criados
+  no código e entregues ao FXMLLoader (Fxml.load), sem
+  fx:controller, para permitir injeção por construtor.
 end note
 
 @enduml
