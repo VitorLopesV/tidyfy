@@ -39,6 +39,7 @@ package "com.tidyfy.domain" {
     + schedule : Schedule
     + enabled : boolean
     + target : CleanupTarget
+    + ageLimit : AgeLimit [0..1]
     + type() : HelperType
   }
 
@@ -50,6 +51,17 @@ package "com.tidyfy.domain" {
 
   class FolderTarget <<record>> {
     + folder : Path
+    + ageReference : AgeReference
+  }
+
+  class AgeLimit <<record>> {
+    + days : int
+    + isExceededBy(moment : Instant, now : Instant) : boolean
+  }
+
+  enum AgeReference {
+    CREATED
+    MODIFIED
   }
 
   class HelperId <<record>> {
@@ -64,6 +76,23 @@ package "com.tidyfy.domain" {
   class Schedule <<record>> {
     + intervalDays : int
     + times : List<LocalTime>
+  }
+
+  class HelperRules {
+    - protectedFolders : ProtectedFolders
+    + assertCanSave(helper : Helper, others : List<Helper>) : void
+  }
+
+  class ProtectedFolders {
+    + {static} forWindows(windowsDir : Path, programFiles : Path, programFilesX86 : Path, programData : Path, userHome : Path) : ProtectedFolders
+    + assertAllowed(folder : Path) : void
+  }
+
+  class FolderEntry <<record>> {
+    + path : Path
+    + directory : boolean
+    + createdAt : Instant
+    + modifiedAt : Instant
   }
 
   class FileCategory <<record>> {
@@ -89,14 +118,50 @@ package "com.tidyfy.domain" {
 
   class FolderOrganizationPlanner {
     + {static} OTHERS_FOLDER : String = "Outros"
+    + {static} FOLDERS_FOLDER : String = "Pastas"
     - categories : List<FileCategory>
-    + plan(folder : Path, files : List<Path>) : List<FileMove>
+    + plan(folder : Path, entries : List<FolderEntry>) : List<FileMove>
+  }
+
+  class NumberedName {
+    + {static} firstFree(name : String, exists : Predicate<String>) : String
+  }
+
+  class ExecutionRecord <<record>> {
+    + {static} RETENTION_DAYS : int = 30
+    + helperId : HelperId
+    + helperName : String
+    + executedAt : Instant
+    + actions : List<HelperAction>
+    + isExpired(now : Instant) : boolean
+  }
+
+  class HelperAction <<record>> {
+    + type : ActionType
+    + source : Path [0..1]
+    + target : Path [0..1]
+  }
+
+  enum ActionType {
+    MOVED
+    DUPLICATE_TRASHED
+    TRASHED
+    RECYCLE_BIN_EMPTIED
   }
 
   class DomainException <<exception>> {
   }
 
   class HelperLimitReachedException <<exception>> {
+  }
+
+  class HelperNameAlreadyUsedException <<exception>> {
+  }
+
+  class FolderAlreadyInUseException <<exception>> {
+  }
+
+  class ProtectedFolderException <<exception>> {
   }
 }
 
@@ -108,15 +173,31 @@ Helper --> "1" Schedule
 Helper ..> HelperType
 
 CleanerHelper --> "1" CleanupTarget
+CleanerHelper --> "0..1" AgeLimit
 CleanupTarget <|.. RecycleBinTarget
 CleanupTarget <|.. FolderTarget
+FolderTarget --> "1" AgeReference
+
+HelperRules ..> Helper : valida
+HelperRules ..> ProtectedFolders : usa
+HelperRules ..> HelperNameAlreadyUsedException : lança
+HelperRules ..> FolderAlreadyInUseException : lança
+ProtectedFolders ..> ProtectedFolderException : lança
 
 FileCategory "1" *-- "1..*" FileExtension
 DefaultFileCategories ..> FileCategory : cria
 FolderOrganizationPlanner --> "*" FileCategory
+FolderOrganizationPlanner ..> FolderEntry : lê
 FolderOrganizationPlanner ..> FileMove : cria
 
+ExecutionRecord "1" *-- "*" HelperAction
+HelperAction --> "1" ActionType
+ExecutionRecord --> "1" HelperId
+
 DomainException <|-- HelperLimitReachedException
+DomainException <|-- HelperNameAlreadyUsedException
+DomainException <|-- FolderAlreadyInUseException
+DomainException <|-- ProtectedFolderException
 HelperType ..> HelperLimitReachedException : lança
 
 note right of Helper
@@ -136,32 +217,89 @@ end note
 note bottom of CleanupTarget
   O que a Limpeza vai limpar:
   a lixeira do Windows ou uma pasta.
+  Lixeira: remove de forma permanente.
+  Pasta: manda só os arquivos soltos
+  para a lixeira (subpastas não são tocadas).
+end note
+
+note bottom of AgeLimit
+  "Quanto limpar": sem AgeLimit limpa tudo;
+  com AgeLimit só o que é mais antigo que
+  days (>= 1). Na pasta, a idade conta da
+  criação ou da última modificação
+  (AgeReference, escolha do usuário).
+  Na lixeira, conta do dia em que o
+  arquivo foi para lá.
 end note
 
 note left of HelperName
   Definido pelo usuário.
   Obrigatório, sem espaços nas pontas.
-  Nomes repetidos: em aberto.
+  Único entre os ajudantes (HelperRules).
 end note
 
 note left of Schedule
   A cada intervalDays dias (>= 1),
   em cada um dos horários de times
   (ao menos um, sem repetição).
-  Limites máximos: em aberto.
+  Sem limite máximo: o usuário define.
+end note
+
+note bottom of HelperRules
+  others = os demais ajudantes (sem o próprio,
+  na edição). Recusa quando:
+  * o nome já existe;
+  * a pasta é sensível (ProtectedFolders);
+  * outro ajudante do mesmo tipo já atua na
+    mesma pasta, ou numa pasta que contém ou
+    está contida nela (Downloads e Downloads\Imagens);
+  * a lixeira já tem um ajudante de limpeza.
+  Organização e Limpeza podem dividir a pasta.
+end note
+
+note bottom of ProtectedFolders
+  Recusa pastas sensíveis:
+  * com tudo dentro: Windows (incluindo System32),
+    Program Files, Program Files (x86), ProgramData;
+  * só elas mesmas: raiz de qualquer disco e a
+    pasta do usuário (Downloads, por exemplo, pode).
+  Pura: recebe os caminhos prontos.
 end note
 
 note bottom of FolderOrganizationPlanner
   Função pura, não acessa o disco:
-  * recebe só os arquivos diretos da pasta
-  * extensão conhecida → pasta / categoria / arquivo
-  * extensão desconhecida → pasta / Outros / arquivo
+  * recebe só o que está direto na pasta
+  * arquivo, extensão conhecida → pasta / categoria / arquivo
+  * arquivo, extensão desconhecida → pasta / Outros / arquivo
+  * pasta que não é do ajudante → pasta / Pastas / pasta
+  * pastas do ajudante (categorias, Pastas e Outros)
+    ficam onde estão
+  Não entra nas pastas: elas são movidas inteiras.
+end note
+
+note right of DefaultFileCategories
+  Catálogo fixo, sem categorias do usuário:
+  Compactados, Documentos, Executáveis,
+  Imagens e Vídeos. Pastas e Outros
+  não têm extensões.
 end note
 
 note right of FileExtension
   Normalizada: minúscula e sem ponto
   (ex.: "Foto.JPG" → "jpg").
   Uma extensão pertence a só uma categoria.
+end note
+
+note right of NumberedName
+  Resolve conflito de nome no destino:
+  "teste.pdf" → "teste(1).pdf" → "teste(2).pdf".
+  Pasta: "Fotos" → "Fotos(1)".
+  exists diz se o nome já está ocupado.
+end note
+
+note bottom of ExecutionRecord
+  Histórico: quando o ajudante rodou e o
+  que fez. Guardado por 30 dias.
 end note
 
 @enduml

@@ -11,6 +11,7 @@ package "com.tidyfy.application.usecase" {
   class SaveHelperUseCase {
     - repository : HelperRepository
     - scheduler : TaskScheduler
+    - rules : HelperRules
     + execute(helper : Helper) : void
   }
 
@@ -25,23 +26,31 @@ package "com.tidyfy.application.usecase" {
     + execute() : List<Helper>
   }
 
+  class ListExecutionHistoryUseCase {
+    - history : ExecutionHistoryRepository
+    + execute(id : HelperId) : List<ExecutionRecord>
+  }
+
   class RunHelperUseCase {
     - repository : HelperRepository
     - organizeFolder : OrganizeFolderUseCase
     - cleanup : CleanupUseCase
+    - history : ExecutionHistoryRepository
+    - clock : Clock
     + execute(id : HelperId) : void
   }
 
   class OrganizeFolderUseCase {
     - fileSystem : FileSystem
     - planner : FolderOrganizationPlanner
-    + execute(helper : FolderOrganizerHelper) : List<FileMove>
+    + execute(helper : FolderOrganizerHelper) : List<HelperAction>
   }
 
   class CleanupUseCase {
     - fileSystem : FileSystem
     - recycleBin : RecycleBin
-    + execute(helper : CleanerHelper) : void
+    - clock : Clock
+    + execute(helper : CleanerHelper) : List<HelperAction>
   }
 }
 
@@ -55,19 +64,28 @@ package "com.tidyfy.application.port" {
     + delete(id : HelperId) : void
   }
 
+  interface ExecutionHistoryRepository {
+    + add(record : ExecutionRecord) : void
+    + findByHelper(id : HelperId) : List<ExecutionRecord>
+    + deleteExpired(now : Instant) : void
+  }
+
   interface TaskScheduler {
     + register(helper : Helper) : void
     + unregister(id : HelperId) : void
   }
 
   interface FileSystem {
-    + listFiles(folder : Path) : List<Path>
+    + listEntries(folder : Path) : List<FolderEntry>
+    + exists(path : Path) : boolean
+    + sameContent(first : Path, second : Path) : boolean
     + move(move : FileMove) : void
-    + discard(file : Path) : void
+    + moveToTrash(path : Path) : void
   }
 
   interface RecycleBin {
-    + empty() : void
+    + emptyAll() : int
+    + emptyOlderThan(cutoff : Instant) : int
   }
 }
 
@@ -76,33 +94,50 @@ package "com.tidyfy.domain" {
   enum HelperType
   class FolderOrganizerHelper
   class CleanerHelper
+  class HelperRules
   class FolderOrganizationPlanner
+  class NumberedName
+  class FolderEntry
+  class ExecutionRecord
+  class HelperAction
 }
 
 SaveHelperUseCase --> HelperRepository
 SaveHelperUseCase --> TaskScheduler
+SaveHelperUseCase --> HelperRules
 RemoveHelperUseCase --> HelperRepository
 RemoveHelperUseCase --> TaskScheduler
 ListHelpersUseCase --> HelperRepository
+ListExecutionHistoryUseCase --> ExecutionHistoryRepository
 RunHelperUseCase --> HelperRepository
 RunHelperUseCase --> OrganizeFolderUseCase
 RunHelperUseCase --> CleanupUseCase
+RunHelperUseCase --> ExecutionHistoryRepository
 OrganizeFolderUseCase --> FileSystem
 OrganizeFolderUseCase --> FolderOrganizationPlanner
+OrganizeFolderUseCase ..> NumberedName
 CleanupUseCase --> FileSystem
 CleanupUseCase --> RecycleBin
 
 SaveHelperUseCase ..> Helper
 SaveHelperUseCase ..> HelperType : assertCanCreate
 RunHelperUseCase ..> Helper
+RunHelperUseCase ..> ExecutionRecord : cria
 OrganizeFolderUseCase ..> FolderOrganizerHelper
+OrganizeFolderUseCase ..> HelperAction : devolve
 CleanupUseCase ..> CleanerHelper
+CleanupUseCase ..> HelperAction : devolve
+FileSystem ..> FolderEntry
+ExecutionHistoryRepository ..> ExecutionRecord
 
 note right of SaveHelperUseCase
   1. Ajudante novo (não existe no repositório)?
      → type.assertCanCreate(repository.countByType(type))
-  2. Salva a configuração.
-  3. Ligado → (re)registra no agendador.
+  2. rules.assertCanSave(helper, demais ajudantes):
+     nome único, sem sobreposição de pasta e
+     pasta não sensível.
+  3. Salva a configuração.
+  4. Ligado → (re)registra no agendador.
      Desligado → remove do agendador.
 end note
 
@@ -111,24 +146,35 @@ note right of RunHelperUseCase
   Escolhe o caso de uso com pattern matching
   no Helper selado. Ajudante desligado
   ou inexistente → não faz nada.
+  Depois de executar: grava o ExecutionRecord
+  (o que foi feito) e apaga os registros com
+  mais de 30 dias.
 end note
 
 note bottom of OrganizeFolderUseCase
-  listFiles(pasta) → planner.plan → move.
-  Conflito de nome e arquivo em uso:
-  em aberto (ver README).
+  listEntries(pasta) → planner.plan → para cada FileMove:
+  * destino livre → move
+  * destino ocupado e sameContent → moveToTrash(origem)
+    (DUPLICATE_TRASHED)
+  * destino ocupado e conteúdo diferente
+    → NumberedName.firstFree → move
+  Pastas movidas com conflito de nome também
+  ganham número. Arquivo em uso: próxima rodada.
 end note
 
 note bottom of CleanupUseCase
-  RecycleBinTarget → recycleBin.empty()
-  FolderTarget → listFiles(pasta) → discard
-  Descartar = lixeira ou exclusão definitiva:
-  em aberto (ver README).
+  RecycleBinTarget:
+  * sem AgeLimit → recycleBin.emptyAll()
+  * com AgeLimit → recycleBin.emptyOlderThan(agora - dias)
+  FolderTarget: listEntries(pasta) → só arquivos
+  soltos (sem subpastas) → filtra por AgeLimit e
+  AgeReference → moveToTrash.
 end note
 
 note bottom of FileSystem
-  listFiles devolve só arquivos
-  diretos da pasta (sem subpastas).
+  listEntries devolve só o que está direto
+  na pasta (arquivos e pastas), sem entrar
+  nas subpastas.
 end note
 
 @enduml

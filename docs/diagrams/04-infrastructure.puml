@@ -19,7 +19,8 @@ package "com.tidyfy.infrastructure.windows" {
 
   class PowerShellRecycleBin {
     - commandRunner : CommandRunner
-    + empty() : void
+    + emptyAll() : int
+    + emptyOlderThan(cutoff : Instant) : int
   }
 
   interface CommandRunner {
@@ -39,9 +40,11 @@ package "com.tidyfy.infrastructure.windows" {
 
 package "com.tidyfy.infrastructure.filesystem" {
   class NioFileSystem {
-    + listFiles(folder : Path) : List<Path>
+    + listEntries(folder : Path) : List<FolderEntry>
+    + exists(path : Path) : boolean
+    + sameContent(first : Path, second : Path) : boolean
     + move(move : FileMove) : void
-    + discard(file : Path) : void
+    + moveToTrash(path : Path) : void
   }
 }
 
@@ -54,6 +57,13 @@ package "com.tidyfy.infrastructure.persistence" {
     + countByType(type : HelperType) : int
     + delete(id : HelperId) : void
   }
+
+  class JsonExecutionHistoryRepository {
+    - storageFile : Path
+    + add(record : ExecutionRecord) : void
+    + findByHelper(id : HelperId) : List<ExecutionRecord>
+    + deleteExpired(now : Instant) : void
+  }
 }
 
 package "com.tidyfy.application.port" {
@@ -61,12 +71,14 @@ package "com.tidyfy.application.port" {
   interface RecycleBin
   interface FileSystem
   interface HelperRepository
+  interface ExecutionHistoryRepository
 }
 
 TaskScheduler <|.. SchtasksTaskScheduler
 RecycleBin <|.. PowerShellRecycleBin
 FileSystem <|.. NioFileSystem
 HelperRepository <|.. JsonHelperRepository
+ExecutionHistoryRepository <|.. JsonExecutionHistoryRepository
 
 SchtasksTaskScheduler --> CommandRunner
 PowerShellRecycleBin --> CommandRunner
@@ -91,21 +103,32 @@ note right of CommandRunner
 end note
 
 note bottom of PowerShellRecycleBin
-  Proposta: Clear-RecycleBin -Force.
-  Alternativa: API nativa do Windows.
-  Decisão em aberto.
+  emptyAll: Clear-RecycleBin -Force.
+  emptyOlderThan: lista os itens da lixeira com
+  o dia em que foram para lá e remove os mais
+  antigos que cutoff. Ambos devolvem quantos
+  itens foram removidos (remoção permanente).
+  Alternativa: API nativa do Windows (a definir).
 end note
 
 note bottom of NioFileSystem
-  discard: proposta de enviar à lixeira
-  (Desktop.moveToTrash) para permitir
-  recuperar. Decisão em aberto.
+  moveToTrash: envia à lixeira
+  (Desktop.moveToTrash), então dá para recuperar.
+  sameContent: compara o conteúdo dos arquivos
+  (ex.: Files.mismatch).
+  listEntries não entra nas subpastas.
 end note
 
 note bottom of JsonHelperRepository
   Proposta: arquivo JSON na pasta
   AppData do usuário (Tidyfy/helpers.json).
   Biblioteca JSON a definir.
+end note
+
+note bottom of JsonExecutionHistoryRepository
+  Proposta: arquivo JSON na pasta AppData
+  do usuário (Tidyfy/history.json).
+  Registros guardados por 30 dias.
 end note
 
 @enduml

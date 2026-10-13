@@ -75,9 +75,9 @@ Os diagramas PlantUML em [docs/diagrams](docs/diagrams) são a referência do de
 | Arquivo | Conteúdo |
 |---|---|
 | [01-layers.puml](docs/diagrams/01-layers.puml) | Camadas e regra de dependência |
-| [02-domain.puml](docs/diagrams/02-domain.puml) | Ajudantes, tipos e limite, alvo da limpeza, agendamento, categorias e planejador de organização |
-| [03-application.puml](docs/diagrams/03-application.puml) | Casos de uso e portas |
-| [04-infrastructure.puml](docs/diagrams/04-infrastructure.puml) | Implementações das portas (schtasks, disco, lixeira, persistência) |
+| [02-domain.puml](docs/diagrams/02-domain.puml) | Ajudantes, tipos e limite, alvo e idade da limpeza, agendamento, regras de nome e pasta, pastas sensíveis, categorias, planejador de organização e histórico |
+| [03-application.puml](docs/diagrams/03-application.puml) | Casos de uso (incluindo execução e histórico) e portas |
+| [04-infrastructure.puml](docs/diagrams/04-infrastructure.puml) | Implementações das portas (schtasks, disco, lixeira, persistência das configurações e do histórico) |
 | [05-presentation.puml](docs/diagrams/05-presentation.puml) | Telas JavaFX, modelos de tela, componentes, `Main` e `AppContainer` |
 
 **Mantenha os diagramas atualizados:** ao criar, renomear ou remover classes/relacionamentos relevantes, atualize o `.puml` correspondente no mesmo commit.
@@ -87,8 +87,8 @@ Os diagramas PlantUML em [docs/diagrams](docs/diagrams) são a referência do de
 | Porta (application) | Responsabilidade | Implementação (infrastructure) |
 |---|---|---|
 | Agendador de tarefas | Criar, atualizar, pausar e remover tarefas agendadas | Wrapper do `schtasks.exe` |
-| Sistema de arquivos | Listar, mover e descartar arquivos | `java.nio.file` (descarte: a definir, ex.: `Desktop.moveToTrash`) |
-| Lixeira | Esvaziar a lixeira do Windows | A definir (ex.: PowerShell `Clear-RecycleBin` ou chamada nativa) |
+| Sistema de arquivos | Listar o que há na pasta, comparar conteúdo, mover e enviar à lixeira | `java.nio.file` (lixeira: `Desktop.moveToTrash`) |
+| Lixeira | Esvaziar a lixeira do Windows, tudo ou só o que está lá há mais de X dias | A definir (ex.: PowerShell `Clear-RecycleBin` ou chamada nativa) |
 | Repositório de ajudantes | Salvar/carregar a configuração dos ajudantes e contar por tipo | A definir (ex.: arquivo JSON em `%APPDATA%\Tidyfy`) |
 | Histórico de execuções | Registrar e consultar quando cada ajudante rodou e o que fez | A definir (ex.: arquivo em `%APPDATA%\Tidyfy`) |
 

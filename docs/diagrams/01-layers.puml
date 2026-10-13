@@ -46,7 +46,8 @@ NApplication .. application
 note as NInfrastructure
   <b>infrastructure</b>
   schtasks.exe, lixeira, disco,
-  persistência das configurações.
+  persistência das configurações
+  e do histórico de execuções.
 end note
 NInfrastructure .. infrastructure
 
