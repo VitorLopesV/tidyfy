@@ -1,6 +1,6 @@
 # Boas práticas de código
 
-Regras de escrita de código do Tidyfy. São **obrigatórias**: código novo que não as siga não está pronto. Para a arquitetura e as regras de negócio, veja o [CLAUDE.md](../CLAUDE.md).
+Regras de escrita de código do Tidyfy. São **obrigatórias**: código novo que não as siga não está pronto. Para a arquitetura e as regras de negócio, veja o [CLAUDE.md](CLAUDE.md).
 
 ## 1. Documentação
 

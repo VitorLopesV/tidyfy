@@ -86,12 +86,13 @@ CommandRunner <|.. ProcessCommandRunner
 CommandRunner ..> CommandResult
 
 note right of SchtasksTaskScheduler
-  Um comando por horário do Schedule, por exemplo:
-  schtasks /Create /TN "Tidyfy\{id}\{n}"
-    /TR "{launcher} --run {id}"
-    /SC DAILY /MO {intervalDays} /ST {hora} /F
-  (alternativa: uma tarefa com vários gatilhos
-  via XML; decisão em aberto)
+  Uma tarefa por ajudante, definida em XML, com um
+  gatilho por horário do Schedule (a cada intervalDays
+  dias, a partir de startDate):
+  schtasks /Create /TN "Tidyfy\{id}" /XML {arquivo} /F
+  A ação chama "{launcher} --run {id}". Roda só com o
+  usuário logado, permite bateria e, se perdeu o
+  horário, roda assim que possível.
   Os testes verificam os comandos montados,
   sem executar o schtasks de verdade.
   launcher = executável do Tidyfy (a definir).
@@ -120,14 +121,14 @@ note bottom of NioFileSystem
 end note
 
 note bottom of JsonHelperRepository
-  Proposta: arquivo JSON na pasta
-  AppData do usuário (Tidyfy/helpers.json).
-  Biblioteca JSON a definir.
+  Arquivo helpers.txt (conteúdo em JSON) na
+  pasta AppData do usuário (Tidyfy/helpers.txt).
+  Jackson (+ jsr310). Gravação atômica.
 end note
 
 note bottom of JsonExecutionHistoryRepository
-  Proposta: arquivo JSON na pasta AppData
-  do usuário (Tidyfy/history.json).
+  Arquivo history.txt (conteúdo em JSON) na pasta
+  AppData do usuário (Tidyfy/history.txt).
   Registros guardados por 30 dias.
 end note
 

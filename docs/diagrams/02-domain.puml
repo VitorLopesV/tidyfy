@@ -76,6 +76,7 @@ package "com.tidyfy.domain" {
   class Schedule <<record>> {
     + intervalDays : int
     + times : List<LocalTime>
+    + startDate : LocalDate
   }
 
   class HelperRules {
@@ -140,6 +141,7 @@ package "com.tidyfy.domain" {
     + type : ActionType
     + source : Path [0..1]
     + target : Path [0..1]
+    + message : String [0..1]
   }
 
   enum ActionType {
@@ -147,6 +149,7 @@ package "com.tidyfy.domain" {
     DUPLICATE_TRASHED
     TRASHED
     RECYCLE_BIN_EMPTIED
+    FAILED
   }
 
   class DomainException <<exception>> {
@@ -235,13 +238,16 @@ end note
 note left of HelperName
   Definido pelo usuário.
   Obrigatório, sem espaços nas pontas.
-  Único entre os ajudantes (HelperRules).
+  Único entre os ajudantes, sem diferenciar
+  maiúsculas (HelperRules).
 end note
 
 note left of Schedule
   A cada intervalDays dias (>= 1),
   em cada um dos horários de times
   (ao menos um, sem repetição).
+  startDate: dia em que foi salvo ou teve a
+  frequência alterada; é de onde se conta o intervalo.
   Sem limite máximo: o usuário define.
 end note
 
@@ -299,7 +305,9 @@ end note
 
 note bottom of ExecutionRecord
   Histórico: quando o ajudante rodou e o
-  que fez. Guardado por 30 dias.
+  que fez (inclusive falhas, com FAILED e a
+  mensagem). Guardado por 30 dias, mesmo se o
+  ajudante for removido.
 end note
 
 @enduml

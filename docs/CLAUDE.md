@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guia técnico do Tidyfy. Para o contexto de negócio, veja o [README.md](README.md).
+Guia técnico do Tidyfy. Para o contexto de negócio, veja o [README.md](../README.md).
 
 ## Visão geral
 
@@ -21,7 +21,8 @@ Todo ajudante tem: nome, tipo, frequência (a cada N dias, em um ou mais horári
 | Build | Maven (3.8+) |
 | Interface | JavaFX 21 (FXML + CSS) |
 | Testes | JUnit 5 (adicionar Mockito quando houver necessidade de dublês) |
-| Agendamento | Agendador de Tarefas do Windows (`schtasks.exe`) |
+| Persistência | Arquivos `.txt` com conteúdo em JSON, lidos e gravados com Jackson (+ `jackson-datatype-jsr310` para `java.time`) |
+| Agendamento | Agendador de Tarefas do Windows (`schtasks.exe`, com tarefa definida em XML) |
 | Plataforma | Windows apenas |
 
 Estado atual do `pom.xml`: Java 21, JavaFX 21 (`javafx-controls` e `javafx-fxml`, mais o `javafx-maven-plugin` para rodar a interface) e JUnit 5.
@@ -32,7 +33,7 @@ Estado atual do `pom.xml`: Java 21, JavaFX 21 (`javafx-controls` e `javafx-fxml`
 2. **Arquitetura limpa** (Clean Architecture). A regra de dependência nunca pode ser quebrada (veja abaixo).
 3. **Somente Windows.** Código que depende do Windows deve ficar isolado na camada de infraestrutura, atrás de interfaces, para que o restante seja testável em qualquer ambiente.
 4. Mantenha o código simples: sem abstrações ou configurações que nenhuma regra de negócio atual exija.
-5. **Siga as [boas práticas de código](docs/BOAS-PRATICAS.md).** Resumo: todo tipo, método, construtor, atributo e constante tem Javadoc (blocos de várias linhas para tipos e métodos, `/** Texto */` para variáveis); nenhuma `String` solta, todas em constantes da própria classe; as constantes ficam depois do último atributo, sob o comentário `// Constantes`.
+5. **Siga as [boas práticas de código](BOAS-PRATICAS.md).** Resumo: todo tipo, método, construtor, atributo e constante tem Javadoc (blocos de várias linhas para tipos e métodos, `/** Texto */` para variáveis); nenhuma `String` solta, todas em constantes da própria classe; as constantes ficam depois do último atributo, sob o comentário `// Constantes`.
 
 ## Arquitetura
 
@@ -70,15 +71,15 @@ infrastructure ──► application ──► domain
 
 ### Diagramas de classe
 
-Os diagramas PlantUML em [docs/diagrams](docs/diagrams) são a referência do design planejado:
+Os diagramas PlantUML em [docs/diagrams](diagrams) são a referência do design planejado:
 
 | Arquivo | Conteúdo |
 |---|---|
-| [01-layers.puml](docs/diagrams/01-layers.puml) | Camadas e regra de dependência |
-| [02-domain.puml](docs/diagrams/02-domain.puml) | Ajudantes, tipos e limite, alvo e idade da limpeza, agendamento, regras de nome e pasta, pastas sensíveis, categorias, planejador de organização e histórico |
-| [03-application.puml](docs/diagrams/03-application.puml) | Casos de uso (incluindo execução e histórico) e portas |
-| [04-infrastructure.puml](docs/diagrams/04-infrastructure.puml) | Implementações das portas (schtasks, disco, lixeira, persistência das configurações e do histórico) |
-| [05-presentation.puml](docs/diagrams/05-presentation.puml) | Telas JavaFX, modelos de tela, componentes, `Main` e `AppContainer` |
+| [01-layers.puml](diagrams/01-layers.puml) | Camadas e regra de dependência |
+| [02-domain.puml](diagrams/02-domain.puml) | Ajudantes, tipos e limite, alvo e idade da limpeza, agendamento, regras de nome e pasta, pastas sensíveis, categorias, planejador de organização e histórico |
+| [03-application.puml](diagrams/03-application.puml) | Casos de uso (incluindo execução e histórico) e portas |
+| [04-infrastructure.puml](diagrams/04-infrastructure.puml) | Implementações das portas (schtasks, disco, lixeira, persistência das configurações e do histórico) |
+| [05-presentation.puml](diagrams/05-presentation.puml) | Telas JavaFX, modelos de tela, componentes, `Main` e `AppContainer` |
 
 **Mantenha os diagramas atualizados:** ao criar, renomear ou remover classes/relacionamentos relevantes, atualize o `.puml` correspondente no mesmo commit.
 
@@ -89,8 +90,15 @@ Os diagramas PlantUML em [docs/diagrams](docs/diagrams) são a referência do de
 | Agendador de tarefas | Criar, atualizar, pausar e remover tarefas agendadas | Wrapper do `schtasks.exe` |
 | Sistema de arquivos | Listar o que há na pasta, comparar conteúdo, mover e enviar à lixeira | `java.nio.file` (lixeira: `Desktop.moveToTrash`) |
 | Lixeira | Esvaziar a lixeira do Windows, tudo ou só o que está lá há mais de X dias | A definir (ex.: PowerShell `Clear-RecycleBin` ou chamada nativa) |
-| Repositório de ajudantes | Salvar/carregar a configuração dos ajudantes e contar por tipo | A definir (ex.: arquivo JSON em `%APPDATA%\Tidyfy`) |
-| Histórico de execuções | Registrar e consultar quando cada ajudante rodou e o que fez | A definir (ex.: arquivo em `%APPDATA%\Tidyfy`) |
+| Repositório de ajudantes | Salvar/carregar a configuração dos ajudantes e contar por tipo | Arquivo `%APPDATA%\Tidyfy\helpers.txt` (JSON) |
+| Histórico de execuções | Registrar e consultar quando cada ajudante rodou e o que fez | Arquivo `%APPDATA%\Tidyfy\history.txt` (JSON) |
+
+### Decisões técnicas
+
+- **Persistência:** configurações em `helpers.txt` e histórico em `history.txt`, ambos em `%APPDATA%\Tidyfy`, com extensão `.txt` e conteúdo em JSON. A gravação é atômica (arquivo temporário e depois mover).
+- **Agendador:** uma única tarefa por ajudante, definida em **XML**, com um gatilho por horário. Roda só com o usuário logado (precisa das pastas e da lixeira dele), permite rodar na bateria e executa assim que possível quando perdeu o horário.
+- **Falha ao salvar:** o Tidyfy tenta registrar no agendador primeiro; se o agendador falhar, a configuração **não** é salva e o erro aparece na tela.
+- **Falha ao executar:** vai para o histórico (`FAILED`) e para o log.
 
 ## Funcionamento
 
@@ -119,10 +127,10 @@ Todas as regras são validadas no domínio, não só na UI.
 - Cada ajudante atua em **um único alvo**: uma pasta, ou a lixeira (só para Limpeza).
 - **Nome** definido pelo usuário: obrigatório e sem espaços nas pontas (`HelperName`).
 - **Máximo de 20 ajudantes por tipo** (`HelperType.MAX_PER_TYPE`). A checagem acontece só na **criação**; editar um ajudante existente não conta. A contagem vem do repositório (`countByType`) e quem decide é o domínio (`HelperType.assertCanCreate`), lançando `HelperLimitReachedException`.
-- **Nome único:** dois ajudantes não podem ter o mesmo nome.
+- **Nome único:** dois ajudantes não podem ter o mesmo nome; maiúsculas e minúsculas não diferenciam (`Organizar Downloads` e `organizar downloads` são o mesmo nome).
 - **Sem sobreposição:** dois ajudantes do **mesmo tipo** não podem atuar na mesma pasta (organização e limpeza podem). Para a limpeza, a lixeira conta como um lugar: só um `CLEANER` pode ter `RecycleBinTarget`. A regra vale também para pastas aninhadas: um ajudante do mesmo tipo não pode atuar numa pasta que contém ou está contida na pasta de outro (ex.: `Downloads` e `Downloads\Imagens`).
-- **Frequência** (`Schedule`): a cada `intervalDays` dias (≥ 1), em um ou mais horários do dia, sem horários repetidos. Sem limite máximo fixo: quem define é o usuário.
-- **Histórico:** toda execução é registrada (quando rodou e o que fez: arquivos movidos, removidos ou renomeados, lixeira esvaziada) e pode ser consultada. Os registros são guardados por **30 dias**.
+- **Frequência** (`Schedule`): a cada `intervalDays` dias (≥ 1), em um ou mais horários do dia, sem horários repetidos. Sem limite máximo fixo: quem define é o usuário. O `Schedule` guarda também a **data de início**: o dia em que o ajudante foi salvo ou teve a frequência alterada. É a partir dela que se conta "a cada N dias" (e o `/SD` do agendador).
+- **Histórico:** toda execução é registrada (quando rodou e o que fez: arquivos movidos, removidos ou renomeados, lixeira esvaziada) e pode ser consultada. Os registros são guardados por **30 dias**. Falhas de uma execução (arquivo sem permissão, pasta apagada) também entram no histórico (`FAILED`, com a mensagem) e em um log em `%APPDATA%\Tidyfy\logs`. O histórico é **exibido na interface** (um diálogo por ajudante). Ao remover um ajudante, a tarefa dele é **removida do Agendador do Windows**, mas o histórico **não** é apagado: fica até expirar.
 - **Pastas sensíveis** são recusadas pelo domínio. Recusadas **com tudo que há dentro**: `C:\Windows` (incluindo `System32`), `C:\Program Files`, `C:\Program Files (x86)` e `C:\ProgramData`. Recusadas **só elas mesmas**: a raiz de qualquer disco e a pasta do usuário (`C:\Users\nome`); as pastas dentro dela, como Downloads, são aceitas.
 - Ajudante **desligado** não fica registrado no Agendador do Windows e não executa.
 

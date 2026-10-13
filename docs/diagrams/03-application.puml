@@ -136,9 +136,11 @@ note right of SaveHelperUseCase
   2. rules.assertCanSave(helper, demais ajudantes):
      nome único, sem sobreposição de pasta e
      pasta não sensível.
-  3. Salva a configuração.
-  4. Ligado → (re)registra no agendador.
+  3. Ligado → (re)registra no agendador.
      Desligado → remove do agendador.
+  4. Só então salva a configuração: se o
+     agendador falhar, nada é salvo e o erro
+     chega à tela.
 end note
 
 note right of RunHelperUseCase
@@ -148,7 +150,8 @@ note right of RunHelperUseCase
   ou inexistente → não faz nada.
   Depois de executar: grava o ExecutionRecord
   (o que foi feito) e apaga os registros com
-  mais de 30 dias.
+  mais de 30 dias. Falha na execução vira ação
+  FAILED no registro e entra no log.
 end note
 
 note bottom of OrganizeFolderUseCase
