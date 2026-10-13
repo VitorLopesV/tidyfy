@@ -33,7 +33,7 @@ Estado atual do `pom.xml`: Java 21, JavaFX 21 (`javafx-controls` e `javafx-fxml`
 2. **Arquitetura limpa** (Clean Architecture). A regra de dependência nunca pode ser quebrada (veja abaixo).
 3. **Somente Windows.** Código que depende do Windows deve ficar isolado na camada de infraestrutura, atrás de interfaces, para que o restante seja testável em qualquer ambiente.
 4. Mantenha o código simples: sem abstrações ou configurações que nenhuma regra de negócio atual exija.
-5. **Siga as [boas práticas de código](BOAS-PRATICAS.md).** Resumo: todo tipo, método, construtor, atributo e constante tem Javadoc (blocos de várias linhas para tipos e métodos, `/** Texto */` para variáveis); nenhuma `String` solta, todas em constantes da própria classe; as constantes ficam depois do último atributo, sob o comentário `// Constantes`.
+5. **Siga as [boas práticas de código](../docs/BOAS-PRATICAS.md).** Resumo: todo tipo, método, construtor, atributo e constante tem Javadoc (blocos de várias linhas para tipos e métodos, `/** Texto */` para variáveis); nenhuma `String` solta, todas em constantes da própria classe; as constantes ficam depois do último atributo, sob o comentário `// Constantes`.
 
 ## Arquitetura
 
@@ -71,15 +71,15 @@ infrastructure ──► application ──► domain
 
 ### Diagramas de classe
 
-Os diagramas PlantUML em [docs/diagrams](diagrams) são a referência do design planejado:
+Os diagramas PlantUML em [docs/diagrams](../docs/diagrams) são a referência do design planejado:
 
 | Arquivo | Conteúdo |
 |---|---|
-| [01-layers.puml](diagrams/01-layers.puml) | Camadas e regra de dependência |
-| [02-domain.puml](diagrams/02-domain.puml) | Ajudantes, tipos e limite, alvo e idade da limpeza, agendamento, regras de nome e pasta, pastas sensíveis, categorias, planejador de organização e histórico |
-| [03-application.puml](diagrams/03-application.puml) | Casos de uso (incluindo execução e histórico) e portas |
-| [04-infrastructure.puml](diagrams/04-infrastructure.puml) | Implementações das portas (schtasks, disco, lixeira, persistência das configurações e do histórico) |
-| [05-presentation.puml](diagrams/05-presentation.puml) | Telas JavaFX, modelos de tela, componentes, `Main` e `AppContainer` |
+| [01-layers.puml](../docs/diagrams/01-layers.puml) | Camadas e regra de dependência |
+| [02-domain.puml](../docs/diagrams/02-domain.puml) | Ajudantes, tipos e limite, alvo e idade da limpeza, agendamento, regras de nome e pasta, pastas sensíveis, categorias, planejador de organização e histórico |
+| [03-application.puml](../docs/diagrams/03-application.puml) | Casos de uso (incluindo execução e histórico) e portas |
+| [04-infrastructure.puml](../docs/diagrams/04-infrastructure.puml) | Implementações das portas (schtasks, disco, lixeira, persistência das configurações e do histórico) |
+| [05-presentation.puml](../docs/diagrams/05-presentation.puml) | Telas JavaFX, modelos de tela, componentes, `Main` e `AppContainer` |
 
 **Mantenha os diagramas atualizados:** ao criar, renomear ou remover classes/relacionamentos relevantes, atualize o `.puml` correspondente no mesmo commit.
 

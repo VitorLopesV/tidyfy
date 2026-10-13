@@ -116,4 +116,4 @@ Ideias para as próximas rodadas, como novos tipos de ajudante:
 
 ## Para quem vai desenvolver
 
-Informações técnicas (arquitetura, tecnologias, padrões e comandos) ficam no arquivo [CLAUDE.md](docs/CLAUDE.md).
+Informações técnicas (arquitetura, tecnologias, padrões e comandos) ficam no arquivo [CLAUDE.md](.claude/CLAUDE.md).
