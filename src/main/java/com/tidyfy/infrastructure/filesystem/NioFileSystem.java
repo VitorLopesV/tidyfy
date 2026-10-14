@@ -3,6 +3,9 @@ package com.tidyfy.infrastructure.filesystem;
 import com.tidyfy.application.port.FileSystem;
 import com.tidyfy.domain.FileMove;
 import com.tidyfy.domain.FolderEntry;
+import com.tidyfy.infrastructure.windows.CommandResult;
+import com.tidyfy.infrastructure.windows.CommandRunner;
+import com.tidyfy.infrastructure.windows.ProcessCommandRunner;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -19,16 +22,27 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Implementação da porta {@link FileSystem} com {@code java.nio.file}.
  */
 public final class NioFileSystem implements FileSystem {
 
+    /** Executor dos comandos externos (PowerShell) usados para enviar à lixeira. */
+    private final CommandRunner commandRunner;
+
     // Constantes
 
-    /** Mensagem das operações que ainda não foram implementadas. */
-    private static final String NOT_IMPLEMENTED = "Operação ainda não implementada";
+    /** Mensagem quando o item a enviar à lixeira não existe. */
+    private static final String TRASH_NOT_FOUND = "Não é possível enviar à lixeira, o caminho não existe: %s";
+
+    /** Mensagem quando o comando que envia à lixeira falha: caminho, código de saída e saída do comando. */
+    private static final String TRASH_FAILED =
+            "Não foi possível enviar à lixeira: %s (código de saída %d). Caminhos com mais de 260 caracteres não são aceitos. Saída: %s";
+
+    /** Mensagem quando o executor de comandos é nulo. */
+    private static final String NULL_RUNNER_MESSAGE = "commandRunner must not be null";
 
     /** Mensagem de quando o caminho comparado não é um arquivo comum. */
     private static final String NOT_A_FILE = "Não é um arquivo: %s";
@@ -40,6 +54,22 @@ public final class NioFileSystem implements FileSystem {
     private static final Comparator<FolderEntry> BY_NAME =
             Comparator.comparing((FolderEntry entry) -> entry.path().getFileName().toString().toLowerCase())
                     .thenComparing(entry -> entry.path().getFileName().toString());
+
+    /**
+     * Cria o sistema de arquivos usando processos reais para enviar à lixeira.
+     */
+    public NioFileSystem() {
+        this(new ProcessCommandRunner());
+    }
+
+    /**
+     * Cria o sistema de arquivos com o executor de comandos informado.
+     *
+     * @param commandRunner executor dos comandos externos (PowerShell) usados para enviar à lixeira
+     */
+    public NioFileSystem(CommandRunner commandRunner) {
+        this.commandRunner = Objects.requireNonNull(commandRunner, NULL_RUNNER_MESSAGE);
+    }
 
     /**
      * Lista o que está diretamente na pasta, sem entrar nas subpastas.
@@ -210,10 +240,26 @@ public final class NioFileSystem implements FileSystem {
     }
 
     /**
-     * Ainda não implementado.
+     * Envia o arquivo ou a pasta (com o conteúdo) para a Lixeira do Windows, de onde dá para recuperar,
+     * por um PowerShell sem interface (veja {@link TrashCommands}). Links simbólicos não são seguidos.
+     * Caminhos com mais de 260 caracteres falham.
+     *
+     * @param path caminho a enviar
+     * @throws UncheckedIOException se o caminho não existir ou o comando falhar
      */
     @Override
     public void moveToTrash(Path path) {
-        throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+        if (!exists(path)) {
+            throw new UncheckedIOException(new NoSuchFileException(path.toString(), null,
+                    String.format(TRASH_NOT_FOUND, path)));
+        }
+        List<String> command = Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)
+                ? TrashCommands.sendDirectoryToTrash(path)
+                : TrashCommands.sendFileToTrash(path);
+        CommandResult result = commandRunner.run(command);
+        if (!result.succeeded()) {
+            throw new UncheckedIOException(new IOException(
+                    String.format(TRASH_FAILED, path, result.exitCode(), result.output().strip())));
+        }
     }
 }

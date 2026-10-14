@@ -43,6 +43,9 @@ package "com.tidyfy.infrastructure.windows" {
 
 package "com.tidyfy.infrastructure.filesystem" {
   class NioFileSystem {
+    - commandRunner : CommandRunner
+    + NioFileSystem()
+    + NioFileSystem(commandRunner : CommandRunner)
     + listEntries(folder : Path) : List<FolderEntry>
     + exists(path : Path) : boolean
     + sameContent(first : Path, second : Path) : boolean
@@ -95,6 +98,8 @@ HelperJsonMapper ..> HelperJsonException : lança
 
 SchtasksTaskScheduler --> CommandRunner
 PowerShellRecycleBin --> CommandRunner
+NioFileSystem --> CommandRunner
+NioFileSystem ..> TrashCommands : usa
 CommandRunner <|.. ProcessCommandRunner
 CommandRunner ..> CommandResult
 
