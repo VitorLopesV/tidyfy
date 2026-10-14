@@ -55,16 +55,29 @@ package "com.tidyfy" {
 package "com.tidyfy.presentation" {
 
   class TidyfyApplication {
+    - {static} services : UiServices
+    + {static} configure(services : UiServices) : void
     + start(stage : Stage) : void
   }
 
+  class UiServices <<record>> {
+    + listHelpers : ListHelpersUseCase
+    + saveHelper : SaveHelperUseCase
+    + removeHelper : RemoveHelperUseCase
+    + listExecutionHistory : ListExecutionHistoryUseCase
+    + clock : Clock
+  }
+
   class HelperListController {
-    - listHelpers : ListHelpersUseCase
-    - removeHelper : RemoveHelperUseCase
-    - saveHelper : SaveHelperUseCase
+    - source : Supplier<List<HelperItem>>
+    - errorHandler : Consumer<Throwable>
     - selection : HelperSelection
     - filter : TypeFilter
+    + HelperListController()
+    + HelperListController(listHelpers : ListHelpersUseCase, mapper : HelperItemMapper)
+    + HelperListController(listHelpers : ListHelpersUseCase, mapper : HelperItemMapper, errorHandler : Consumer<Throwable>)
     + createView() : Parent
+    + reload() : void
     + showHelpers(items : List<HelperItem>) : void
   }
 
@@ -222,7 +235,11 @@ HeadlessRunner ..> AppContainer : cria sob demanda
 HeadlessRunner ..> RunHelperUseCase : execute(id)
 HeadlessRunner ..> ExecutionLog : started / finished / failed
 
+InterfaceLauncher ..> UiServices : monta com os casos de uso do AppContainer
+TidyfyApplication ..> UiServices : usa
 TidyfyApplication --> HelperListController
+HelperListController ..> ListHelpersUseCase : reload()
+HelperListController ..> HelperItemMapper : converte Helper em HelperItem
 HelperListController ..> HelperTypeChooserController : "Novo ajudante"
 HelperListController ..> FolderOrganizerFormController : abre
 HelperListController ..> CleanerFormController : abre

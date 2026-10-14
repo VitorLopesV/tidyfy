@@ -1,5 +1,6 @@
 package com.tidyfy.presentation;
 
+import com.tidyfy.application.usecase.ListHelpersUseCase;
 import com.tidyfy.presentation.component.Animations;
 import com.tidyfy.presentation.component.CardGrid;
 import com.tidyfy.presentation.component.Fxml;
@@ -10,6 +11,7 @@ import com.tidyfy.presentation.component.Nodes;
 import com.tidyfy.presentation.component.UsageMeter;
 import com.tidyfy.presentation.model.ExecutionItem;
 import com.tidyfy.presentation.model.HelperItem;
+import com.tidyfy.presentation.model.HelperItemMapper;
 import com.tidyfy.presentation.model.HelperKind;
 import com.tidyfy.presentation.model.HelperSelection;
 import com.tidyfy.presentation.model.TypeFilter;
@@ -17,7 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -36,7 +40,9 @@ import javafx.util.Duration;
 /**
  * Lista de ajudantes: filtro por tipo, seleção e ações. Edição só com um ajudante selecionado;
  * remoção com um ou vários. A página não rola; só a área dos cartões, quando eles não cabem.
- * Ainda sem casos de uso: a lista fica vazia até alguém chamar {@link #showHelpers(List)}.
+ * Os ajudantes vêm do {@link ListHelpersUseCase}: são carregados ao abrir a tela e de novo a cada
+ * {@link #reload()}. Sem caso de uso (construtor sem argumentos), a lista começa vazia até alguém chamar
+ * {@link #showHelpers(List)}.
  */
 public class HelperListController {
 
@@ -145,6 +151,12 @@ public class HelperListController {
     /** Filtro ativo. */
     private TypeFilter filter = TypeFilter.ALL;
 
+    /** Fonte dos ajudantes exibidos; pode lançar se a leitura falhar. */
+    private final Supplier<List<HelperItem>> source;
+
+    /** Quem é avisado quando a leitura dos ajudantes falha; a exibição do erro ao usuário é de outra issue. */
+    private final Consumer<Throwable> errorHandler;
+
     /** Busca o histórico de um ajudante pelo id; por padrão devolve sempre uma lista vazia. */
     private Function<String, List<ExecutionItem>> historyLoader = id -> List.of();
 
@@ -158,6 +170,18 @@ public class HelperListController {
 
     /** Arquivo FXML da tela, no pacote desta classe. */
     private static final String FXML_FILE = "helper-list.fxml";
+
+    /** Mensagem escrita no erro padrão quando a leitura dos ajudantes falha. */
+    private static final String LOAD_FAILED = "Não foi possível carregar os ajudantes:";
+
+    /** Nome do parâmetro do caso de uso, usado na mensagem de valor nulo. */
+    private static final String LIST_HELPERS_NAME = "listHelpers";
+
+    /** Nome do parâmetro do mapeador, usado na mensagem de valor nulo. */
+    private static final String MAPPER_NAME = "mapper";
+
+    /** Nome do parâmetro do tratador de erro, usado na mensagem de valor nulo. */
+    private static final String ERROR_HANDLER_NAME = "errorHandler";
 
     /** Título do diálogo de novo ajudante. */
     private static final String NEW_HELPER_TITLE = "Novo ajudante";
@@ -173,6 +197,63 @@ public class HelperListController {
 
     /** Modelo do contador de ajudantes ligados; recebe os ligados e o total. */
     private static final String ENABLED_COUNT = "%d de %d";
+
+    /**
+     * Cria a tela sem fonte de dados: a lista começa vazia e só muda por {@link #showHelpers(List)}.
+     */
+    public HelperListController() {
+        this(List::of, error -> { });
+    }
+
+    /**
+     * Cria a tela que carrega os ajudantes pelo caso de uso. Se a leitura falhar, a lista fica vazia e o
+     * erro vai para o erro padrão ({@link System#err}).
+     *
+     * @param listHelpers caso de uso que lista os ajudantes salvos
+     * @param mapper      conversor dos ajudantes do domínio nos itens exibidos
+     * @throws NullPointerException se algum argumento for nulo
+     */
+    public HelperListController(ListHelpersUseCase listHelpers, HelperItemMapper mapper) {
+        this(listHelpers, mapper, HelperListController::printToStandardError);
+    }
+
+    /**
+     * Cria a tela que carrega os ajudantes pelo caso de uso e avisa o {@code errorHandler} se a leitura
+     * falhar (a lista fica vazia). Ponto de extensão para a exibição do erro em diálogo.
+     *
+     * @param listHelpers  caso de uso que lista os ajudantes salvos
+     * @param mapper       conversor dos ajudantes do domínio nos itens exibidos
+     * @param errorHandler recebe a falha da leitura
+     * @throws NullPointerException se algum argumento for nulo
+     */
+    public HelperListController(ListHelpersUseCase listHelpers, HelperItemMapper mapper,
+                                Consumer<Throwable> errorHandler) {
+        this(sourceOf(Objects.requireNonNull(listHelpers, LIST_HELPERS_NAME),
+                Objects.requireNonNull(mapper, MAPPER_NAME)), errorHandler);
+    }
+
+    /**
+     * Cria a tela com uma fonte de ajudantes qualquer.
+     */
+    private HelperListController(Supplier<List<HelperItem>> source, Consumer<Throwable> errorHandler) {
+        this.source = source;
+        this.errorHandler = Objects.requireNonNull(errorHandler, ERROR_HANDLER_NAME);
+    }
+
+    /**
+     * Monta a fonte que lê os ajudantes pelo caso de uso e os converte em itens.
+     */
+    private static Supplier<List<HelperItem>> sourceOf(ListHelpersUseCase listHelpers, HelperItemMapper mapper) {
+        return () -> mapper.toItems(listHelpers.execute());
+    }
+
+    /**
+     * Tratador padrão de falhas: escreve no erro padrão.
+     */
+    private static void printToStandardError(Throwable error) {
+        System.err.println(LOAD_FAILED);
+        error.printStackTrace();
+    }
 
     /**
      * Carrega a tela.
@@ -208,11 +289,27 @@ public class HelperListController {
         Animations.rotateOnHover(newHelperIcon, newHelperButton, 90);
         Animations.rotateOnHover(firstHelperIcon, firstHelperButton, 90);
         Animations.floating(emptyIllustration);
-        render();
+        reload();
     }
 
     /**
-     * Ponto de entrada dos dados: será alimentado pelo ListHelpersUseCase.
+     * Busca os ajudantes de novo e atualiza a tela (limpa a seleção; o filtro é mantido). Deve ser chamado
+     * depois de criar, editar ou remover. Se a leitura falhar, a lista fica vazia e o erro vai para o
+     * {@code errorHandler}; a exceção não sai daqui.
+     */
+    public void reload() {
+        List<HelperItem> items;
+        try {
+            items = source.get();
+        } catch (RuntimeException error) {
+            items = List.of();
+            errorHandler.accept(error);
+        }
+        showHelpers(items);
+    }
+
+    /**
+     * Exibe os ajudantes informados no lugar dos atuais; usado por {@link #reload()}.
      *
      * @param items ajudantes a exibir
      */

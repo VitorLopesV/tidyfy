@@ -49,7 +49,7 @@ public final class Main {
         LaunchArguments arguments = LaunchArguments.parse(args);
         if (arguments.mode() == LaunchArguments.Mode.INTERFACE) {
             startSchedulerSync();
-            InterfaceLauncher.launch(args);
+            InterfaceLauncher.launch(AppContainer.create(), Clock.systemDefaultZone(), args);
             return;
         }
         ExecutionLog log = createLog();

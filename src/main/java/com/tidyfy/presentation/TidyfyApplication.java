@@ -1,6 +1,10 @@
 package com.tidyfy.presentation;
 
 import com.tidyfy.presentation.component.Logo;
+import com.tidyfy.presentation.model.ExecutionItemMapper;
+import com.tidyfy.presentation.model.HelperItemMapper;
+import java.time.ZoneId;
+import java.util.Objects;
 import javafx.application.Application;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
@@ -12,6 +16,9 @@ import javafx.stage.Stage;
  */
 public class TidyfyApplication extends Application {
 
+    /** Serviços entregues antes de {@link Application#launch}; o JavaFX instancia a aplicação sem argumentos. */
+    private static UiServices services;
+
     // Constantes
 
     /** Nome do arquivo de estilos, no mesmo pacote desta classe. */
@@ -20,6 +27,23 @@ public class TidyfyApplication extends Application {
     /** Título da janela. */
     private static final String TITLE = "Tidyfy";
 
+    /** Mensagem de quando a aplicação abre sem os serviços configurados. */
+    private static final String NOT_CONFIGURED =
+            "TidyfyApplication.configure(UiServices) deve ser chamado antes de abrir a interface";
+
+    /** Nome do parâmetro dos serviços, usado na mensagem de valor nulo. */
+    private static final String SERVICES_NAME = "services";
+
+    /**
+     * Define os serviços que a interface usa. Deve ser chamado antes de {@link Application#launch}.
+     *
+     * @param uiServices casos de uso e relógio da interface
+     * @throws NullPointerException se {@code uiServices} for nulo
+     */
+    public static void configure(UiServices uiServices) {
+        services = Objects.requireNonNull(uiServices, SERVICES_NAME);
+    }
+
     /**
      * Abre a janela principal.
      *
@@ -27,7 +51,14 @@ public class TidyfyApplication extends Application {
      */
     @Override
     public void start(Stage stage) {
-        HelperListController helperList = new HelperListController();
+        UiServices ui = services;
+        if (ui == null) {
+            throw new IllegalStateException(NOT_CONFIGURED);
+        }
+        HelperListController helperList =
+                new HelperListController(ui.listHelpers(), new HelperItemMapper(ui.clock()));
+        helperList.setHistoryLoader(new HistoryLoader(ui.listExecutionHistory(),
+                new ExecutionItemMapper(ZoneId.systemDefault())));
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();
         Scene scene = new Scene(helperList.createView(),
                 Math.min(1280, screen.getWidth() - 80),
