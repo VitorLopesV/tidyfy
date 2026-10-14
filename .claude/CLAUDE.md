@@ -25,7 +25,7 @@ Todo ajudante tem: nome, tipo, frequência (a cada N dias, em um ou mais horári
 | Agendamento | Agendador de Tarefas do Windows (`schtasks.exe`, com tarefa definida em XML) |
 | Plataforma | Windows apenas |
 
-Estado atual do `pom.xml`: Java 21, JavaFX 21 (`javafx-controls` e `javafx-fxml`, mais o `javafx-maven-plugin` para rodar a interface) e JUnit 5.
+Estado atual do `pom.xml`: Java 21, JavaFX 21 (`javafx-controls` e `javafx-fxml`, mais o `javafx-maven-plugin` para rodar a interface), Jackson 2.18 (`jackson-databind` e `jackson-datatype-jsr310`) e JUnit 5.
 
 ## Regras do projeto (obrigatórias)
 
