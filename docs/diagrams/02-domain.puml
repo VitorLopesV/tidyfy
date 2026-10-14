@@ -79,6 +79,13 @@ package "com.tidyfy.domain" {
     + startDate : LocalDate
   }
 
+  class ScheduleCalculator {
+    - clock : Clock
+    + nextExecution(schedule : Schedule) : LocalDateTime
+    + previousExecution(schedule : Schedule) : Optional<LocalDateTime>
+    + progress(schedule : Schedule) : double
+  }
+
   class HelperRules {
     - protectedFolders : ProtectedFolders
     + assertCanSave(helper : Helper, others : List<Helper>) : void
@@ -173,6 +180,7 @@ Helper <|.. CleanerHelper
 Helper --> "1" HelperId
 Helper --> "1" HelperName
 Helper --> "1" Schedule
+ScheduleCalculator ..> Schedule : calcula
 Helper ..> HelperType
 
 CleanerHelper --> "1" CleanupTarget
@@ -240,6 +248,14 @@ note left of HelperName
   Obrigatório, sem espaços nas pontas.
   Único entre os ajudantes, sem diferenciar
   maiúsculas (HelperRules).
+end note
+
+note bottom of ScheduleCalculator
+  Próxima e anterior execução e o progresso (0 a 1)
+  entre elas, para os cartões da lista. Os dias de
+  execução são os que distam de startDate um múltiplo
+  de intervalDays. Um horário igual a agora conta como
+  já executado. Sem execução anterior, o progresso é 0.
 end note
 
 note left of Schedule
