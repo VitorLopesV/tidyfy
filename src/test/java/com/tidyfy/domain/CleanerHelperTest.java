@@ -24,6 +24,17 @@ class CleanerHelperTest {
     }
 
     @Test
+    void withEnabledChangesOnlyTheEnabledState() {
+        CleanerHelper helper = helper(new RecycleBinTarget(), new AgeLimit(30));
+
+        CleanerHelper on = helper.withEnabled(true);
+
+        assertEquals(new CleanerHelper(helper.id(), helper.name(), helper.schedule(), true, helper.target(),
+                helper.ageLimit()), on);
+        assertEquals(helper, on.withEnabled(false));
+    }
+
+    @Test
     void typeIsCleaner() {
         assertEquals(HelperType.CLEANER, helper(new RecycleBinTarget(), null).type());
     }

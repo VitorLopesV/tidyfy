@@ -40,4 +40,12 @@ public sealed interface Helper permits FolderOrganizerHelper, CleanerHelper {
      * @return {@code true} se estiver ligado
      */
     boolean enabled();
+
+    /**
+     * Devolve uma cópia do ajudante com o estado ligado/desligado trocado; todo o resto é preservado.
+     *
+     * @param enabled {@code true} para ligar, {@code false} para desligar
+     * @return a cópia, do mesmo tipo deste ajudante
+     */
+    Helper withEnabled(boolean enabled);
 }

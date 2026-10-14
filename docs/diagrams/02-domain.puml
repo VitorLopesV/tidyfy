@@ -14,6 +14,7 @@ package "com.tidyfy.domain" {
     + type() : HelperType
     + schedule() : Schedule
     + enabled() : boolean
+    + withEnabled(enabled : boolean) : Helper
   }
 
   enum HelperType {
@@ -31,6 +32,7 @@ package "com.tidyfy.domain" {
     + enabled : boolean
     + folder : Path
     + type() : HelperType
+    + withEnabled(enabled : boolean) : FolderOrganizerHelper
   }
 
   class CleanerHelper <<record>> {
@@ -41,6 +43,7 @@ package "com.tidyfy.domain" {
     + target : CleanupTarget
     + ageLimit : AgeLimit [0..1]
     + type() : HelperType
+    + withEnabled(enabled : boolean) : CleanerHelper
   }
 
   interface CleanupTarget <<sealed>> {

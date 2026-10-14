@@ -50,4 +50,15 @@ public record FolderOrganizerHelper(HelperId id, HelperName name, Schedule sched
     public HelperType type() {
         return HelperType.FOLDER_ORGANIZER;
     }
+
+    /**
+     * Cópia deste ajudante com o estado ligado/desligado trocado.
+     *
+     * @param enabled {@code true} para ligar, {@code false} para desligar
+     * @return a cópia, com os demais campos iguais
+     */
+    @Override
+    public FolderOrganizerHelper withEnabled(boolean enabled) {
+        return new FolderOrganizerHelper(id, name, schedule, enabled, folder);
+    }
 }

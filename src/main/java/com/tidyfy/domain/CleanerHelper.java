@@ -62,4 +62,15 @@ public record CleanerHelper(HelperId id, HelperName name, Schedule schedule, boo
     public Optional<AgeLimit> findAgeLimit() {
         return Optional.ofNullable(ageLimit);
     }
+
+    /**
+     * Cópia deste ajudante com o estado ligado/desligado trocado.
+     *
+     * @param enabled {@code true} para ligar, {@code false} para desligar
+     * @return a cópia, com os demais campos iguais
+     */
+    @Override
+    public CleanerHelper withEnabled(boolean enabled) {
+        return new CleanerHelper(id, name, schedule, enabled, target, ageLimit);
+    }
 }

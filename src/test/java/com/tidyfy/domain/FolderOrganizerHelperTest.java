@@ -61,6 +61,17 @@ class FolderOrganizerHelperTest {
     }
 
     @Test
+    void withEnabledChangesOnlyTheEnabledState() {
+        FolderOrganizerHelper helper = helper(Path.of("downloads"));
+
+        FolderOrganizerHelper off = helper.withEnabled(false);
+
+        assertEquals(new FolderOrganizerHelper(helper.id(), helper.name(), helper.schedule(), false,
+                helper.folder()), off);
+        assertEquals(helper, off.withEnabled(true));
+    }
+
+    @Test
     void rejectsNullSchedule() {
         assertThrows(NullPointerException.class,
                 () -> new FolderOrganizerHelper(HelperId.newId(), new HelperName("A"), null, true, Path.of("a")));

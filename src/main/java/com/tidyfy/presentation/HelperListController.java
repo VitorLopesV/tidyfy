@@ -170,6 +170,12 @@ public class HelperListController {
     /** Relógio entregue aos formulários; {@code null} até {@link #setSaveServices}. */
     private Clock clock;
 
+    /** Caso de uso que lê os ajudantes do domínio; {@code null} no construtor sem argumentos. */
+    private final ListHelpersUseCase listHelpers;
+
+    /** Indica que o interruptor de um cartão está sendo devolvido ao estado anterior: não regrava. */
+    private boolean revertingSwitch;
+
     // Constantes
 
     /** Título da janela do diálogo de erro. */
@@ -250,7 +256,7 @@ public class HelperListController {
      */
     public HelperListController(ListHelpersUseCase listHelpers, HelperItemMapper mapper,
                                 Consumer<Throwable> errorHandler) {
-        this(sourceOf(Objects.requireNonNull(listHelpers, LIST_HELPERS_NAME),
+        this(listHelpers, sourceOf(Objects.requireNonNull(listHelpers, LIST_HELPERS_NAME),
                 Objects.requireNonNull(mapper, MAPPER_NAME)), errorHandler);
     }
 
@@ -258,6 +264,15 @@ public class HelperListController {
      * Cria a tela com uma fonte de ajudantes qualquer.
      */
     private HelperListController(Supplier<List<HelperItem>> source, Consumer<Throwable> errorHandler) {
+        this(null, source, errorHandler);
+    }
+
+    /**
+     * Cria a tela com uma fonte de ajudantes qualquer e, se houver, o caso de uso que lê o domínio.
+     */
+    private HelperListController(ListHelpersUseCase listHelpers, Supplier<List<HelperItem>> source,
+                                 Consumer<Throwable> errorHandler) {
+        this.listHelpers = listHelpers;
         this.source = source;
         this.errorHandler = Objects.requireNonNull(errorHandler, ERROR_HANDLER_NAME);
     }
@@ -420,6 +435,15 @@ public class HelperListController {
      * Recria os cartões dos ajudantes que passam pelo filtro.
      */
     private void showCards() {
+        showCards(true);
+    }
+
+    /**
+     * Recria os cartões dos ajudantes que passam pelo filtro.
+     *
+     * @param animate {@code true} para os cartões subirem animados; {@code false} para surgirem no lugar
+     */
+    private void showCards(boolean animate) {
         List<HelperItem> visible = visibleHelpers();
         List<Node> cards = new ArrayList<>();
         for (int i = 0; i < visible.size(); i++) {
@@ -430,17 +454,82 @@ public class HelperListController {
                 selection.set(item.id(), selected);
                 showSelection();
             });
-            card.enabledProperty().addListener((obs, was, on) -> {
-                replace(item.withEnabled(on));
-                showCounts();
-            });
+            card.enabledProperty().addListener((obs, was, on) -> onEnabledChanged(card, item, was, on));
             card.setOnHistory(this::onHistory);
-            Animations.riseIn(card, Duration.millis(i * 50L));
+            if (animate) {
+                Animations.riseIn(card, Duration.millis(i * 50L));
+            }
             cards.add(card);
         }
         cardGrid.getChildren().setAll(cards);
         Nodes.setShown(noResults, visible.isEmpty() && !helpers.isEmpty());
         showSelection();
+    }
+
+    /**
+     * Trata o clique no interruptor de um cartão. Sem os serviços de salvar, só atualiza a lista em memória.
+     * Com eles, salva o novo estado; se falhar, devolve o interruptor ao estado anterior e mostra o erro.
+     *
+     * @param card cartão cujo interruptor mudou
+     * @param item ajudante do cartão
+     * @param was  estado anterior do interruptor
+     * @param on   novo estado do interruptor
+     */
+    private void onEnabledChanged(HelperCard card, HelperItem item, boolean was, boolean on) {
+        if (revertingSwitch) {
+            return;
+        }
+        if (saveHelper == null || listHelpers == null) {
+            replace(item.withEnabled(on));
+            showCounts();
+            return;
+        }
+        try {
+            saveEnabled(item.id(), on);
+        } catch (RuntimeException error) {
+            revertingSwitch = true;
+            try {
+                card.enabledProperty().set(was);
+            } finally {
+                revertingSwitch = false;
+            }
+            showError(error);
+            return;
+        }
+        refreshAfterToggle();
+    }
+
+    /**
+     * Salva o ajudante atual do domínio com o estado ligado/desligado informado. Se ele não existir mais
+     * (removido por outro processo), não há o que salvar e a lista é recarregada em seguida.
+     *
+     * @param id identificador do ajudante, em texto
+     * @param on novo estado
+     */
+    private void saveEnabled(String id, boolean on) {
+        listHelpers.execute().stream()
+                .filter(helper -> helper.id().value().toString().equals(id))
+                .findFirst()
+                .map(helper -> helper.withEnabled(on))
+                .ifPresent(saveHelper::execute);
+    }
+
+    /**
+     * Depois de salvar o interruptor, relê os ajudantes (a próxima execução e o progresso mudam) e redesenha
+     * a tela mantendo a seleção e o filtro, sem animar os cartões. Se a releitura falhar, a lista em memória
+     * é mantida: o estado salvo está certo e só o texto da próxima execução fica desatualizado.
+     */
+    private void refreshAfterToggle() {
+        try {
+            List<HelperItem> items = source.get();
+            helpers.clear();
+            helpers.addAll(items);
+        } catch (RuntimeException error) {
+            errorHandler.accept(error);
+            return;
+        }
+        showCounts();
+        showCards(false);
     }
 
     /**
