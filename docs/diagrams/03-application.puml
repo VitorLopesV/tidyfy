@@ -18,7 +18,7 @@ package "com.tidyfy.application.usecase" {
   class RemoveHelperUseCase {
     - repository : HelperRepository
     - scheduler : TaskScheduler
-    + execute(id : HelperId) : void
+    + execute(ids : Collection<HelperId>) : void
   }
 
   class ListHelpersUseCase {
