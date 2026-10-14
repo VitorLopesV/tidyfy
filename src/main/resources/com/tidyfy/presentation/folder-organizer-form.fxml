@@ -46,6 +46,7 @@
                     <VBox spacing="8">
                         <Label text="Pasta a organizar" styleClass="field-label"/>
                         <FolderField fx:id="folderField" chooserTitle="Escolher a pasta a organizar"/>
+                        <Label fx:id="folderError" styleClass="help, error" wrapText="true"/>
                         <Label text="Uma pasta por ajudante. Só os arquivos soltos nela são organizados."
                                styleClass="help" wrapText="true"/>
                     </VBox>

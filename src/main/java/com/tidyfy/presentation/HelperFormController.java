@@ -1,16 +1,21 @@
 package com.tidyfy.presentation;
 
 import com.tidyfy.application.usecase.SaveHelperUseCase;
+import com.tidyfy.domain.FolderAlreadyInUseException;
 import com.tidyfy.domain.Helper;
 import com.tidyfy.domain.HelperId;
 import com.tidyfy.domain.HelperName;
+import com.tidyfy.domain.HelperNameAlreadyUsedException;
+import com.tidyfy.domain.ProtectedFolderException;
 import com.tidyfy.domain.Schedule;
 import com.tidyfy.presentation.component.Animations;
+import com.tidyfy.presentation.component.FolderField;
 import com.tidyfy.presentation.component.Fxml;
 import com.tidyfy.presentation.component.ScheduleEditor;
 import com.tidyfy.presentation.component.Nodes;
 import com.tidyfy.presentation.component.ToggleSwitch;
 import com.tidyfy.presentation.component.UpcomingRunsCalendar;
+import com.tidyfy.presentation.model.ErrorMessageMapper;
 import com.tidyfy.presentation.model.HelperItem;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -23,6 +28,7 @@ import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -48,6 +54,9 @@ public abstract class HelperFormController {
 
     /** Ajuda ou erro do campo de nome. */
     @FXML private Label nameHelp;
+
+    /** Erro de regra da pasta (em uso, aninhada, protegida ou lixeira em uso); escondido enquanto não há erro. */
+    @FXML private Label folderError;
 
     /** Editor da frequência. */
     @FXML private ScheduleEditor scheduleEditor;
@@ -91,6 +100,9 @@ public abstract class HelperFormController {
      */
     private BooleanBinding nameError;
 
+    /** Indica se o campo de nome mostra um erro de regra do domínio (nome já usado). */
+    private boolean nameRuleError;
+
     // Constantes
 
     /** Ajuda do campo de nome. */
@@ -123,7 +135,7 @@ public abstract class HelperFormController {
     /** Explicação do estado desligado. */
     private static final String DISABLED_HELP = "Não fica no Agendador e não executa.";
 
-    /** Classe CSS do campo de nome com erro. */
+    /** Classe CSS do campo com erro. */
     private static final String INVALID_STYLE_CLASS = "invalid";
 
     /** Mensagem quando o formulário foi criado sem o caso de uso de salvar. */
@@ -201,6 +213,13 @@ public abstract class HelperFormController {
     protected abstract String viewName();
 
     /**
+     * Devolve o campo de pasta do formulário, onde aparecem os erros de regra da pasta.
+     *
+     * @return o campo de pasta
+     */
+    protected abstract FolderField folderField();
+
+    /**
      * Informa se ainda falta escolher onde o ajudante vai atuar.
      *
      * @return binding verdadeiro enquanto faltar o alvo
@@ -224,6 +243,7 @@ public abstract class HelperFormController {
         saveButton.setText(creating ? CREATE_BUTTON : EDIT_BUTTON);
         nameTitle.setLabelFor(nameField);
         Nodes.setShown(saveError, false);
+        Nodes.setShown(folderError, false);
 
         if (creating) {
             scheduleEditor.setTimes(List.of(LocalTime.of(9, 0)));
@@ -236,7 +256,11 @@ public abstract class HelperFormController {
             showTarget(editing);
         }
 
-        nameField.textProperty().addListener((obs, old, now) -> nameTouched.set(true));
+        nameField.textProperty().addListener((obs, old, now) -> {
+            nameTouched.set(true);
+            clearNameRuleError();
+        });
+        folderField().folderProperty().addListener((obs, old, now) -> clearFolderError());
         BooleanBinding nameMissing = Bindings.createBooleanBinding(
                 () -> nameField.getText() == null || nameField.getText().isBlank(), nameField.textProperty());
         nameError = nameTouched.and(nameMissing);
@@ -258,12 +282,67 @@ public abstract class HelperFormController {
     private void showNameError(boolean error) {
         nameHelp.setText(error ? NAME_ERROR : NAME_HELP);
         if (error) {
-            nameField.getStyleClass().add(INVALID_STYLE_CLASS);
-            nameHelp.getStyleClass().add(ERROR_STYLE_CLASS);
+            addStyleClass(nameField, INVALID_STYLE_CLASS);
+            addStyleClass(nameHelp, ERROR_STYLE_CLASS);
             Animations.fadeUpIn(nameHelp);
         } else {
             nameField.getStyleClass().remove(INVALID_STYLE_CLASS);
             nameHelp.getStyleClass().remove(ERROR_STYLE_CLASS);
+        }
+    }
+
+    /**
+     * Mostra o erro de regra no campo de nome, no lugar da ajuda, com o mesmo visual do erro de nome vazio.
+     *
+     * @param message texto do erro
+     */
+    private void showNameRuleError(String message) {
+        nameRuleError = true;
+        nameHelp.setText(message);
+        addStyleClass(nameField, INVALID_STYLE_CLASS);
+        addStyleClass(nameHelp, ERROR_STYLE_CLASS);
+        Animations.fadeUpIn(nameHelp);
+    }
+
+    /**
+     * Some com o erro de regra do nome, se houver, e volta a ajuda do campo. Se o nome ficou vazio, o erro
+     * de "obrigatório" continua a cargo do binding.
+     */
+    private void clearNameRuleError() {
+        if (!nameRuleError) {
+            return;
+        }
+        nameRuleError = false;
+        showNameError(nameError.get());
+    }
+
+    /**
+     * Mostra o erro de regra da pasta abaixo do campo de pasta e marca o campo como inválido.
+     *
+     * @param message texto do erro
+     */
+    private void showFolderError(String message) {
+        folderError.setText(message);
+        Nodes.setShown(folderError, true);
+        addStyleClass(folderField(), INVALID_STYLE_CLASS);
+        Animations.fadeUpIn(folderError);
+    }
+
+    /**
+     * Esconde o erro de regra da pasta e tira a marca de inválido do campo. Os formulários chamam também
+     * quando o usuário troca o alvo.
+     */
+    protected void clearFolderError() {
+        Nodes.setShown(folderError, false);
+        folderField().getStyleClass().remove(INVALID_STYLE_CLASS);
+    }
+
+    /**
+     * Adiciona a classe CSS ao nó, sem repetir.
+     */
+    private static void addStyleClass(Node node, String styleClass) {
+        if (!node.getStyleClass().contains(styleClass)) {
+            node.getStyleClass().add(styleClass);
         }
     }
 
@@ -287,11 +366,13 @@ public abstract class HelperFormController {
 
     /**
      * Monta o ajudante e o grava pelo caso de uso. Se der certo, marca o formulário como salvo e o fecha;
-     * se falhar, mantém o formulário aberto e preenchido e mostra a mensagem do erro no rodapé.
+     * se falhar, mantém o formulário aberto e preenchido e mostra o erro no campo certo: nome repetido no
+     * campo de nome; pasta em uso ou protegida (e lixeira em uso) abaixo do alvo; o resto no rodapé.
      */
     @FXML
     protected void onSave() {
         Nodes.setShown(saveError, false);
+        clearFolderError();
         if (saveHelper == null) {
             showSaveError(SAVE_UNAVAILABLE);
             return;
@@ -299,6 +380,12 @@ public abstract class HelperFormController {
         try {
             saveHelper.execute(buildHelper(editingId(), new HelperName(nameField.getText()), schedule(),
                     enabledSwitch.isSelected(), editing));
+        } catch (HelperNameAlreadyUsedException error) {
+            showNameRuleError(ruleMessage(error));
+            return;
+        } catch (FolderAlreadyInUseException | ProtectedFolderException error) {
+            showFolderError(ruleMessage(error));
+            return;
         } catch (RuntimeException error) {
             showSaveError(error.getMessage() == null || error.getMessage().isBlank()
                     ? SAVE_FAILED : error.getMessage());
@@ -306,6 +393,13 @@ public abstract class HelperFormController {
         }
         saved = true;
         onClose();
+    }
+
+    /**
+     * Texto do erro para o usuário, o mesmo que a lista usa nos diálogos de erro.
+     */
+    private static String ruleMessage(RuntimeException error) {
+        return ErrorMessageMapper.toMessage(error).message();
     }
 
     /**

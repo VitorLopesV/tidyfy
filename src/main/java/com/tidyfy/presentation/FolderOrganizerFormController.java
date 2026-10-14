@@ -75,6 +75,16 @@ public class FolderOrganizerFormController extends HelperFormController {
     }
 
     /**
+     * Devolve o campo da pasta a organizar.
+     *
+     * @return o campo de pasta
+     */
+    @Override
+    protected FolderField folderField() {
+        return folderField;
+    }
+
+    /**
      * Informa se falta escolher a pasta.
      *
      * @return binding verdadeiro enquanto nenhuma pasta foi escolhida

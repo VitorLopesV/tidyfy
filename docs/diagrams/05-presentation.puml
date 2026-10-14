@@ -103,7 +103,9 @@ package "com.tidyfy.presentation" {
     + saved() : boolean
     # {abstract} buildHelper(id : HelperId, name : HelperName, schedule : Schedule, enabled : boolean, editing : HelperItem) : Helper
     # {abstract} viewName() : String
+    # {abstract} folderField() : FolderField
     # {abstract} targetMissing() : BooleanBinding
+    # clearFolderError() : void
     # {abstract} showTarget(item : HelperItem) : void
   }
 
@@ -351,7 +353,9 @@ note bottom of HelperFormController
   Limpeza: lixeira ou uma pasta.
   Salvar monta o Helper do domínio e chama o
   SaveHelperUseCase; só fecha se der certo, senão
-  mostra o erro no rodapé. startDate = hoje ao criar
+  mostra o erro no campo certo (nome repetido no
+  nome; pasta em uso/protegida e lixeira em uso no
+  folderError; o resto, como o limite, no rodapé). startDate = hoje ao criar
   ou quando a frequência muda.
 end note
 

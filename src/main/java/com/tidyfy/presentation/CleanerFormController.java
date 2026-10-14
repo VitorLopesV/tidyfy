@@ -201,6 +201,16 @@ public class CleanerFormController extends HelperFormController {
     }
 
     /**
+     * Devolve o campo da pasta a limpar.
+     *
+     * @return o campo de pasta
+     */
+    @Override
+    protected FolderField folderField() {
+        return folderField;
+    }
+
+    /**
      * Informa se falta escolher a pasta: só importa quando o alvo é uma pasta.
      *
      * @return binding verdadeiro quando o alvo é uma pasta e nenhuma foi escolhida
@@ -257,6 +267,7 @@ public class CleanerFormController extends HelperFormController {
                 old.setSelected(true);
                 return;
             }
+            clearFolderError();
             showTargetChoice(true);
         });
 

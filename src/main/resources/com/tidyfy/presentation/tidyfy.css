@@ -1003,6 +1003,10 @@
     -fx-background-color: -tf-danger, -tf-sunken;
 }
 
+.folder-field.invalid {
+    -fx-background-color: -tf-danger, -tf-sunken;
+}
+
 .folder-field {
     -fx-background-color: -tf-field, -tf-sunken;
     -fx-background-insets: 0, 1;

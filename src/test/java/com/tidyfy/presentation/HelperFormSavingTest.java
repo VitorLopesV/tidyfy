@@ -275,9 +275,10 @@ class HelperFormSavingTest {
 
             assertFalse(form.saved());
             assertEquals(0, form.closed);
-            Label error = (Label) view.lookup("#saveError");
-            assertTrue(error.isVisible());
+            Label error = (Label) view.lookup("#nameHelp");
+            assertTrue(error.getStyleClass().contains("error"));
             assertFalse(error.getText().isBlank());
+            assertFalse(view.lookup("#saveError").isVisible());
             assertEquals(1, repository.findAll().size());
         });
     }
