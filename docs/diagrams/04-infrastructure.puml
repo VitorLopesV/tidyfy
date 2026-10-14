@@ -119,7 +119,8 @@ note right of CommandRunner
 end note
 
 note bottom of PowerShellRecycleBin
-  emptyAll: Clear-RecycleBin -Force.
+  emptyAll: conta os itens (Shell.Application) e,
+  se houver, Clear-RecycleBin -Force.
   emptyOlderThan: lista os itens da lixeira com
   o dia em que foram para lá e remove os mais
   antigos que cutoff. Ambos devolvem quantos
