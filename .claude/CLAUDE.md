@@ -169,6 +169,29 @@ Limpeza da lixeira sem limite, limpa tudo (item da lista `helpers`):
 }
 ```
 
+#### Formato do `history.txt`
+
+Arquivo em `%APPDATA%\Tidyfy\history.txt`, ao lado do `helpers.txt`, extensão `.txt`, conteúdo **JSON em UTF-8**. Arquivo ausente ou vazio significa histórico vazio. A gravação é atômica e arquivo corrompido ou de versão desconhecida segue a mesma política do `helpers.txt` (original intacto, cópia `history.txt.bak-<carimbo>` e `CorruptedStorageException`).
+
+Objeto raiz: `version` (inteiro, começa em `1`) e `records` (lista, na ordem em que foram gravados). Cada registro tem `helperId` (UUID em texto), `helperName` (nome na hora da execução), `executedAt` (instante ISO-8601 em UTC, com fração de segundo se houver) e `actions` (lista). Cada ação tem `type` (`MOVED`, `DUPLICATE_TRASHED`, `TRASHED`, `RECYCLE_BIN_EMPTIED` ou `FAILED`) e os opcionais `source`, `target` e `message` (`null` ou ausentes quando não há; caminhos com barras invertidas escapadas). Os registros com mais de 30 dias são apagados por `deleteExpired`.
+
+```json
+{
+  "version": 1,
+  "records": [
+    {
+      "helperId": "3f2b8c1e-6a4d-4e0b-9c57-1d2a7b9e4f10",
+      "helperName": "Organizar Downloads",
+      "executedAt": "2026-10-14T12:00:00Z",
+      "actions": [
+        {"type": "MOVED", "source": "C:\\Users\\ana\\Downloads\\foto.jpg", "target": "C:\\Users\\ana\\Downloads\\Imagens\\foto.jpg", "message": null},
+        {"type": "FAILED", "source": "C:\\Users\\ana\\Downloads\\a.zip", "target": null, "message": "Acesso negado"}
+      ]
+    }
+  ]
+}
+```
+
 ## Funcionamento
 
 1. O usuário cria/edita um ajudante na interface JavaFX.
