@@ -9,6 +9,7 @@ import com.tidyfy.presentation.component.HelperCard;
 import com.tidyfy.presentation.component.Icon;
 import com.tidyfy.presentation.component.Nodes;
 import com.tidyfy.presentation.component.UsageMeter;
+import com.tidyfy.presentation.model.ErrorMessageMapper;
 import com.tidyfy.presentation.model.ExecutionItem;
 import com.tidyfy.presentation.model.HelperItem;
 import com.tidyfy.presentation.model.HelperItemMapper;
@@ -22,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -154,13 +156,19 @@ public class HelperListController {
     /** Fonte dos ajudantes exibidos; pode lançar se a leitura falhar. */
     private final Supplier<List<HelperItem>> source;
 
-    /** Quem é avisado quando a leitura dos ajudantes falha; a exibição do erro ao usuário é de outra issue. */
-    private final Consumer<Throwable> errorHandler;
+    /** Quem é avisado quando a leitura dos ajudantes falha; a aplicação liga aqui {@link #showError}. */
+    private Consumer<Throwable> errorHandler;
 
     /** Busca o histórico de um ajudante pelo id; por padrão devolve sempre uma lista vazia. */
     private Function<String, List<ExecutionItem>> historyLoader = id -> List.of();
 
     // Constantes
+
+    /** Título da janela do diálogo de erro. */
+    private static final String ERROR_TITLE = "Erro";
+
+    /** Nome do parâmetro do erro, usado na mensagem de valor nulo. */
+    private static final String ERROR_NAME = "error";
 
     /** Título do diálogo de histórico. */
     private static final String HISTORY_TITLE = "Histórico";
@@ -253,6 +261,52 @@ public class HelperListController {
     private static void printToStandardError(Throwable error) {
         System.err.println(LOAD_FAILED);
         error.printStackTrace();
+    }
+
+    /**
+     * Define quem é avisado quando a leitura dos ajudantes falha. Deve ser chamado antes de
+     * {@link #createView()}, que já carrega a lista.
+     *
+     * @param errorHandler recebe a falha da leitura
+     * @throws NullPointerException se {@code errorHandler} for nulo
+     */
+    public void setErrorHandler(Consumer<Throwable> errorHandler) {
+        this.errorHandler = Objects.requireNonNull(errorHandler, ERROR_HANDLER_NAME);
+    }
+
+    /**
+     * Explica o erro ao usuário num diálogo que escurece a lista. A interface continua funcionando depois
+     * dele. Se a tela ainda não está numa janela (a falha da primeira leitura acontece ao montar a tela), o
+     * diálogo é adiado com {@link Platform#runLater} até a janela existir; nesse caso ele abre assim que a
+     * janela principal é exibida.
+     *
+     * @param error falha ocorrida
+     * @throws NullPointerException se {@code error} for nulo
+     */
+    public void showError(Throwable error) {
+        ErrorDialogController dialog =
+                new ErrorDialogController(ErrorMessageMapper.toMessage(Objects.requireNonNull(error, ERROR_NAME)));
+        if (isInWindow()) {
+            presentError(dialog);
+        } else {
+            Platform.runLater(() -> presentError(dialog));
+        }
+    }
+
+    /**
+     * Indica se a tela já está numa janela, onde um diálogo pode ser aberto.
+     */
+    private boolean isInWindow() {
+        return root != null && root.getScene() != null && root.getScene().getWindow() != null;
+    }
+
+    /**
+     * Mostra o diálogo de erro. Separado para que os testes não abram uma janela de verdade.
+     *
+     * @param dialog controller do diálogo de erro
+     */
+    void presentError(ErrorDialogController dialog) {
+        showDialog(dialog.createView(), ERROR_TITLE);
     }
 
     /**

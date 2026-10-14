@@ -78,6 +78,8 @@ package "com.tidyfy.presentation" {
     + HelperListController(listHelpers : ListHelpersUseCase, mapper : HelperItemMapper, errorHandler : Consumer<Throwable>)
     + createView() : Parent
     + reload() : void
+    + setErrorHandler(handler : Consumer<Throwable>) : void
+    + showError(error : Throwable) : void
     + showHelpers(items : List<HelperItem>) : void
   }
 
@@ -112,6 +114,21 @@ package "com.tidyfy.presentation" {
   class ExecutionHistoryController {
     + ExecutionHistoryController(helperName : String, items : List<ExecutionItem>)
     + createView() : Parent
+  }
+
+  class ErrorDialogController {
+    + ErrorDialogController(error : ErrorMessage)
+    + createView() : Parent
+  }
+
+  class ErrorMessage <<record>> {
+    + title : String
+    + message : String
+    + details : String
+  }
+
+  class ErrorMessageMapper <<utility>> {
+    + {static} toMessage(error : Throwable) : ErrorMessage
   }
 
   class Dialogs <<utility>> {
@@ -245,6 +262,10 @@ HelperListController ..> FolderOrganizerFormController : abre
 HelperListController ..> CleanerFormController : abre
 HelperListController ..> RemoveConfirmationController : "Remover"
 HelperListController ..> ExecutionHistoryController : "Histórico"
+HelperListController ..> ErrorDialogController : showError
+HelperListController ..> ErrorMessageMapper
+ErrorMessageMapper ..> ErrorMessage : converte Throwable
+ErrorDialogController --> ErrorMessage
 HelperListController ..> Dialogs
 ExecutionHistoryController ..> ExecutionItem
 ExecutionItem *-- ExecutionAction

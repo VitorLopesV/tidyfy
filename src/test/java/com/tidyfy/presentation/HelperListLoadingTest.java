@@ -202,7 +202,7 @@ class HelperListLoadingTest {
     }
 
     /** Repositório que lança ao listar, desde o início ou a partir de {@code failing = true}. */
-    private static final class FailingRepository implements com.tidyfy.application.port.HelperRepository {
+    static final class FailingRepository implements com.tidyfy.application.port.HelperRepository {
 
         private final RuntimeException failure;
         private FakeHelperRepository delegate;

@@ -1387,6 +1387,18 @@
     -fx-stroke: -tf-danger;
 }
 
+.error-details {
+    -fx-background-color: -tf-sunken;
+    -fx-background-radius: 12;
+    -fx-padding: 12 14;
+}
+
+.error-details-text {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 12px;
+    -fx-text-fill: -tf-muted;
+}
+
 .confirm-title {
     -fx-font-size: 22px;
     -fx-font-weight: bold;
