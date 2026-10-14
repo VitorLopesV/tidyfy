@@ -11,10 +11,11 @@ package "com.tidyfy.infrastructure.windows" {
   class SchtasksTaskScheduler {
     - commandRunner : CommandRunner
     - launcher : Path
+    - tempDirectory : Path
     + register(helper : Helper) : void
     + unregister(id : HelperId) : void
-    ~ createCommands(helper : Helper) : List<List<String>>
-    ~ deleteCommands(id : HelperId) : List<List<String>>
+    ~ createCommand(id : HelperId, xmlFile : Path) : List<String>
+    ~ buildXml(helper : Helper) : String
   }
 
   class PowerShellRecycleBin {
