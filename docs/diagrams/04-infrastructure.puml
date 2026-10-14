@@ -16,6 +16,8 @@ package "com.tidyfy.infrastructure.windows" {
     + unregister(id : HelperId) : void
     ~ createCommand(id : HelperId, xmlFile : Path) : List<String>
     ~ buildXml(helper : Helper) : String
+    ~ deleteCommand(id : HelperId) : List<String>
+    ~ queryCommand(id : HelperId) : List<String>
   }
 
   class PowerShellRecycleBin {
@@ -101,6 +103,8 @@ note right of SchtasksTaskScheduler
   gatilho por horário do Schedule (a cada intervalDays
   dias, a partir de startDate):
   schtasks /Create /TN "Tidyfy\{id}" /XML {arquivo} /F
+  unregister: schtasks /Delete /TN "Tidyfy\{id}" /F; se
+  falhar, /Query decide: tarefa inexistente e ignorada.
   A ação chama "{launcher} --run {id}". Roda só com o
   usuário logado, permite bateria e, se perdeu o
   horário, roda assim que possível.

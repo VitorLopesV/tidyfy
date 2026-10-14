@@ -76,8 +76,11 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
     /** Mensagem de falha ao gravar o XML temporário. */
     private static final String WRITE_FAILURE_MESSAGE = "Could not write the task XML for helper %s";
 
-    /** Mensagem do {@code unregister} ainda não implementado. */
-    private static final String UNREGISTER_NOT_IMPLEMENTED = "unregister ainda não foi implementado";
+    /** Opção que apaga a tarefa. */
+    private static final String DELETE_OPTION = "/Delete";
+
+    /** Opção que consulta a tarefa. */
+    private static final String QUERY_OPTION = "/Query";
 
     /** Cabeçalho do XML, com a codificação gravada no arquivo. */
     private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n";
@@ -256,17 +259,46 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
         }
     }
 
-    // region unregister (issue I8)
-
     /**
-     * Remove a tarefa do ajudante. Ainda não implementado.
+     * Remove a tarefa do ajudante. Tarefa inexistente não é erro: como a mensagem do {@code schtasks} é
+     * localizada, depois de uma falha no {@code /Delete} a tarefa é consultada com {@code /Query}; se a consulta
+     * também falhar, a tarefa não existe e nada é feito.
+     * Tarefas antigas por horário ({@code Tidyfy\{id}\{n}}) não são tratadas: a tarefa agora é única por ajudante.
      *
      * @param id identificador do ajudante
+     * @throws UncheckedIOException se o {@code schtasks} falhar e a tarefa ainda existir
      */
     @Override
     public void unregister(HelperId id) {
-        throw new UnsupportedOperationException(UNREGISTER_NOT_IMPLEMENTED);
+        Objects.requireNonNull(id);
+        CommandResult result = commandRunner.run(deleteCommand(id));
+        if (result.succeeded()) {
+            return;
+        }
+        if (commandRunner.run(queryCommand(id)).succeeded()) {
+            throw new UncheckedIOException(new IOException(String.format(
+                    COMMAND_FAILURE_MESSAGE, id.value(), result.exitCode(), result.output())));
+        }
     }
 
-    // endregion
+    /**
+     * Monta o comando que apaga a tarefa do ajudante.
+     *
+     * @param id identificador do ajudante
+     * @return programa e argumentos
+     */
+    List<String> deleteCommand(HelperId id) {
+        return List.of(SCHTASKS, DELETE_OPTION, TASK_NAME_OPTION, String.format(TASK_NAME_TEMPLATE, id.value()),
+                FORCE_OPTION);
+    }
+
+    /**
+     * Monta o comando que consulta a tarefa do ajudante (falha se ela não existe).
+     *
+     * @param id identificador do ajudante
+     * @return programa e argumentos
+     */
+    List<String> queryCommand(HelperId id) {
+        return List.of(SCHTASKS, QUERY_OPTION, TASK_NAME_OPTION, String.format(TASK_NAME_TEMPLATE, id.value()));
+    }
 }
