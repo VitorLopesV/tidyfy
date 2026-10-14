@@ -82,6 +82,8 @@ package "com.tidyfy.presentation" {
     + showError(error : Throwable) : void
     + showHelpers(items : List<HelperItem>) : void
     + setSaveServices(saveHelper : SaveHelperUseCase, clock : Clock) : void
+    + setRemoveService(removeHelper : RemoveHelperUseCase) : void
+    ~ afterRemoveConfirmation(confirmation : RemoveConfirmationController, chosen : List<HelperItem>) : void
     ~ createForm(kind : HelperKind, editing : HelperItem) : HelperFormController
     ~ afterForm(form : HelperFormController) : void
   }
@@ -300,7 +302,7 @@ UpcomingRunsCalendar ..> SchedulePreview
 HelperItem --> HelperKind
 
 HelperListController --> ListHelpersUseCase
-HelperListController --> RemoveHelperUseCase
+HelperListController --> RemoveHelperUseCase : confirmar remoção
 HelperListController --> SaveHelperUseCase
 FolderOrganizerFormController --> SaveHelperUseCase
 CleanerFormController --> SaveHelperUseCase
@@ -338,9 +340,9 @@ note bottom of HelperListController
   Mostra o uso por tipo (ex.: 12/20) e bloqueia
   a criação no limite; quem garante a regra
   é o domínio.
-  Os casos de uso ainda não existem: a lista
-  começa vazia e Salvar/Remover só fecham
-  os diálogos.
+  A lista vem do ListHelpersUseCase; Salvar e
+  Remover chamam os casos de uso e a lista
+  é recarregada.
 end note
 
 note bottom of HelperFormController

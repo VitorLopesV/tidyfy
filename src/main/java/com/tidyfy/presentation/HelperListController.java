@@ -1,7 +1,9 @@
 package com.tidyfy.presentation;
 
 import com.tidyfy.application.usecase.ListHelpersUseCase;
+import com.tidyfy.application.usecase.RemoveHelperUseCase;
 import com.tidyfy.application.usecase.SaveHelperUseCase;
+import com.tidyfy.domain.HelperId;
 import com.tidyfy.presentation.component.Animations;
 import com.tidyfy.presentation.component.CardGrid;
 import com.tidyfy.presentation.component.Fxml;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -167,6 +170,9 @@ public class HelperListController {
     /** Caso de uso que grava os ajudantes; {@code null} até {@link #setSaveServices}. */
     private SaveHelperUseCase saveHelper;
 
+    /** Caso de uso que remove os ajudantes; {@code null} até {@link #setRemoveService}. */
+    private RemoveHelperUseCase removeHelper;
+
     /** Relógio entregue aos formulários; {@code null} até {@link #setSaveServices}. */
     private Clock clock;
 
@@ -189,6 +195,9 @@ public class HelperListController {
 
     /** Nome do parâmetro do relógio, usado na mensagem de valor nulo. */
     private static final String CLOCK_NAME = "clock";
+
+    /** Nome do parâmetro do caso de uso de remover, usado na mensagem de valor nulo. */
+    private static final String REMOVE_HELPER_NAME = "removeHelper";
 
     /** Título do diálogo de histórico. */
     private static final String HISTORY_TITLE = "Histórico";
@@ -609,7 +618,44 @@ public class HelperListController {
         }
         RemoveConfirmationController confirmation = new RemoveConfirmationController(chosen);
         showDialog(confirmation.createView(), REMOVE_HELPERS_TITLE);
-        // A remoção de verdade chega com o RemoveHelperUseCase.
+        afterRemoveConfirmation(confirmation, chosen);
+    }
+
+    /**
+     * Liga a confirmação de remoção ao caso de uso de remover. Sem isso, confirmar só fecha o diálogo e não
+     * remove nada (útil só em testes de tela).
+     *
+     * @param removeHelper caso de uso que remove ajudantes
+     * @throws NullPointerException se {@code removeHelper} for nulo
+     */
+    public void setRemoveService(RemoveHelperUseCase removeHelper) {
+        this.removeHelper = Objects.requireNonNull(removeHelper, REMOVE_HELPER_NAME);
+    }
+
+    /**
+     * Chamado depois que a confirmação fecha: se o usuário confirmou, remove os ajudantes e recarrega a
+     * lista. Cancelar não remove nada. Se a remoção falhar (alguns podem já ter sido removidos), a lista é
+     * recarregada mesmo assim e o erro é mostrado no diálogo de erro.
+     *
+     * @param confirmation confirmação que acabou de fechar
+     * @param chosen       ajudantes que a confirmação mostrou
+     */
+    void afterRemoveConfirmation(RemoveConfirmationController confirmation, List<HelperItem> chosen) {
+        if (!confirmation.isConfirmed() || removeHelper == null) {
+            return;
+        }
+        List<HelperId> ids = chosen.stream().map(item -> new HelperId(UUID.fromString(item.id()))).toList();
+        RuntimeException failure = null;
+        try {
+            removeHelper.execute(ids);
+        } catch (RuntimeException error) {
+            failure = error;
+        }
+        selection.clear();
+        reload();
+        if (failure != null) {
+            showError(failure);
+        }
     }
 
     /**
