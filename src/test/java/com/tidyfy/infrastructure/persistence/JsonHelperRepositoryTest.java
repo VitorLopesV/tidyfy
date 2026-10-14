@@ -75,7 +75,7 @@ class JsonHelperRepositoryTest {
      */
     private List<String> filesInFolder() throws IOException {
         try (Stream<Path> files = Files.list(tempDir.resolve("tidyfy"))) {
-            return files.map(path -> path.getFileName().toString()).toList();
+            return files.map(path -> path.getFileName().toString()).filter(name -> !name.endsWith(".lock")).toList();
         }
     }
 

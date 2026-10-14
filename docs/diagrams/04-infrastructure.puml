@@ -160,12 +160,15 @@ note bottom of JsonHelperRepository
   Arquivo helpers.txt (conteúdo em JSON) na
   pasta AppData do usuário (Tidyfy/helpers.txt).
   Jackson (+ jsr310). Gravação atômica.
+  Escritas sob trava (FileLocks): ReentrantLock + FileLock
+  em helpers.txt.lock.
 end note
 
 note bottom of JsonExecutionHistoryRepository
   Arquivo history.txt (conteúdo em JSON) na pasta
   AppData do usuário (Tidyfy/history.txt).
   Registros guardados por 30 dias.
+  Escritas sob trava (FileLocks): history.txt.lock.
 end note
 
 @enduml

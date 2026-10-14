@@ -72,7 +72,7 @@ class JsonHelperRepositoryCorruptionTest {
      */
     private List<String> names() throws IOException {
         try (Stream<Path> files = Files.list(file.getParent())) {
-            return files.map(path -> path.getFileName().toString()).sorted().toList();
+            return files.map(path -> path.getFileName().toString()).filter(name -> !name.endsWith(".lock")).sorted().toList();
         }
     }
 

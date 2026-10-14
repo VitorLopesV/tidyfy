@@ -96,6 +96,7 @@ Os diagramas PlantUML em [docs/diagrams](../docs/diagrams) são a referência do
 ### Decisões técnicas
 
 - **Persistência:** configurações em `helpers.txt` e histórico em `history.txt`, ambos em `%APPDATA%\Tidyfy`, com extensão `.txt` e conteúdo em JSON. A gravação é atômica (arquivo temporário e depois mover).
+- **Acesso simultâneo:** as operações que alteram `helpers.txt`/`history.txt` (ler-alterar-gravar) rodam sob uma trava exclusiva: `ReentrantLock` por arquivo (threads) mais `FileLock` em `<arquivo>.lock` (processos), com espera máxima de 10 s e `UncheckedIOException` ao esgotar (`FileLocks`). O `.lock` fica na pasta; leituras não travam.
 - **Agendador:** uma única tarefa por ajudante, definida em **XML**, com um gatilho por horário. Roda só com o usuário logado (precisa das pastas e da lixeira dele), permite rodar na bateria e executa assim que possível quando perdeu o horário.
 - **Falha ao salvar:** o Tidyfy tenta registrar no agendador primeiro; se o agendador falhar, a configuração **não** é salva e o erro aparece na tela.
 - **Falha ao executar:** vai para o histórico (`FAILED`) e para o log.

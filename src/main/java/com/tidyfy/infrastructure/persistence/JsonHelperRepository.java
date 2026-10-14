@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +27,8 @@ import java.util.Optional;
  * Se o conteúdo for inválido ou de versão desconhecida, o arquivo original nunca é alterado: uma cópia
  * de segurança ({@code helpers.txt.bak-yyyyMMdd-HHmmss}) é guardada uma única vez por conteúdo e a
  * {@link CorruptedStorageException} sobe, inclusive nas operações que gravam.
- * O controle de acesso simultâneo entre processos (locks) não é feito aqui; fica para a issue C4.
+ * As operações que alteram (ler, alterar e gravar) rodam sob uma trava exclusiva entre threads e processos
+ * ({@link FileLocks}); as leituras não travam, pois a gravação atômica garante um arquivo sempre completo.
  */
 public final class JsonHelperRepository implements HelperRepository {
 
@@ -38,6 +40,9 @@ public final class JsonHelperRepository implements HelperRepository {
 
     /** Relógio usado no carimbo da cópia de segurança. */
     private final Clock clock;
+
+    /** Trava exclusiva das operações que alteram o arquivo. */
+    private final FileLocks locks;
 
     // Constantes
 
@@ -65,9 +70,22 @@ public final class JsonHelperRepository implements HelperRepository {
      * @param clock    relógio do carimbo da cópia de segurança
      */
     public JsonHelperRepository(StorageLocation location, HelperJsonMapper mapper, Clock clock) {
+        this(location, mapper, clock, FileLocks.DEFAULT_TIMEOUT);
+    }
+
+    /**
+     * Cria o repositório com relógio e espera máxima pela trava específicos (útil nos testes).
+     *
+     * @param location    local de armazenamento
+     * @param mapper      conversor de ajudantes para JSON e de volta
+     * @param clock       relógio do carimbo da cópia de segurança
+     * @param lockTimeout espera máxima pela trava exclusiva
+     */
+    JsonHelperRepository(StorageLocation location, HelperJsonMapper mapper, Clock clock, Duration lockTimeout) {
         this.location = location;
         this.mapper = mapper;
         this.clock = clock;
+        this.locks = new FileLocks(lockTimeout);
     }
 
     /**
@@ -77,14 +95,16 @@ public final class JsonHelperRepository implements HelperRepository {
      */
     @Override
     public void save(Helper helper) {
-        List<Helper> helpers = load();
-        int index = indexOf(helpers, helper.id());
-        if (index >= 0) {
-            helpers.set(index, helper);
-        } else {
-            helpers.add(helper);
-        }
-        store(helpers);
+        locks.withLock(lockTarget(), () -> {
+            List<Helper> helpers = load();
+            int index = indexOf(helpers, helper.id());
+            if (index >= 0) {
+                helpers.set(index, helper);
+            } else {
+                helpers.add(helper);
+            }
+            store(helpers);
+        });
     }
 
     /**
@@ -120,16 +140,32 @@ public final class JsonHelperRepository implements HelperRepository {
     }
 
     /**
-     * Remove o ajudante. Id inexistente não altera nada, nem o arquivo.
+     * Remove o ajudante. Id inexistente não altera nada, nem o arquivo;
+     * sem arquivo, nem a pasta nem a trava são criadas.
      *
      * @param id identificador do ajudante
      */
     @Override
     public void delete(HelperId id) {
-        List<Helper> helpers = load();
-        if (helpers.removeIf(helper -> helper.id().equals(id))) {
-            store(helpers);
+        if (!Files.isRegularFile(location.helpersFile())) {
+            return;
         }
+        locks.withLock(lockTarget(), () -> {
+            List<Helper> helpers = load();
+            if (helpers.removeIf(helper -> helper.id().equals(id))) {
+                store(helpers);
+            }
+        });
+    }
+
+    /**
+     * Arquivo protegido pela trava; garante que a pasta exista, pois a trava fica ao lado dele.
+     *
+     * @return o caminho de {@code helpers.txt}
+     */
+    private Path lockTarget() {
+        location.directory();
+        return location.helpersFile();
     }
 
     /**

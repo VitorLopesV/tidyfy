@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,7 +25,8 @@ import java.util.List;
  * Se o conteúdo for inválido ou de versão desconhecida, o arquivo original nunca é alterado: uma cópia
  * de segurança ({@code history.txt.bak-yyyyMMdd-HHmmss}) é guardada uma única vez por conteúdo e a
  * {@link CorruptedStorageException} sobe, inclusive nas operações que gravam.
- * O controle de acesso simultâneo entre processos (locks) não é feito aqui; fica para a issue C4.
+ * As operações que alteram (ler, alterar e gravar) rodam sob uma trava exclusiva entre threads e processos
+ * ({@link FileLocks}); as leituras não travam, pois a gravação atômica garante um arquivo sempre completo.
  */
 public final class JsonExecutionHistoryRepository implements ExecutionHistoryRepository {
 
@@ -36,6 +38,9 @@ public final class JsonExecutionHistoryRepository implements ExecutionHistoryRep
 
     /** Relógio usado no carimbo da cópia de segurança. */
     private final Clock clock;
+
+    /** Trava exclusiva das operações que alteram o arquivo. */
+    private final FileLocks locks;
 
     // Constantes
 
@@ -63,9 +68,23 @@ public final class JsonExecutionHistoryRepository implements ExecutionHistoryRep
      * @param clock    relógio do carimbo da cópia de segurança
      */
     public JsonExecutionHistoryRepository(StorageLocation location, ExecutionHistoryJsonMapper mapper, Clock clock) {
+        this(location, mapper, clock, FileLocks.DEFAULT_TIMEOUT);
+    }
+
+    /**
+     * Cria o repositório com relógio e espera máxima pela trava específicos (útil nos testes).
+     *
+     * @param location    local de armazenamento
+     * @param mapper      conversor de registros para JSON e de volta
+     * @param clock       relógio do carimbo da cópia de segurança
+     * @param lockTimeout espera máxima pela trava exclusiva
+     */
+    JsonExecutionHistoryRepository(StorageLocation location, ExecutionHistoryJsonMapper mapper, Clock clock,
+            Duration lockTimeout) {
         this.location = location;
         this.mapper = mapper;
         this.clock = clock;
+        this.locks = new FileLocks(lockTimeout);
     }
 
     /**
@@ -75,9 +94,11 @@ public final class JsonExecutionHistoryRepository implements ExecutionHistoryRep
      */
     @Override
     public void add(ExecutionRecord record) {
-        List<ExecutionRecord> records = load();
-        records.add(record);
-        store(records);
+        locks.withLock(lockTarget(), () -> {
+            List<ExecutionRecord> records = load();
+            records.add(record);
+            store(records);
+        });
     }
 
     /**
@@ -95,16 +116,32 @@ public final class JsonExecutionHistoryRepository implements ExecutionHistoryRep
     }
 
     /**
-     * Apaga os registros vencidos. Se nenhum venceu, o arquivo não é regravado.
+     * Apaga os registros vencidos. Se nenhum venceu, o arquivo não é regravado;
+     * sem arquivo, nada é criado.
      *
      * @param now instante de referência
      */
     @Override
     public void deleteExpired(Instant now) {
-        List<ExecutionRecord> records = load();
-        if (records.removeIf(record -> record.isExpired(now))) {
-            store(records);
+        if (!Files.isRegularFile(location.historyFile())) {
+            return;
         }
+        locks.withLock(lockTarget(), () -> {
+            List<ExecutionRecord> records = load();
+            if (records.removeIf(record -> record.isExpired(now))) {
+                store(records);
+            }
+        });
+    }
+
+    /**
+     * Arquivo protegido pela trava; garante que a pasta exista, pois a trava fica ao lado dele.
+     *
+     * @return o caminho de {@code history.txt}
+     */
+    private Path lockTarget() {
+        location.directory();
+        return location.historyFile();
     }
 
     /**
