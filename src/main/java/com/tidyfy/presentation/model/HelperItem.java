@@ -17,6 +17,10 @@ import java.util.Objects;
  * @param enabled         {@code true} quando o ajudante está ligado
  * @param nextRun         texto da próxima execução (ex.: "Hoje, 18:00"); {@code null} quando desconhecida
  * @param nextRunProgress quanto do intervalo até a próxima execução já passou, de 0 a 1
+ * @param ageLimitDays    idade máxima, em dias, dos arquivos mantidos na limpeza; {@code null} quando limpa tudo
+ *                        ou quando o ajudante não é uma limpeza
+ * @param ageReference    data do arquivo usada para medir a idade; {@code null} quando não se aplica
+ *                        (organização e lixeira)
  */
 public record HelperItem(
         String id,
@@ -27,7 +31,9 @@ public record HelperItem(
         List<LocalTime> times,
         boolean enabled,
         String nextRun,
-        double nextRunProgress) {
+        double nextRunProgress,
+        Integer ageLimitDays,
+        HelperAgeReference ageReference) {
 
     // Constantes
 
@@ -39,6 +45,24 @@ public record HelperItem(
 
     /** Nome do campo {@code kind} nas mensagens de validação. */
     private static final String FIELD_KIND = "kind";
+
+    /**
+     * Cria um ajudante sem limite de idade nem data de referência.
+     *
+     * @param id              identificador do ajudante
+     * @param name            nome definido pelo usuário
+     * @param kind            tipo do ajudante
+     * @param folder          pasta-alvo; {@code null} quando o alvo é a lixeira
+     * @param intervalDays    intervalo, em dias, entre as execuções
+     * @param times           horários do dia
+     * @param enabled         se o ajudante está ligado
+     * @param nextRun         texto da próxima execução; {@code null} quando desconhecida
+     * @param nextRunProgress progresso até a próxima execução, de 0 a 1
+     */
+    public HelperItem(String id, String name, HelperKind kind, Path folder, int intervalDays,
+                      List<LocalTime> times, boolean enabled, String nextRun, double nextRunProgress) {
+        this(id, name, kind, folder, intervalDays, times, enabled, nextRun, nextRunProgress, null, null);
+    }
 
     /**
      * Valida os campos obrigatórios e ordena os horários.
@@ -66,6 +90,7 @@ public record HelperItem(
      * @return o ajudante atualizado
      */
     public HelperItem withEnabled(boolean value) {
-        return new HelperItem(id, name, kind, folder, intervalDays, times, value, nextRun, nextRunProgress);
+        return new HelperItem(id, name, kind, folder, intervalDays, times, value, nextRun, nextRunProgress,
+                ageLimitDays, ageReference);
     }
 }
