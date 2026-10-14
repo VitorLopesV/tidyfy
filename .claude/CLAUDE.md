@@ -88,7 +88,7 @@ Os diagramas PlantUML em [docs/diagrams](../docs/diagrams) são a referência do
 | Porta (application) | Responsabilidade | Implementação (infrastructure) |
 |---|---|---|
 | Agendador de tarefas | Criar, atualizar, pausar e remover tarefas agendadas | Wrapper do `schtasks.exe` |
-| Sistema de arquivos | Listar o que há na pasta, comparar conteúdo, mover e enviar à lixeira | `java.nio.file` (lixeira: `Desktop.moveToTrash`) |
+| Sistema de arquivos | Listar o que há na pasta, comparar conteúdo, mover e enviar à lixeira | `java.nio.file` (lixeira: PowerShell + `Microsoft.VisualBasic`, veja "Enviar à lixeira sem interface") |
 | Lixeira | Esvaziar a lixeira do Windows, tudo ou só o que está lá há mais de X dias | A definir (ex.: PowerShell `Clear-RecycleBin` ou chamada nativa) |
 | Repositório de ajudantes | Salvar/carregar a configuração dos ajudantes e contar por tipo | Arquivo `%APPDATA%\Tidyfy\helpers.txt` (JSON) |
 | Histórico de execuções | Registrar e consultar quando cada ajudante rodou e o que fez | Arquivo `%APPDATA%\Tidyfy\history.txt` (JSON) |
@@ -99,6 +99,22 @@ Os diagramas PlantUML em [docs/diagrams](../docs/diagrams) são a referência do
 - **Agendador:** uma única tarefa por ajudante, definida em **XML**, com um gatilho por horário. Roda só com o usuário logado (precisa das pastas e da lixeira dele), permite rodar na bateria e executa assim que possível quando perdeu o horário.
 - **Falha ao salvar:** o Tidyfy tenta registrar no agendador primeiro; se o agendador falhar, a configuração **não** é salva e o erro aparece na tela.
 - **Falha ao executar:** vai para o histórico (`FAILED`) e para o log.
+
+#### Enviar à lixeira sem interface
+
+A execução agendada não tem janela, então `FileSystem.moveToTrash` não pode depender de `java.awt.Desktop`. Testado no Windows 11 (Java 21), com arquivos e pastas de teste em um diretório temporário:
+
+| Alternativa | Sem interface? | Arquivo | Pasta | Acentos, espaços e `'` | Arquivo inexistente | Tempo |
+|---|---|---|---|---|---|---|
+| `Desktop.moveToTrash` com `-Djava.awt.headless=true` | **Não**: `isDesktopSupported()` dá `false` e `isSupported`/`moveToTrash` lançam `HeadlessException` | falha | falha | n/a | n/a | n/a |
+| `Desktop.moveToTrash` sem a opção (JVM com AWT) | Só com sessão gráfica; depende do modo do AWT | ok | ok | ok | `false`/exceção | ~150 ms |
+| **PowerShell + `Microsoft.VisualBasic` `SendToRecycleBin`** (`-NoProfile -NonInteractive -WindowStyle Hidden`, chamado de um processo Java headless) | **Sim** | ok (`DeleteFile`) | ok (`DeleteDirectory`, com o conteúdo) | ok (`'` dobrado no script) | código de saída 1 e `FileNotFoundException`/`DirectoryNotFoundException` na saída | ~350 a 800 ms |
+| `Shell.Application` COM `InvokeVerb('delete')` | Sim, mas é o caminho do Explorer | ok | ok | ok | sem erro útil (`ParseName` devolve nulo) | ~2,3 s |
+
+- **Escolhida:** PowerShell + `Microsoft.VisualBasic.FileIO.FileSystem`, montada por `TrashCommands` (`infrastructure.filesystem`): `powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('<caminho>', 'OnlyErrorDialogs', 'SendToRecycleBin')"` (`DeleteDirectory` para pastas). O item é recuperável na Lixeira.
+- **Erros:** o código de saída é `0` em sucesso e `1` em falha, com a exceção do .NET na saída; a implementação deve virar `UncheckedIOException` e deixar o item como está.
+- **Limitação:** caminhos com mais de 260 caracteres falham (`Could not find file`, código 1), porque o `Microsoft.VisualBasic` do Windows PowerShell 5.1 não aceita caminho longo. Vira falha da execução (`FAILED` no histórico).
+- A API nativa do Java 21 (FFM) segue em preview e não foi usada.
 
 #### Formato do `helpers.txt`
 

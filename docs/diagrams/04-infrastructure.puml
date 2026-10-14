@@ -129,8 +129,10 @@ note bottom of PowerShellRecycleBin
 end note
 
 note bottom of NioFileSystem
-  moveToTrash: envia à lixeira
-  (Desktop.moveToTrash), então dá para recuperar.
+  moveToTrash: envia à lixeira via PowerShell
+  (Microsoft.VisualBasic SendToRecycleBin, montado
+  por TrashCommands), pois Desktop.moveToTrash
+  falha sem interface. Dá para recuperar.
   sameContent: compara o conteúdo dos arquivos
   (ex.: Files.mismatch).
   listEntries não entra nas subpastas.
