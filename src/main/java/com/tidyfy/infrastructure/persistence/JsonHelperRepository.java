@@ -11,9 +11,13 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Repositório de ajudantes que guarda a configuração em {@code helpers.txt} (JSON).
@@ -24,7 +28,9 @@ import java.util.Optional;
  * arquivo temporário da mesma pasta e depois movido sobre o original, de modo que o arquivo
  * nunca fica pela metade.
  * <p>
- * Se o conteúdo for inválido, a {@link HelperJsonException} do mapeador sobe sem alterar o arquivo.
+ * Se o conteúdo for inválido ou de versão desconhecida, o arquivo original nunca é alterado: uma cópia
+ * de segurança ({@code helpers.txt.bak-yyyyMMdd-HHmmss}) é guardada uma única vez por conteúdo e a
+ * {@link CorruptedStorageException} sobe, inclusive nas operações que gravam.
  * O controle de acesso simultâneo entre processos (locks) não é feito aqui; fica para a issue C4.
  */
 public final class JsonHelperRepository implements HelperRepository {
@@ -35,7 +41,19 @@ public final class JsonHelperRepository implements HelperRepository {
     /** Conversor entre a lista de ajudantes e o JSON. */
     private final HelperJsonMapper mapper;
 
+    /** Relógio usado no carimbo da cópia de segurança. */
+    private final Clock clock;
+
     // Constantes
+
+    /** Infixo do nome da cópia de segurança, depois do nome do arquivo. */
+    private static final String BACKUP_INFIX = ".bak-";
+
+    /** Formato do carimbo da cópia de segurança. */
+    private static final DateTimeFormatter BACKUP_STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
+
+    /** Mensagem de erro ao guardar a cópia de segurança. */
+    private static final String BACKUP_ERROR = "Não foi possível guardar a cópia de segurança de %s";
 
     /** Prefixo do arquivo temporário de gravação. */
     private static final String TEMP_PREFIX = "helpers-";
@@ -56,8 +74,20 @@ public final class JsonHelperRepository implements HelperRepository {
      * @param mapper   conversor de ajudantes para JSON e de volta
      */
     public JsonHelperRepository(StorageLocation location, HelperJsonMapper mapper) {
+        this(location, mapper, Clock.systemDefaultZone());
+    }
+
+    /**
+     * Cria o repositório com um relógio específico (útil nos testes).
+     *
+     * @param location local de armazenamento (a pasta é criada na primeira gravação)
+     * @param mapper   conversor de ajudantes para JSON e de volta
+     * @param clock    relógio do carimbo da cópia de segurança
+     */
+    public JsonHelperRepository(StorageLocation location, HelperJsonMapper mapper, Clock clock) {
         this.location = location;
         this.mapper = mapper;
+        this.clock = clock;
     }
 
     /**
@@ -143,7 +173,7 @@ public final class JsonHelperRepository implements HelperRepository {
      *
      * @return lista mutável de ajudantes
      * @throws UncheckedIOException se a leitura falhar
-     * @throws HelperJsonException  se o conteúdo for inválido
+     * @throws CorruptedStorageException se o conteúdo for inválido ou de versão desconhecida
      */
     private List<Helper> load() {
         Path file = location.helpersFile();
@@ -151,10 +181,57 @@ public final class JsonHelperRepository implements HelperRepository {
             return new ArrayList<>();
         }
         try {
-            return new ArrayList<>(mapper.fromJson(Files.readString(file, StandardCharsets.UTF_8)));
+            String content = Files.readString(file, StandardCharsets.UTF_8);
+            try {
+                return new ArrayList<>(mapper.fromJson(content));
+            } catch (HelperJsonException e) {
+                CorruptedStorageException corrupted = new CorruptedStorageException(file, e);
+                backUp(file, corrupted);
+                throw corrupted;
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(String.format(READ_ERROR, file), e);
         }
+    }
+
+    /**
+     * Guarda uma cópia do arquivo problemático, a menos que já exista uma com conteúdo idêntico.
+     * Falha ao copiar não esconde o erro principal: fica anexada a ele como suprimida.
+     *
+     * @param file      arquivo problemático
+     * @param corrupted erro que será lançado
+     */
+    private void backUp(Path file, CorruptedStorageException corrupted) {
+        try {
+            if (hasIdenticalBackup(file)) {
+                return;
+            }
+            String stamp = LocalDateTime.now(clock).format(BACKUP_STAMP);
+            Path backup = file.resolveSibling(file.getFileName() + BACKUP_INFIX + stamp);
+            Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            corrupted.addSuppressed(new UncheckedIOException(String.format(BACKUP_ERROR, file), e));
+        }
+    }
+
+    /**
+     * Indica se já existe, na mesma pasta, uma cópia de segurança com o mesmo conteúdo.
+     *
+     * @param file arquivo problemático
+     * @return {@code true} se houver cópia idêntica
+     * @throws IOException se a pasta ou os arquivos não puderem ser lidos
+     */
+    private boolean hasIdenticalBackup(Path file) throws IOException {
+        String prefix = file.getFileName() + BACKUP_INFIX;
+        try (Stream<Path> siblings = Files.list(file.getParent())) {
+            for (Path candidate : siblings.toList()) {
+                if (candidate.getFileName().toString().startsWith(prefix)
+                        && Files.isRegularFile(candidate) && Files.mismatch(file, candidate) == -1) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

@@ -217,19 +217,18 @@ class JsonHelperRepositoryTest {
     }
 
     /**
-     * JSON inválido propaga a exceção do mapeador e não altera o arquivo.
+     * JSON inválido gera CorruptedStorageException e não altera o arquivo.
      */
     @Test
-    void invalidJsonPropagatesWithoutChangingFile() throws IOException {
+    void invalidJsonFailsWithoutChangingFile() throws IOException {
         Files.createDirectories(tempDir.resolve("tidyfy"));
         Path file = location().helpersFile();
         Files.writeString(file, "{ isso nao e json");
 
         JsonHelperRepository repository = repository();
-        assertThrows(HelperJsonException.class, repository::findAll);
-        assertThrows(HelperJsonException.class, () -> repository.save(organizer("A")));
-        assertThrows(HelperJsonException.class, () -> repository.delete(HelperId.newId()));
+        assertThrows(CorruptedStorageException.class, repository::findAll);
+        assertThrows(CorruptedStorageException.class, () -> repository.save(organizer("A")));
+        assertThrows(CorruptedStorageException.class, () -> repository.delete(HelperId.newId()));
         assertEquals("{ isso nao e json", Files.readString(file));
-        assertEquals(List.of("helpers.txt"), filesInFolder());
     }
 }
