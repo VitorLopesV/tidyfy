@@ -12,6 +12,7 @@ import com.tidyfy.domain.HelperAction;
 import com.tidyfy.domain.RecycleBinTarget;
 import java.io.UncheckedIOException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,8 @@ import java.util.Optional;
  * Executa a limpeza de um ajudante. Para uma pasta, manda para a lixeira os arquivos soltos (subpastas
  * não são tocadas), todos ou só os mais antigos que o {@link AgeLimit}, medindo a idade pela data
  * escolhida no alvo ({@link AgeReference}). Falha de E/S em um arquivo é registrada como
- * {@link ActionType#FAILED} e os demais continuam. Falha ao listar a pasta é propagada.
+ * {@link ActionType#FAILED} e os demais continuam. Falha ao listar a pasta é propagada. Para a lixeira,
+ * esvazia tudo ou só o que está lá há mais de X dias, de forma permanente.
  */
 public final class CleanupUseCase {
 
@@ -32,7 +34,7 @@ public final class CleanupUseCase {
     /** Porta da lixeira do sistema. */
     private final RecycleBin recycleBin;
 
-    /** Relógio usado para medir a idade dos arquivos. */
+    /** Relógio usado para medir a idade dos arquivos e calcular a data de corte da lixeira. */
     private final Clock clock;
 
     // Constantes
@@ -49,8 +51,8 @@ public final class CleanupUseCase {
     /** Nome do parâmetro do ajudante, usado na mensagem de valor nulo. */
     private static final String HELPER_NAME = "helper";
 
-    /** Mensagem do ramo da lixeira, ainda não implementado. */
-    private static final String RECYCLE_BIN_NOT_IMPLEMENTED = "Limpeza da lixeira ainda não implementada.";
+    /** Modelo da mensagem com a quantidade de itens removidos da lixeira. */
+    private static final String ITEMS_REMOVED = "%d itens removidos";
 
     /**
      * Cria o caso de uso.
@@ -136,13 +138,34 @@ public final class CleanupUseCase {
     // Região: limpeza da lixeira
 
     /**
-     * Esvazia a lixeira do sistema. Ainda não implementado.
+     * Esvazia a lixeira de forma permanente. Sem limite de idade remove tudo; com limite remove só os itens
+     * enviados antes de {@code agora - dias}. O corte é exclusivo (a porta remove itens estritamente antes dele),
+     * o que combina com {@link AgeLimit#isExceededBy}, para o qual exatamente {@code days} dias ainda não excede.
+     * Sempre registra uma única ação {@link ActionType#RECYCLE_BIN_EMPTIED} com a quantidade removida, mesmo que
+     * seja zero. Uma falha de E/S vira uma ação {@link ActionType#FAILED} com a mensagem, sem propagar.
      *
-     * @param helper ajudante de limpeza
-     * @return as ações realizadas
-     * @throws UnsupportedOperationException enquanto não for implementado
+     * @param helper ajudante de limpeza com alvo na lixeira
+     * @return uma ação com a quantidade removida, ou uma ação de falha
      */
     private List<HelperAction> cleanRecycleBin(CleanerHelper helper) {
-        throw new UnsupportedOperationException(RECYCLE_BIN_NOT_IMPLEMENTED);
+        try {
+            int removed = helper.findAgeLimit()
+                .map(limit -> recycleBin.emptyOlderThan(cutoffOf(limit)))
+                .orElseGet(recycleBin::emptyAll);
+            return List.of(new HelperAction(ActionType.RECYCLE_BIN_EMPTIED, null, null,
+                String.format(ITEMS_REMOVED, removed)));
+        } catch (UncheckedIOException e) {
+            return List.of(new HelperAction(ActionType.FAILED, null, null, e.getMessage()));
+        }
+    }
+
+    /**
+     * Calcula o instante de corte: agora menos os dias do limite.
+     *
+     * @param limit limite de idade
+     * @return instante de corte
+     */
+    private Instant cutoffOf(AgeLimit limit) {
+        return clock.instant().minus(Duration.ofDays(limit.days()));
     }
 }
