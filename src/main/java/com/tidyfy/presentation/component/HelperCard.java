@@ -6,6 +6,7 @@ import com.tidyfy.presentation.model.SchedulePreview;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -15,6 +16,7 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.css.PseudoClass;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
@@ -45,6 +47,9 @@ public final class HelperCard extends VBox {
 
     /** Nome curto do tipo. */
     @FXML private Label kindLabel;
+
+    /** Botão que abre o histórico do ajudante. */
+    @FXML private Button historyButton;
 
     /** Interruptor que liga e desliga o ajudante. */
     @FXML private ToggleSwitch enabledSwitch;
@@ -85,6 +90,9 @@ public final class HelperCard extends VBox {
     /** Progresso até a próxima execução, de 0 a 1. */
     private final DoubleProperty progress = new SimpleDoubleProperty();
 
+    /** Ação executada ao pedir o histórico; {@code null} enquanto ninguém a definir. */
+    private Consumer<HelperItem> onHistory;
+
     // Constantes
 
     /** Horários exibidos no cartão; os demais viram "+N" (a lista completa fica na dica). */
@@ -116,6 +124,12 @@ public final class HelperCard extends VBox {
 
     /** Modelo do texto de acessibilidade do interruptor; recebe o nome do ajudante. */
     private static final String SWITCH_ACCESSIBLE_TEXT = "Ligar ou desligar %s";
+
+    /** Modelo do texto de acessibilidade do botão de histórico; recebe o nome do ajudante. */
+    private static final String HISTORY_ACCESSIBLE_TEXT = "Ver histórico de %s";
+
+    /** Dica do botão de histórico. */
+    private static final String HISTORY_TOOLTIP = "Histórico";
 
     /** Dica do interruptor. */
     private static final String SWITCH_TOOLTIP = "Ligar ou desligar";
@@ -164,6 +178,13 @@ public final class HelperCard extends VBox {
         selectBox.setAccessibleText(String.format(SELECT_ACCESSIBLE_TEXT, item.name()));
         enabledSwitch.setAccessibleText(String.format(SWITCH_ACCESSIBLE_TEXT, item.name()));
         enabledSwitch.setTooltip(new Tooltip(SWITCH_TOOLTIP));
+        historyButton.setAccessibleText(String.format(HISTORY_ACCESSIBLE_TEXT, item.name()));
+        historyButton.setTooltip(new Tooltip(HISTORY_TOOLTIP));
+        historyButton.setOnAction(event -> {
+            if (onHistory != null) {
+                onHistory.accept(item);
+            }
+        });
         Tooltip.install(nextRunBox, new Tooltip(NEXT_RUN_TOOLTIP));
         Tooltip.install(pausedBox, new Tooltip(PAUSED_TOOLTIP));
         enabledSwitch.setSelected(item.enabled());
@@ -251,7 +272,8 @@ public final class HelperCard extends VBox {
     private void toggleSelectionOnClick(MouseEvent event) {
         if (event.getButton() != MouseButton.PRIMARY
                 || Nodes.isInside(event.getTarget(), selectBox)
-                || Nodes.isInside(event.getTarget(), enabledSwitch)) {
+                || Nodes.isInside(event.getTarget(), enabledSwitch)
+                || Nodes.isInside(event.getTarget(), historyButton)) {
             return;
         }
         selectBox.setSelected(!selectBox.isSelected());
@@ -264,6 +286,15 @@ public final class HelperCard extends VBox {
      */
     public HelperItem item() {
         return item;
+    }
+
+    /**
+     * Define o que acontece quando o usuário aciona "Histórico". O clique no botão não altera a seleção.
+     *
+     * @param onHistory ação que recebe o ajudante do cartão; {@code null} para não fazer nada
+     */
+    public void setOnHistory(Consumer<HelperItem> onHistory) {
+        this.onHistory = onHistory;
     }
 
     /**

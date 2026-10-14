@@ -150,6 +150,11 @@ package "com.tidyfy.presentation.model" {
     + failure : boolean
   }
 
+  class HistoryLoader {
+    + HistoryLoader(useCase : ListExecutionHistoryUseCase, mapper : ExecutionItemMapper)
+    + apply(helperId : String) : List<ExecutionItem>
+  }
+
   class ExecutionItemMapper {
     + ExecutionItemMapper(zone : ZoneId)
     + mapAll(records : List<ExecutionRecord>) : List<ExecutionItem>
@@ -227,6 +232,9 @@ HelperListController ..> Dialogs
 ExecutionHistoryController ..> ExecutionItem
 ExecutionItem *-- ExecutionAction
 ExecutionItemMapper ..> ExecutionItem : converte ExecutionRecord
+HistoryLoader --> ExecutionItemMapper
+HistoryLoader --> ListExecutionHistoryUseCase
+HelperListController --> HistoryLoader : historyLoader (Function)
 HelperFormController <|-- FolderOrganizerFormController
 HelperFormController <|-- CleanerFormController
 

@@ -8,13 +8,16 @@ import com.tidyfy.presentation.component.HelperCard;
 import com.tidyfy.presentation.component.Icon;
 import com.tidyfy.presentation.component.Nodes;
 import com.tidyfy.presentation.component.UsageMeter;
+import com.tidyfy.presentation.model.ExecutionItem;
 import com.tidyfy.presentation.model.HelperItem;
 import com.tidyfy.presentation.model.HelperKind;
 import com.tidyfy.presentation.model.HelperSelection;
 import com.tidyfy.presentation.model.TypeFilter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -142,7 +145,16 @@ public class HelperListController {
     /** Filtro ativo. */
     private TypeFilter filter = TypeFilter.ALL;
 
+    /** Busca o histórico de um ajudante pelo id; por padrão devolve sempre uma lista vazia. */
+    private Function<String, List<ExecutionItem>> historyLoader = id -> List.of();
+
     // Constantes
+
+    /** Título do diálogo de histórico. */
+    private static final String HISTORY_TITLE = "Histórico";
+
+    /** Nome do parâmetro do carregador de histórico, usado na mensagem de valor nulo. */
+    private static final String HISTORY_LOADER_NAME = "historyLoader";
 
     /** Arquivo FXML da tela, no pacote desta classe. */
     private static final String FXML_FILE = "helper-list.fxml";
@@ -257,6 +269,7 @@ public class HelperListController {
                 replace(item.withEnabled(on));
                 showCounts();
             });
+            card.setOnHistory(this::onHistory);
             Animations.riseIn(card, Duration.millis(i * 50L));
             cards.add(card);
         }
@@ -343,6 +356,44 @@ public class HelperListController {
         RemoveConfirmationController confirmation = new RemoveConfirmationController(chosen);
         showDialog(confirmation.createView(), REMOVE_HELPERS_TITLE);
         // A remoção de verdade chega com o RemoveHelperUseCase.
+    }
+
+    /**
+     * Define como o histórico de um ajudante é buscado. Os casos de uso ainda não chegam a esta tela:
+     * quem montar a tela com eles liga aqui um {@link HistoryLoader}. Sem isso, o histórico aparece vazio.
+     *
+     * @param historyLoader função do identificador do ajudante para os itens do histórico
+     */
+    public void setHistoryLoader(Function<String, List<ExecutionItem>> historyLoader) {
+        this.historyLoader = Objects.requireNonNull(historyLoader, HISTORY_LOADER_NAME);
+    }
+
+    /**
+     * Abre o histórico do ajudante do cartão cuja ação foi acionada.
+     *
+     * @param item ajudante escolhido
+     */
+    private void onHistory(HelperItem item) {
+        presentHistory(historyOf(item));
+    }
+
+    /**
+     * Monta o diálogo de histórico de um ajudante com os itens devolvidos pelo carregador.
+     *
+     * @param item ajudante cujo histórico será exibido
+     * @return o controller do diálogo, com o histórico do ajudante
+     */
+    ExecutionHistoryController historyOf(HelperItem item) {
+        return new ExecutionHistoryController(item.name(), historyLoader.apply(item.id()));
+    }
+
+    /**
+     * Mostra o diálogo de histórico. Separado para que os testes não abram uma janela de verdade.
+     *
+     * @param history controller do diálogo de histórico
+     */
+    void presentHistory(ExecutionHistoryController history) {
+        showDialog(history.createView(), HISTORY_TITLE);
     }
 
     /**

@@ -3,6 +3,7 @@
 <?import com.tidyfy.presentation.component.Icon?>
 <?import com.tidyfy.presentation.component.Pulse?>
 <?import com.tidyfy.presentation.component.ToggleSwitch?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.HBox?>
@@ -22,6 +23,9 @@
             <Label fx:id="nameLabel" styleClass="card-name" maxWidth="Infinity"/>
             <Label fx:id="kindLabel" styleClass="kind-label, kind-text"/>
         </VBox>
+        <Button fx:id="historyButton" styleClass="card-action">
+            <graphic><Icon glyph="CLOCK" size="17"/></graphic>
+        </Button>
         <ToggleSwitch fx:id="enabledSwitch"/>
     </HBox>
 

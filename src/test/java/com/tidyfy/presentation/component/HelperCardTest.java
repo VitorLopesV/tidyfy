@@ -8,7 +8,9 @@ import com.tidyfy.presentation.JavaFx;
 import com.tidyfy.presentation.SampleHelpers;
 import com.tidyfy.presentation.model.HelperItem;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -107,6 +109,53 @@ class HelperCardTest {
             assertTrue(card.selectedProperty().get());
 
             card.fireEvent(click());
+            assertFalse(card.selectedProperty().get());
+        });
+    }
+
+    @Test
+    void historyButtonHasAccessibleTextAndTooltip() {
+        JavaFx.run(() -> {
+            HelperCard card = new HelperCard(SampleHelpers.organizer("h1", "Organizar Downloads"));
+            Button button = (Button) card.lookup("#historyButton");
+
+            assertEquals("Ver histórico de Organizar Downloads", button.getAccessibleText());
+            assertEquals("Histórico", button.getTooltip().getText());
+        });
+    }
+
+    @Test
+    void historyButtonReportsTheCardHelper() {
+        JavaFx.run(() -> {
+            HelperItem helper = SampleHelpers.organizer("h1", "Organizar Downloads");
+            HelperCard card = new HelperCard(helper);
+            List<HelperItem> received = new ArrayList<>();
+            card.setOnHistory(received::add);
+
+            ((Button) card.lookup("#historyButton")).fire();
+
+            assertEquals(List.of(helper), received);
+        });
+    }
+
+    @Test
+    void historyButtonWithoutCallbackDoesNothing() {
+        JavaFx.run(() -> {
+            HelperCard card = new HelperCard(SampleHelpers.organizer("h1", "Organizar Downloads"));
+
+            ((Button) card.lookup("#historyButton")).fire();
+
+            assertFalse(card.selectedProperty().get());
+        });
+    }
+
+    @Test
+    void clickingTheHistoryButtonDoesNotToggleSelection() {
+        JavaFx.run(() -> {
+            HelperCard card = new HelperCard(SampleHelpers.organizer("h1", "Organizar Downloads"));
+
+            card.lookup("#historyButton").fireEvent(click());
+
             assertFalse(card.selectedProperty().get());
         });
     }

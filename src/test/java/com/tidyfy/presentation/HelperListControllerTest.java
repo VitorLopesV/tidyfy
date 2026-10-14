@@ -8,8 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tidyfy.presentation.component.HelperCard;
+import com.tidyfy.presentation.model.ExecutionItem;
 import com.tidyfy.presentation.model.HelperItem;
 import com.tidyfy.presentation.model.HelperKind;
+import java.util.ArrayList;
 import java.util.List;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
@@ -264,6 +266,43 @@ class HelperListControllerTest {
             cards(view).get(0).enabledProperty().set(false);
 
             assertEquals("1 de 3", text(view, "#enabledCount"));
+        });
+    }
+
+    @Test
+    void historyActionOnACardLoadsTheRightHelperAndBuildsTheDialog() {
+        JavaFx.run(() -> {
+            List<String> loadedIds = new ArrayList<>();
+            List<ExecutionHistoryController> presented = new ArrayList<>();
+            HelperListController controller = new HelperListController() {
+                @Override
+                void presentHistory(ExecutionHistoryController history) {
+                    presented.add(history);
+                }
+            };
+            controller.setHistoryLoader(id -> {
+                loadedIds.add(id);
+                return List.of(new ExecutionItem("05/03/2026 12:30", "Nada a fazer", List.of()));
+            });
+            Parent view = JavaFx.mount(controller.createView(), 1280, 900);
+            controller.showHelpers(HELPERS);
+
+            ((Button) cards(view).get(1).lookup("#historyButton")).fire();
+
+            assertEquals(List.of("h2"), loadedIds);
+            assertEquals(1, presented.size());
+            Parent dialog = presented.get(0).createView();
+            assertEquals("Histórico de Limpar temporários", text(dialog, "#titleLabel"));
+            assertEquals("1 execução registrada", text(dialog, "#subtitleLabel"));
+        });
+    }
+
+    @Test
+    void historyIsEmptyByDefaultWhileNoLoaderIsSet() {
+        JavaFx.run(() -> {
+            Parent dialog = new HelperListController().historyOf(organizer("h1", "Organizar Downloads")).createView();
+
+            assertEquals("Nenhuma execução registrada", text(dialog, "#subtitleLabel"));
         });
     }
 

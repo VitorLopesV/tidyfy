@@ -300,8 +300,28 @@
     -fx-opacity: 0.35;
 }
 
+.card-action {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+    -fx-pref-width: 32;
+    -fx-pref-height: 32;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.card-action:hover {
+    -fx-background-color: -tf-surface-3;
+}
+
+.card-action:hover .icon-shape {
+    -fx-stroke: -tf-ink;
+}
+
 .btn:focus-visible,
 .icon-btn:focus-visible,
+.card-action:focus-visible,
 .bar-btn:focus-visible,
 .seg:focus-visible,
 .type-card:focus-visible,
