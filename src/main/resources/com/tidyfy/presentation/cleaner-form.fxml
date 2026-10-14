@@ -86,6 +86,37 @@
                         <FolderField fx:id="folderField" chooserTitle="Escolher a pasta a limpar"/>
                     </VBox>
 
+                    <VBox fx:id="ageSection" spacing="8">
+                        <Label text="Quanto limpar" styleClass="field-label"/>
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <HBox styleClass="segmented" alignment="CENTER_LEFT" spacing="4">
+                                <ToggleButton fx:id="allChoice" text="Tudo" styleClass="seg, age-choice"/>
+                                <ToggleButton fx:id="olderChoice" text="Só o que tem mais de" styleClass="seg, age-choice"/>
+                            </HBox>
+                            <HBox fx:id="ageStepperRow" alignment="CENTER_LEFT" spacing="10">
+                                <HBox styleClass="stepper" alignment="CENTER" spacing="2">
+                                    <Button fx:id="decreaseAge" styleClass="icon-btn" accessibleText="Diminuir dias" onAction="#onDecreaseAge">
+                                        <graphic><Icon glyph="MINUS" size="18"/></graphic>
+                                    </Button>
+                                    <Label fx:id="ageDaysLabel" styleClass="stepper-value"/>
+                                    <Button fx:id="increaseAge" styleClass="icon-btn" accessibleText="Aumentar dias" onAction="#onIncreaseAge">
+                                        <graphic><Icon glyph="PLUS" size="18"/></graphic>
+                                    </Button>
+                                </HBox>
+                                <Label fx:id="ageUnitLabel" styleClass="field-label"/>
+                            </HBox>
+                        </HBox>
+                        <Label fx:id="ageHelp" styleClass="help" wrapText="true"/>
+                    </VBox>
+
+                    <VBox fx:id="referenceSection" spacing="8">
+                        <Label text="Contar a idade a partir da" styleClass="field-label"/>
+                        <HBox styleClass="segmented" alignment="CENTER_LEFT" spacing="4" maxWidth="-Infinity">
+                            <ToggleButton fx:id="createdChoice" text="Data de criação" styleClass="seg, age-choice"/>
+                            <ToggleButton fx:id="modifiedChoice" text="Última modificação" styleClass="seg, age-choice"/>
+                        </HBox>
+                    </VBox>
+
                     <VBox spacing="14">
                         <Label text="Frequência" styleClass="field-label"/>
                         <ScheduleEditor fx:id="scheduleEditor"/>
@@ -104,6 +135,7 @@
                                 <VBox spacing="2" HBox.hgrow="ALWAYS">
                                     <Label fx:id="previewFolderName" styleClass="h3"/>
                                     <Label text="Os arquivos desta pasta são removidos." styleClass="help" wrapText="true"/>
+                                    <Label fx:id="folderAgeSummary" styleClass="help" wrapText="true"/>
                                 </VBox>
                             </HBox>
                             <HBox styleClass="notice" alignment="TOP_LEFT" spacing="10">
@@ -117,6 +149,7 @@
                             <VBox spacing="2">
                                 <Label text="Lixeira do Windows" styleClass="h3"/>
                                 <Label text="A lixeira é esvaziada." styleClass="help"/>
+                                <Label fx:id="binAgeSummary" styleClass="help" wrapText="true"/>
                             </VBox>
                         </HBox>
                     </VBox>

@@ -1507,3 +1507,15 @@
     -fx-text-fill: -tf-ink;
     -fx-font-size: 12px;
 }
+
+/* ---------- Limpeza: quanto limpar ---------- */
+
+.age-choice {
+    -fx-text-fill: -tf-muted;
+    -fx-font-weight: bold;
+}
+
+.age-choice:hover,
+.age-choice:selected {
+    -fx-text-fill: -tf-ink;
+}

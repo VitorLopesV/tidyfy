@@ -16,14 +16,19 @@ import com.tidyfy.presentation.component.FolderField;
 import com.tidyfy.presentation.component.Nodes;
 import com.tidyfy.presentation.model.HelperAgeReference;
 import com.tidyfy.presentation.model.HelperItem;
+import com.tidyfy.presentation.model.SchedulePreview;
 import java.time.Clock;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -59,10 +64,73 @@ public class CleanerFormController extends HelperFormController {
     /** Selo animado da prévia da lixeira. */
     @FXML private StackPane binPreviewBadge;
 
+    /** Opção de limpar tudo. */
+    @FXML private ToggleButton allChoice;
+
+    /** Opção de limpar só o que passou de N dias. */
+    @FXML private ToggleButton olderChoice;
+
+    /** Linha do contador de dias, ativa só em «mais de N dias». */
+    @FXML private HBox ageStepperRow;
+
+    /** Valor do contador de dias. */
+    @FXML private Label ageDaysLabel;
+
+    /** Unidade ao lado do contador ("dia" ou "dias"). */
+    @FXML private Label ageUnitLabel;
+
+    /** Botão de diminuir os dias. */
+    @FXML private Button decreaseAge;
+
+    /** Dica sobre a idade na lixeira. */
+    @FXML private Label ageHelp;
+
+    /** Seção da data de referência, exibida só para pasta com limite ligado. */
+    @FXML private VBox referenceSection;
+
+    /** Opção de contar a idade da criação. */
+    @FXML private ToggleButton createdChoice;
+
+    /** Opção de contar a idade da última modificação. */
+    @FXML private ToggleButton modifiedChoice;
+
+    /** Resumo do limite na prévia da pasta. */
+    @FXML private Label folderAgeSummary;
+
+    /** Resumo do limite na prévia da lixeira. */
+    @FXML private Label binAgeSummary;
+
     /** Grupo das opções de alvo: sempre há uma opção escolhida. */
     private final ToggleGroup target = new ToggleGroup();
 
+    /** Grupo «tudo» ou «mais de N dias»: sempre há uma opção escolhida. */
+    private final ToggleGroup amount = new ToggleGroup();
+
+    /** Grupo da data de referência: sempre há uma opção escolhida. */
+    private final ToggleGroup reference = new ToggleGroup();
+
+    /** Número de dias do limite de idade (mínimo 1). */
+    private final IntegerProperty ageDays = new SimpleIntegerProperty(this, PROPERTY_AGE_DAYS, DEFAULT_AGE_DAYS);
+
     // Constantes
+
+    /** Nome da propriedade dos dias do limite. */
+    private static final String PROPERTY_AGE_DAYS = "ageDays";
+
+    /** Dias do limite quando o usuário não escolheu outro. */
+    private static final int DEFAULT_AGE_DAYS = 30;
+
+    /** Menor número de dias do limite. */
+    private static final int MIN_AGE_DAYS = 1;
+
+    /** Resumo na prévia quando o ajudante limpa tudo. */
+    private static final String SUMMARY_ALL = "Remove tudo, sem olhar a idade.";
+
+    /** Modelo do resumo na prévia com limite; recebe os dias e a unidade. */
+    private static final String SUMMARY_OLDER = "Remove só o que tem mais de %d %s.";
+
+    /** Dica da idade na lixeira. */
+    private static final String BIN_AGE_HELP = "Na lixeira, a idade conta do dia em que o arquivo foi para lá.";
 
     /** Arquivo FXML do formulário, no pacote desta classe. */
     private static final String FXML_FILE = "cleaner-form.fxml";
@@ -91,30 +159,35 @@ public class CleanerFormController extends HelperFormController {
     }
 
     /**
-     * Monta o ajudante de limpeza. O formulário ainda não tem campos de limite de idade nem de data de
-     * referência: ao criar, limpa tudo e mede pela modificação; ao editar, preserva os do ajudante original.
+     * Monta o ajudante de limpeza com o limite de idade e a data de referência escolhidos no formulário.
      *
      * @return o ajudante do domínio
      */
     @Override
     protected Helper buildHelper(HelperId id, HelperName name, Schedule schedule, boolean enabled,
                                  HelperItem editing) {
-        AgeLimit ageLimit = editing == null || editing.ageLimitDays() == null
-                ? null : new AgeLimit(editing.ageLimitDays());
+        AgeLimit ageLimit = olderChoice.isSelected() ? new AgeLimit(ageDays.get()) : null;
+        AgeReference ageReference = createdChoice.isSelected() ? AgeReference.CREATED : AgeReference.MODIFIED;
         CleanupTarget cleanupTarget = folderChoice.isSelected()
-                ? new FolderTarget(folderField.getFolder(), referenceOf(editing))
+                ? new FolderTarget(folderField.getFolder(), ageReference)
                 : new RecycleBinTarget();
         return new CleanerHelper(id, name, schedule, enabled, cleanupTarget, ageLimit);
     }
 
     /**
-     * Data de referência da idade: a do ajudante em edição, ou a modificação quando não há.
+     * Diminui os dias do limite, sem passar do mínimo.
      */
-    private static AgeReference referenceOf(HelperItem editing) {
-        if (editing == null || editing.ageReference() == null) {
-            return AgeReference.MODIFIED;
-        }
-        return editing.ageReference() == HelperAgeReference.CREATED ? AgeReference.CREATED : AgeReference.MODIFIED;
+    @FXML
+    private void onDecreaseAge() {
+        ageDays.set(Math.max(MIN_AGE_DAYS, ageDays.get() - 1));
+    }
+
+    /**
+     * Aumenta os dias do limite.
+     */
+    @FXML
+    private void onIncreaseAge() {
+        ageDays.set(ageDays.get() + 1);
     }
 
     /**
@@ -150,6 +223,22 @@ public class CleanerFormController extends HelperFormController {
             target.selectToggle(folderChoice);
             folderField.setFolder(item.folder());
         }
+        showAgeOf(item);
+    }
+
+    /**
+     * Mostra o limite de idade e a data de referência do ajudante em edição.
+     *
+     * @param item ajudante em edição
+     */
+    private void showAgeOf(HelperItem item) {
+        if (item.ageLimitDays() == null) {
+            amount.selectToggle(allChoice);
+        } else {
+            ageDays.set(Math.max(MIN_AGE_DAYS, item.ageLimitDays()));
+            amount.selectToggle(olderChoice);
+        }
+        reference.selectToggle(item.ageReference() == HelperAgeReference.CREATED ? createdChoice : modifiedChoice);
     }
 
     /**
@@ -171,8 +260,25 @@ public class CleanerFormController extends HelperFormController {
             showTargetChoice(true);
         });
 
+        allChoice.setToggleGroup(amount);
+        olderChoice.setToggleGroup(amount);
+        createdChoice.setToggleGroup(reference);
+        modifiedChoice.setToggleGroup(reference);
+        amount.selectToggle(allChoice);
+        reference.selectToggle(modifiedChoice);
+        keepOneSelected(amount);
+        keepOneSelected(reference);
+        ageDaysLabel.textProperty().bind(ageDays.asString());
+        ageUnitLabel.textProperty().bind(Bindings.createStringBinding(
+                () -> SchedulePreview.unit(ageDays.get()), ageDays));
+        decreaseAge.disableProperty().bind(ageDays.lessThanOrEqualTo(MIN_AGE_DAYS));
+        ageStepperRow.disableProperty().bind(olderChoice.selectedProperty().not());
+        ageHelp.setText(BIN_AGE_HELP);
+
         super.initialize();
 
+        amount.selectedToggleProperty().addListener((obs, old, now) -> showAge());
+        ageDays.addListener((obs, old, now) -> showAge());
         showTargetChoice(false);
         previewFolderName.textProperty().bind(Bindings.createStringBinding(
                 () -> folderField.getFolder() == null
@@ -181,6 +287,34 @@ public class CleanerFormController extends HelperFormController {
                 folderField.folderProperty()));
         Animations.floating(folderPreviewBadge);
         Animations.floating(binPreviewBadge);
+    }
+
+    /**
+     * Atualiza a visibilidade da referência, a dica da lixeira e os resumos das prévias.
+     */
+    private void showAge() {
+        boolean folder = folderChoice.isSelected();
+        boolean limited = olderChoice.isSelected();
+        Nodes.setShown(referenceSection, folder && limited);
+        Nodes.setShown(ageHelp, !folder);
+        String summary = limited
+                ? SUMMARY_OLDER.formatted(ageDays.get(), SchedulePreview.unit(ageDays.get()))
+                : SUMMARY_ALL;
+        folderAgeSummary.setText(summary);
+        binAgeSummary.setText(summary);
+    }
+
+    /**
+     * Impede que um grupo fique sem opção: clicar na opção escolhida a mantém.
+     *
+     * @param group grupo de opções
+     */
+    private static void keepOneSelected(ToggleGroup group) {
+        group.selectedToggleProperty().addListener((obs, old, now) -> {
+            if (now == null && old != null) {
+                old.setSelected(true);
+            }
+        });
     }
 
     /**
@@ -193,6 +327,7 @@ public class CleanerFormController extends HelperFormController {
         Nodes.setShown(folderSection, folder);
         Nodes.setShown(folderPreview, folder);
         Nodes.setShown(binPreview, !folder);
+        showAge();
         if (animate) {
             Animations.fadeUpIn(folder ? folderPreview : binPreview);
             if (folder) {
