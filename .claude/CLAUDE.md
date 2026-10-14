@@ -99,6 +99,7 @@ Os diagramas PlantUML em [docs/diagrams](../docs/diagrams) são a referência do
 - **Agendador:** uma única tarefa por ajudante, definida em **XML**, com um gatilho por horário. Roda só com o usuário logado (precisa das pastas e da lixeira dele), permite rodar na bateria e executa assim que possível quando perdeu o horário.
 - **Falha ao salvar:** o Tidyfy tenta registrar no agendador primeiro; se o agendador falhar, a configuração **não** é salva e o erro aparece na tela.
 - **Falha ao executar:** vai para o histórico (`FAILED`) e para o log.
+- **Log (`ExecutionLog`):** um arquivo por dia, `%APPDATA%\Tidyfy\logs	idyfy-yyyy-MM-dd.log` (UTF-8, anexando); apaga logs com mais de 30 dias e, ao chegar a 1 MiB no dia, para de gravar e registra o limite uma vez. Falhas ao gravar o log são engolidas, nunca derrubam a execução.
 
 #### Enviar à lixeira sem interface
 

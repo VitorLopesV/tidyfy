@@ -80,6 +80,19 @@ package "com.tidyfy.infrastructure.persistence" {
   }
 }
 
+package "com.tidyfy.infrastructure.logging" {
+  class ExecutionLog {
+    - logsDirectory : Path
+    - clock : Clock
+    + {static} RETENTION_DAYS : int
+    + {static} MAX_FILE_BYTES : long
+    + started(id : HelperId) : void
+    + finished(id : HelperId, actions : int) : void
+    + failed(id : HelperId, error : Throwable) : void
+    + error(message : String, error : Throwable) : void
+  }
+}
+
 package "com.tidyfy.application.port" {
   interface TaskScheduler
   interface RecycleBin
