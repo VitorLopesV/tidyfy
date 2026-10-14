@@ -1387,6 +1387,86 @@
     -fx-font-weight: bold;
 }
 
+/* ---------- Histórico ---------- */
+
+.history-item {
+    -fx-background-color: -tf-surface-2;
+    -fx-background-radius: 14;
+    -fx-border-color: -tf-line;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-padding: 12 16 14 16;
+}
+
+.history-item-failed {
+    -fx-border-color: -tf-danger-strong;
+}
+
+.history-date {
+    -fx-font-family: "Consolas";
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.history-summary {
+    -fx-font-size: 13px;
+    -fx-text-fill: -tf-muted;
+}
+
+.history-summary-failed {
+    -fx-text-fill: -tf-danger;
+    -fx-font-weight: bold;
+}
+
+.history-action {
+    -fx-font-size: 13px;
+    -fx-text-fill: -tf-ink;
+    -fx-padding: 4 0 4 10;
+    -fx-border-color: transparent transparent transparent -tf-line-strong;
+    -fx-border-width: 0 0 0 2;
+}
+
+.history-action-failed {
+    -fx-text-fill: -tf-danger;
+    -fx-font-weight: bold;
+    -fx-background-color: -tf-danger-tint;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent transparent transparent -tf-danger;
+}
+
+.history-toggle {
+    -fx-background-color: transparent;
+    -fx-text-fill: -tf-muted;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 0;
+    -fx-cursor: hand;
+}
+
+.history-toggle:hover {
+    -fx-text-fill: -tf-ink;
+}
+
+.history-empty {
+    -fx-padding: 24 32;
+}
+
+.history-empty-badge {
+    -fx-background-color: -tf-surface-3;
+    -fx-background-radius: 20;
+    -fx-min-width: 64;
+    -fx-min-height: 64;
+}
+
+.history-empty-badge .icon-shape {
+    -fx-stroke: -tf-muted;
+}
+
+.history-empty-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
 /* ---------- Dicas ---------- */
 
 .tooltip {

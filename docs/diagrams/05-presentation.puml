@@ -96,6 +96,11 @@ package "com.tidyfy.presentation" {
     + isConfirmed() : boolean
   }
 
+  class ExecutionHistoryController {
+    + ExecutionHistoryController(helperName : String, items : List<ExecutionItem>)
+    + createView() : Parent
+  }
+
   class Dialogs <<utility>> {
     ~ {static} showModal(owner : Window, view : Parent, title : String) : void
   }
@@ -130,6 +135,25 @@ package "com.tidyfy.presentation.model" {
     CLEANER
     --
     + matches(item : HelperItem) : boolean
+  }
+
+  class ExecutionItem <<record>> {
+    + executedAt : String
+    + summary : String
+    + actions : List<ExecutionAction>
+    + hasFailure() : boolean
+  }
+
+  class ExecutionAction <<record>> {
+    + text : String
+    + detail : String
+    + failure : boolean
+  }
+
+  class ExecutionItemMapper {
+    + ExecutionItemMapper(zone : ZoneId)
+    + mapAll(records : List<ExecutionRecord>) : List<ExecutionItem>
+    + map(record : ExecutionRecord) : ExecutionItem
   }
 
   class HelperSelection {
@@ -198,7 +222,11 @@ HelperListController ..> HelperTypeChooserController : "Novo ajudante"
 HelperListController ..> FolderOrganizerFormController : abre
 HelperListController ..> CleanerFormController : abre
 HelperListController ..> RemoveConfirmationController : "Remover"
+HelperListController ..> ExecutionHistoryController : "Histórico"
 HelperListController ..> Dialogs
+ExecutionHistoryController ..> ExecutionItem
+ExecutionItem *-- ExecutionAction
+ExecutionItemMapper ..> ExecutionItem : converte ExecutionRecord
 HelperFormController <|-- FolderOrganizerFormController
 HelperFormController <|-- CleanerFormController
 
