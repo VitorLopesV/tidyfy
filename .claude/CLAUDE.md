@@ -100,6 +100,75 @@ Os diagramas PlantUML em [docs/diagrams](../docs/diagrams) são a referência do
 - **Falha ao salvar:** o Tidyfy tenta registrar no agendador primeiro; se o agendador falhar, a configuração **não** é salva e o erro aparece na tela.
 - **Falha ao executar:** vai para o histórico (`FAILED`) e para o log.
 
+#### Formato do `helpers.txt`
+
+Arquivo em `%APPDATA%\Tidyfy\helpers.txt`, extensão `.txt`, conteúdo **JSON em UTF-8**. Arquivo ausente ou vazio significa nenhum ajudante. A gravação é atômica (arquivo temporário e depois mover).
+
+Objeto raiz: `version` (inteiro, começa em `1`) e `helpers` (lista). Uma `version` desconhecida é erro (o arquivo não é lido nem sobrescrito, como no caso de arquivo corrompido). Qualquer mudança incompatível no formato incrementa a versão.
+
+Campos comuns a todo ajudante:
+
+| Campo | Descrição |
+|---|---|
+| `type` | Discriminador: `FOLDER_ORGANIZER` ou `CLEANER` |
+| `id` | UUID em texto |
+| `name` | Nome do ajudante |
+| `enabled` | `true` ou `false` |
+| `schedule` | `intervalDays` (inteiro ≥ 1), `times` (lista de horários `HH:mm`, sem repetição, ao menos um) e `startDate` (data ISO `yyyy-MM-dd`) |
+
+Campos por tipo:
+
+- `FOLDER_ORGANIZER`: `folder`, o caminho da pasta em texto (barras invertidas escapadas: `C:\\Users\\ana\\Downloads`).
+- `CLEANER`: `target` e `ageLimitDays`.
+  - `target` é `{"type": "FOLDER", "folder": "...", "ageReference": "CREATED" | "MODIFIED"}` ou `{"type": "RECYCLE_BIN"}`.
+  - `ageLimitDays` é um inteiro ≥ 1 (só limpa o que é mais antigo que isso). `null` ou ausente significa limpar tudo.
+
+Organização de pasta:
+
+```json
+{
+  "version": 1,
+  "helpers": [
+    {
+      "type": "FOLDER_ORGANIZER",
+      "id": "3f2b8c1e-6a4d-4e0b-9c57-1d2a7b9e4f10",
+      "name": "Organizar Downloads",
+      "enabled": true,
+      "schedule": {"intervalDays": 1, "times": ["09:00", "18:00"], "startDate": "2026-10-14"},
+      "folder": "C:\\Users\\ana\\Downloads"
+    }
+  ]
+}
+```
+
+Limpeza de pasta com limite de idade (item da lista `helpers`):
+
+```json
+{
+  "type": "CLEANER",
+  "id": "a91c5d72-0b3e-4f68-8d14-6e7f2c3b5a09",
+  "name": "Limpar Temporários",
+  "enabled": true,
+  "schedule": {"intervalDays": 7, "times": ["20:30"], "startDate": "2026-10-14"},
+  "target": {"type": "FOLDER", "folder": "C:\\Users\\ana\\Temp", "ageReference": "MODIFIED"},
+  "ageLimitDays": 30
+}
+```
+
+Limpeza da lixeira sem limite, limpa tudo (item da lista `helpers`):
+
+```json
+{
+  "type": "CLEANER",
+  "id": "c47e0f13-9d2a-4b85-a6c1-3e8d5f7a2b64",
+  "name": "Esvaziar Lixeira",
+  "enabled": false,
+  "schedule": {"intervalDays": 3, "times": ["12:00"], "startDate": "2026-10-14"},
+  "target": {"type": "RECYCLE_BIN"},
+  "ageLimitDays": null
+}
+```
+
 ## Funcionamento
 
 1. O usuário cria/edita um ajudante na interface JavaFX.
