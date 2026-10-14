@@ -47,7 +47,7 @@ class PortsArchitectureTest {
 
     @Test
     void taskSchedulerDeclaresDiagramMethods() {
-        assertPort(TaskScheduler.class, "register:void", "unregister:void");
+        assertPort(TaskScheduler.class, "register:void", "unregister:void", "registeredIds:List");
     }
 
     @Test

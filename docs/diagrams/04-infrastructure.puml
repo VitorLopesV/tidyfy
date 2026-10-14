@@ -18,6 +18,8 @@ package "com.tidyfy.infrastructure.windows" {
     ~ buildXml(helper : Helper) : String
     ~ deleteCommand(id : HelperId) : List<String>
     ~ queryCommand(id : HelperId) : List<String>
+    ~ listCommand() : List<String>
+    + registeredIds() : List<HelperId>
   }
 
   class PowerShellRecycleBin {
@@ -123,6 +125,8 @@ note right of SchtasksTaskScheduler
   schtasks /Create /TN "Tidyfy\{id}" /XML {arquivo} /F
   unregister: schtasks /Delete /TN "Tidyfy\{id}" /F; se
   falhar, /Query decide: tarefa inexistente e ignorada.
+  registeredIds: schtasks /Query /FO CSV /NH; fica só com
+  as linhas \Tidyfy\{uuid} (o resto e ignorado).
   A ação chama "{launcher} --run {id}". Roda só com o
   usuário logado, permite bateria e, se perdeu o
   horário, roda assim que possível.

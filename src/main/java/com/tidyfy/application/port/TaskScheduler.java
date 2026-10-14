@@ -2,6 +2,7 @@ package com.tidyfy.application.port;
 
 import com.tidyfy.domain.Helper;
 import com.tidyfy.domain.HelperId;
+import java.util.List;
 
 /**
  * Porta do agendador de tarefas do sistema operacional.
@@ -23,4 +24,12 @@ public interface TaskScheduler {
      * @param id identificador do ajudante
      */
     void unregister(HelperId id);
+
+    /**
+     * Lista os ajudantes que têm tarefa registrada no agendador. Tarefas que não são do Tidyfy, ou cujo nome
+     * não é um identificador de ajudante, são ignoradas. Sem tarefas, devolve lista vazia.
+     *
+     * @return ids dos ajudantes com tarefa
+     */
+    List<HelperId> registeredIds();
 }

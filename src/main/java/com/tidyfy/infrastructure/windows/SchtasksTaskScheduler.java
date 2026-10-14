@@ -12,8 +12,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Agendador de tarefas baseado no {@code schtasks.exe} do Windows.
@@ -81,6 +84,30 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
 
     /** Opção que consulta a tarefa. */
     private static final String QUERY_OPTION = "/Query";
+
+    /** Opção do formato de saída da consulta. */
+    private static final String FORMAT_OPTION = "/FO";
+
+    /** Formato CSV da consulta. */
+    private static final String CSV_FORMAT = "CSV";
+
+    /** Opção que omite o cabeçalho da consulta. */
+    private static final String NO_HEADER_OPTION = "/NH";
+
+    /** Prefixo (em minúsculas) do nome completo das tarefas do Tidyfy na saída da consulta. */
+    private static final String TASK_PATH_PREFIX = "\\tidyfy\\";
+
+    /** Aspas que envolvem os campos do CSV. */
+    private static final char CSV_QUOTE = '"';
+
+    /** Quebra de linha em qualquer formato. */
+    private static final String LINE_BREAK_REGEX = "\\R";
+
+    /** Quantidade de caracteres de um UUID escrito por extenso. */
+    private static final int UUID_LENGTH = 36;
+
+    /** Mensagem de falha da listagem: código de saída e saída. */
+    private static final String LIST_FAILURE_MESSAGE = "schtasks could not list the tasks (exit code %d): %s";
 
     /** Cabeçalho do XML, com a codificação gravada no arquivo. */
     private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n";
@@ -300,5 +327,66 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
      */
     List<String> queryCommand(HelperId id) {
         return List.of(SCHTASKS, QUERY_OPTION, TASK_NAME_OPTION, String.format(TASK_NAME_TEMPLATE, id.value()));
+    }
+
+    /**
+     * Monta o comando que lista todas as tarefas em CSV, sem cabeçalho.
+     *
+     * @return programa e argumentos
+     */
+    List<String> listCommand() {
+        return List.of(SCHTASKS, QUERY_OPTION, FORMAT_OPTION, CSV_FORMAT, NO_HEADER_OPTION);
+    }
+
+    /**
+     * Lista os ajudantes com tarefa em {@code Tidyfy\}. Lê o primeiro campo de cada linha do CSV; linhas
+     * inválidas, mensagens informativas, tarefas de outras pastas e nomes que não são UUID são ignorados, o que
+     * independe do idioma do Windows. Sem tarefas devolve lista vazia.
+     *
+     * @return ids dos ajudantes com tarefa, sem repetição
+     * @throws UncheckedIOException se o {@code schtasks} falhar
+     */
+    @Override
+    public List<HelperId> registeredIds() {
+        CommandResult result = commandRunner.run(listCommand());
+        if (!result.succeeded()) {
+            throw new UncheckedIOException(new IOException(
+                    String.format(LIST_FAILURE_MESSAGE, result.exitCode(), result.output())));
+        }
+        List<HelperId> ids = new ArrayList<>();
+        for (String line : result.output().split(LINE_BREAK_REGEX)) {
+            HelperId id = parseTaskId(line);
+            if (id != null && !ids.contains(id)) {
+                ids.add(id);
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Extrai o id do ajudante do primeiro campo da linha, ou {@code null} se a linha não for de uma tarefa dele.
+     */
+    private static HelperId parseTaskId(String line) {
+        String text = line.strip();
+        if (text.isEmpty() || text.charAt(0) != CSV_QUOTE) {
+            return null;
+        }
+        int end = text.indexOf(CSV_QUOTE, 1);
+        if (end < 0) {
+            return null;
+        }
+        String name = text.substring(1, end);
+        if (!name.toLowerCase(Locale.ROOT).startsWith(TASK_PATH_PREFIX)) {
+            return null;
+        }
+        String uuid = name.substring(TASK_PATH_PREFIX.length());
+        if (uuid.length() != UUID_LENGTH) {
+            return null;
+        }
+        try {
+            return new HelperId(UUID.fromString(uuid));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

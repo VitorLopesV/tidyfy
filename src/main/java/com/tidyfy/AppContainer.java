@@ -7,6 +7,7 @@ import com.tidyfy.application.usecase.OrganizeFolderUseCase;
 import com.tidyfy.application.usecase.RemoveHelperUseCase;
 import com.tidyfy.application.usecase.RunHelperUseCase;
 import com.tidyfy.application.usecase.SaveHelperUseCase;
+import com.tidyfy.application.usecase.SyncSchedulerUseCase;
 import com.tidyfy.domain.FolderOrganizationPlanner;
 import com.tidyfy.domain.HelperRules;
 import com.tidyfy.domain.ProtectedFolders;
@@ -50,6 +51,9 @@ public final class AppContainer {
 
     /** Caso de uso de executar um ajudante. */
     private final RunHelperUseCase runHelper;
+
+    /** Caso de uso de sincronizar o agendador. */
+    private final SyncSchedulerUseCase syncScheduler;
 
     // Constantes
 
@@ -98,6 +102,7 @@ public final class AppContainer {
         this.listHelpers = new ListHelpersUseCase(helpers);
         this.listExecutionHistory = new ListExecutionHistoryUseCase(history);
         this.runHelper = new RunHelperUseCase(helpers, organizeFolder, cleanup, history, clock);
+        this.syncScheduler = new SyncSchedulerUseCase(helpers, scheduler);
     }
 
     /**
@@ -178,5 +183,14 @@ public final class AppContainer {
      */
     public RunHelperUseCase runHelper() {
         return runHelper;
+    }
+
+    /**
+     * Caso de uso de sincronizar o Agendador do Windows com os ajudantes salvos (chamado ao abrir a interface).
+     *
+     * @return o caso de uso
+     */
+    public SyncSchedulerUseCase syncScheduler() {
+        return syncScheduler;
     }
 }

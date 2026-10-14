@@ -141,5 +141,10 @@ class RemoveHelperUseCaseTest {
         public void unregister(HelperId id) {
             throw new UncheckedIOException(new IOException("falha"));
         }
+
+        @Override
+        public List<HelperId> registeredIds() {
+            return List.of();
+        }
     }
 }

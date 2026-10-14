@@ -24,6 +24,12 @@ public final class FakeTaskScheduler implements TaskScheduler {
     /** Todas as chamadas a {@link #unregister(HelperId)}, em ordem. */
     private final List<HelperId> unregisterCalls = new ArrayList<>();
 
+    /** Falha a lançar na próxima remoção; {@code null} quando não há. */
+    private RuntimeException unregisterFailure;
+
+    /** Falha a lançar na próxima listagem de ids; {@code null} quando não há. */
+    private RuntimeException registeredIdsFailure;
+
     /** Falha a lançar no próximo registro; {@code null} quando não há. */
     private RuntimeException registerFailure;
 
@@ -98,6 +104,48 @@ public final class FakeTaskScheduler implements TaskScheduler {
     @Override
     public void unregister(HelperId id) {
         unregisterCalls.add(id);
+        if (unregisterFailure != null) {
+            RuntimeException failure = unregisterFailure;
+            unregisterFailure = null;
+            throw failure;
+        }
         tasks.remove(id);
+    }
+
+    @Override
+    public List<HelperId> registeredIds() {
+        if (registeredIdsFailure != null) {
+            RuntimeException failure = registeredIdsFailure;
+            registeredIdsFailure = null;
+            throw failure;
+        }
+        return registered();
+    }
+
+    /**
+     * Faz o próximo {@link #unregister(HelperId)} lançar a falha informada (uma vez só).
+     *
+     * @param failure falha a lançar
+     */
+    public void failNextUnregisterWith(RuntimeException failure) {
+        this.unregisterFailure = failure;
+    }
+
+    /**
+     * Faz o próximo {@link #registeredIds()} lançar a falha informada (uma vez só).
+     *
+     * @param failure falha a lançar
+     */
+    public void failNextRegisteredIdsWith(RuntimeException failure) {
+        this.registeredIdsFailure = failure;
+    }
+
+    /**
+     * Cria uma tarefa para um id sem ajudante salvo (órfã), como se tivesse sobrado no agendador.
+     *
+     * @param helper ajudante usado como conteúdo da tarefa; o id dele identifica a tarefa
+     */
+    public void addOrphanTask(Helper helper) {
+        tasks.put(helper.id(), helper);
     }
 }

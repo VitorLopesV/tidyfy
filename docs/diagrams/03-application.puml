@@ -40,6 +40,19 @@ package "com.tidyfy.application.usecase" {
     + execute(id : HelperId) : Optional<ExecutionRecord>
   }
 
+  class SyncSchedulerUseCase {
+    - repository : HelperRepository
+    - scheduler : TaskScheduler
+    + execute() : SyncResult
+  }
+
+  class SyncResult {
+    registered : int
+    removed : int
+    orphansRemoved : int
+    failures : List<Failure>
+  }
+
   class OrganizeFolderUseCase {
     - fileSystem : FileSystem
     - planner : FolderOrganizationPlanner
@@ -73,6 +86,7 @@ package "com.tidyfy.application.port" {
   interface TaskScheduler {
     + register(helper : Helper) : void
     + unregister(id : HelperId) : void
+    + registeredIds() : List<HelperId>
   }
 
   interface FileSystem {
@@ -109,6 +123,9 @@ RemoveHelperUseCase --> HelperRepository
 RemoveHelperUseCase --> TaskScheduler
 ListHelpersUseCase --> HelperRepository
 ListExecutionHistoryUseCase --> ExecutionHistoryRepository
+SyncSchedulerUseCase --> HelperRepository
+SyncSchedulerUseCase --> TaskScheduler
+SyncSchedulerUseCase ..> SyncResult
 RunHelperUseCase --> HelperRepository
 RunHelperUseCase --> OrganizeFolderUseCase
 RunHelperUseCase --> CleanupUseCase

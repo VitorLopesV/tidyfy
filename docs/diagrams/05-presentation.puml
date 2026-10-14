@@ -32,6 +32,11 @@ package "com.tidyfy" {
     + run(arguments : LaunchArguments) : int
   }
 
+  class SchedulerSyncStarter {
+    ~ start() : Thread
+    ~ run() : void
+  }
+
   class InterfaceLauncher {
     ~ {static} launch(args : String[]) : void
   }
@@ -43,6 +48,7 @@ package "com.tidyfy" {
     + listHelpers() : ListHelpersUseCase
     + listExecutionHistory() : ListExecutionHistoryUseCase
     + runHelper() : RunHelperUseCase
+    + syncScheduler() : SyncSchedulerUseCase
   }
 }
 
@@ -178,6 +184,8 @@ Application <|-- TidyfyApplication
 
 Main --> LaunchArguments : interpreta os argumentos
 LaunchArguments +-- Mode
+Main ..> SchedulerSyncStarter : sem argumentos (segundo plano)
+SchedulerSyncStarter ..> AppContainer : syncScheduler()
 Main ..> InterfaceLauncher : sem argumentos
 InterfaceLauncher ..> TidyfyApplication : Application.launch
 Main ..> HeadlessRunner : --run {id}

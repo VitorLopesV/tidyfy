@@ -20,6 +20,25 @@ public final class Main {
     }
 
     /**
+     * Dispara a sincronização do agendador em segundo plano. Qualquer falha aqui é ignorada: a interface
+     * sempre abre.
+     */
+    private static void startSchedulerSync() {
+        try {
+            new SchedulerSyncStarter(() -> AppContainer.create().syncScheduler(), createLog()).start();
+        } catch (RuntimeException ignored) {
+            // Sem log ou sem thread: a sincronização é descartada e a interface abre normalmente.
+        }
+    }
+
+    /**
+     * Cria o log das execuções na pasta padrão do Tidyfy.
+     */
+    private static ExecutionLog createLog() {
+        return new ExecutionLog(StorageLocation.defaultLocation().logsDirectory(), Clock.systemDefaultZone());
+    }
+
+    /**
      * Interpreta os argumentos e abre a interface ou executa o ajudante. No modo interface não chama
      * {@link System#exit(int)}; no modo {@code --run} (ou com argumentos inválidos) encerra o processo
      * com o código de saída.
@@ -29,11 +48,11 @@ public final class Main {
     public static void main(String[] args) {
         LaunchArguments arguments = LaunchArguments.parse(args);
         if (arguments.mode() == LaunchArguments.Mode.INTERFACE) {
+            startSchedulerSync();
             InterfaceLauncher.launch(args);
             return;
         }
-        ExecutionLog log = new ExecutionLog(StorageLocation.defaultLocation().logsDirectory(),
-                Clock.systemDefaultZone());
+        ExecutionLog log = createLog();
         System.exit(new HeadlessRunner(() -> AppContainer.create().runHelper(), log, System.err).run(arguments));
     }
 }

@@ -65,6 +65,7 @@ class AppContainerTest {
         assertNotNull(container.listHelpers());
         assertNotNull(container.listExecutionHistory());
         assertNotNull(container.runHelper());
+        assertNotNull(container.syncScheduler());
     }
 
     @Test
@@ -74,6 +75,7 @@ class AppContainerTest {
         assertSame(container.listHelpers(), container.listHelpers());
         assertSame(container.listExecutionHistory(), container.listExecutionHistory());
         assertSame(container.runHelper(), container.runHelper());
+        assertSame(container.syncScheduler(), container.syncScheduler());
     }
 
     @Test
