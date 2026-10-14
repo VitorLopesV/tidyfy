@@ -5,10 +5,16 @@ import com.tidyfy.domain.FileMove;
 import com.tidyfy.domain.FolderEntry;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -23,6 +29,12 @@ public final class NioFileSystem implements FileSystem {
 
     /** Mensagem das operações que ainda não foram implementadas. */
     private static final String NOT_IMPLEMENTED = "Operação ainda não implementada";
+
+    /** Mensagem de quando o caminho comparado não é um arquivo comum. */
+    private static final String NOT_A_FILE = "Não é um arquivo: %s";
+
+    /** Retorno de {@link Files#mismatch} quando os conteúdos são idênticos. */
+    private static final long NO_MISMATCH = -1L;
 
     /** Ordem estável da listagem: pelo nome do item, sem diferenciar maiúsculas de minúsculas. */
     private static final Comparator<FolderEntry> BY_NAME =
@@ -62,27 +74,139 @@ public final class NioFileSystem implements FileSystem {
     }
 
     /**
-     * Ainda não implementado.
+     * Informa se o caminho existe, sem seguir links simbólicos: um link quebrado conta como existente.
+     *
+     * @param path caminho a verificar
+     * @return {@code true} se existir
      */
     @Override
     public boolean exists(Path path) {
-        throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+        return Files.exists(path, LinkOption.NOFOLLOW_LINKS);
     }
 
     /**
-     * Ainda não implementado.
+     * Compara o conteúdo de dois arquivos. Tamanhos diferentes já resultam em {@code false}, sem ler o conteúdo.
+     *
+     * @param first primeiro arquivo
+     * @param second segundo arquivo
+     * @return {@code true} se os conteúdos forem idênticos
+     * @throws UncheckedIOException se algum caminho não existir, não for um arquivo ou não puder ser lido
      */
     @Override
     public boolean sameContent(Path first, Path second) {
-        throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+        try {
+            requireRegularFile(first);
+            requireRegularFile(second);
+            if (Files.size(first) != Files.size(second)) {
+                return false;
+            }
+            return Files.mismatch(first, second) == NO_MISMATCH;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
-     * Ainda não implementado.
+     * Garante que o caminho existe e é um arquivo comum.
+     */
+    private void requireRegularFile(Path path) throws IOException {
+        if (!Files.exists(path)) {
+            throw new NoSuchFileException(path.toString());
+        }
+        if (!Files.isRegularFile(path)) {
+            throw new IOException(String.format(NOT_A_FILE, path));
+        }
+    }
+
+    /**
+     * Move o arquivo ou a pasta (com todo o conteúdo) para o destino, criando a pasta de destino se preciso.
+     * Nunca sobrescreve. Entre discos diferentes, o arquivo é copiado e a origem removida; uma pasta é copiada
+     * recursivamente e só depois a origem é apagada, então uma falha no meio pode deixar uma cópia parcial no destino.
+     *
+     * @param move origem e destino
+     * @throws UncheckedIOException se a origem não existir, o destino já existir ou a operação falhar
      */
     @Override
     public void move(FileMove move) {
-        throw new UnsupportedOperationException(NOT_IMPLEMENTED);
+        Path source = move.source();
+        Path target = move.target();
+        try {
+            if (!exists(source)) {
+                throw new NoSuchFileException(source.toString());
+            }
+            if (exists(target)) {
+                throw new FileAlreadyExistsException(target.toString());
+            }
+            Path parent = target.toAbsolutePath().getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            moveWithoutOverwrite(source, target);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
+     * Tenta o movimento atômico; se o sistema não o suportar (outro disco), copia e remove a origem.
+     */
+    private void moveWithoutOverwrite(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            if (Files.isDirectory(source, LinkOption.NOFOLLOW_LINKS)) {
+                copyFolder(source, target);
+                deleteFolder(source);
+            } else {
+                Files.move(source, target);
+            }
+        }
+    }
+
+    /**
+     * Copia a pasta e tudo o que há dentro dela para o destino.
+     */
+    private void copyFolder(Path source, Path target) throws IOException {
+        Files.walkFileTree(source, new SimpleFileVisitor<>() {
+            /** Cria a pasta correspondente no destino antes de visitar o conteúdo dela. */
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                Files.createDirectory(target.resolve(source.relativize(dir).toString()));
+                return FileVisitResult.CONTINUE;
+            }
+
+            /** Copia o arquivo para o destino, sem sobrescrever. */
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.copy(file, target.resolve(source.relativize(file).toString()),
+                        StandardCopyOption.COPY_ATTRIBUTES, LinkOption.NOFOLLOW_LINKS);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    /**
+     * Apaga a pasta e tudo o que há dentro dela.
+     */
+    private void deleteFolder(Path folder) throws IOException {
+        Files.walkFileTree(folder, new SimpleFileVisitor<>() {
+            /** Apaga o arquivo. */
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            /** Apaga a pasta depois de esvaziada. */
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException error) throws IOException {
+                if (error != null) {
+                    throw error;
+                }
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     /**
