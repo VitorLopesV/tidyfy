@@ -13,9 +13,11 @@ package "com.tidyfy" {
   }
 
   class AppContainer {
+    + {static} create() : AppContainer
     + saveHelper() : SaveHelperUseCase
     + removeHelper() : RemoveHelperUseCase
     + listHelpers() : ListHelpersUseCase
+    + listExecutionHistory() : ListExecutionHistoryUseCase
     + runHelper() : RunHelperUseCase
   }
 }
@@ -188,8 +190,9 @@ note right of AppContainer
   Composition root: instancia as
   implementações da infraestrutura e
   injeta nos casos de uso (por construtor).
-  Ainda não existe: chega junto com
-  os casos de uso.
+  create() usa os valores de produção;
+  o construtor recebe as dependências
+  externas (os testes usam dublês).
 end note
 
 note bottom of HelperListController
