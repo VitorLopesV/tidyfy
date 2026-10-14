@@ -3,7 +3,6 @@ package com.tidyfy.infrastructure.windows;
 import org.junit.jupiter.api.Test;
 
 import java.io.UncheckedIOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -117,10 +116,5 @@ class PowerShellRecycleBinEmptyAllTest {
         UncheckedIOException e = assertThrows(UncheckedIOException.class, bin::emptyAll);
 
         assertTrue(e.getMessage().contains("sem permissão"));
-    }
-
-    @Test
-    void emptyOlderThanIsNotImplementedYet() {
-        assertThrows(UnsupportedOperationException.class, () -> bin.emptyOlderThan(Instant.EPOCH));
     }
 }

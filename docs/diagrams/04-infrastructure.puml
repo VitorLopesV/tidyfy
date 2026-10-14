@@ -121,9 +121,9 @@ end note
 note bottom of PowerShellRecycleBin
   emptyAll: conta os itens (Shell.Application) e,
   se houver, Clear-RecycleBin -Force.
-  emptyOlderThan: lista os itens da lixeira com
-  o dia em que foram para lá e remove os mais
-  antigos que cutoff. Ambos devolvem quantos
+  emptyOlderThan: um script lê System.Recycle.DateDeleted
+  de cada item (Shell COM) e remove, com Remove-Item,
+  os enviados antes de cutoff (corte exclusivo). Ambos devolvem quantos
   itens foram removidos (remoção permanente).
   Alternativa: API nativa do Windows (a definir).
 end note
