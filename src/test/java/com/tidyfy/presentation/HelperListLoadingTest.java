@@ -119,6 +119,63 @@ class HelperListLoadingTest {
     }
 
     @Test
+    void afterAFormThatSavedTheListIsReloaded() {
+        repository.with(helper("Downloads"));
+        JavaFx.run(() -> {
+            HelperListController controller = controller();
+            Parent view = mount(controller);
+            assertEquals(1, cards(view).size());
+            HelperFormController form = new FolderOrganizerFormController(null) {
+                @Override
+                public boolean saved() {
+                    return true;
+                }
+            };
+
+            repository.with(helper("Fotos"));
+            controller.afterForm(form);
+
+            assertEquals(2, cards(view).size());
+        });
+    }
+
+    @Test
+    void afterAFormThatDidNotSaveTheListIsNotReloaded() {
+        repository.with(helper("Downloads"));
+        JavaFx.run(() -> {
+            HelperListController controller = controller();
+            Parent view = mount(controller);
+
+            repository.with(helper("Fotos"));
+            controller.afterForm(new CleanerFormController(null));
+
+            assertEquals(1, cards(view).size());
+        });
+    }
+
+    @Test
+    void createFormUsesTheSaveServicesWhenTheyWereGiven() {
+        JavaFx.run(() -> {
+            HelperListController controller = controller();
+            controller.setSaveServices(new com.tidyfy.application.usecase.SaveHelperUseCase(repository,
+                    new com.tidyfy.application.fake.FakeTaskScheduler(),
+                    new com.tidyfy.domain.HelperRules(com.tidyfy.domain.ProtectedFolders.forWindows(
+                            Path.of("C:\\Windows"), Path.of("C:\\Program Files"),
+                            Path.of("C:\\Program Files (x86)"), Path.of("C:\\ProgramData"),
+                            Path.of("C:\\Users\\nome")))), CLOCK);
+            Parent view = JavaFx.mount(
+                    controller.createForm(com.tidyfy.presentation.model.HelperKind.ORGANIZER, null).createView());
+            ((javafx.scene.control.TextField) view.lookup("#nameField")).setText("Organizar");
+            ((com.tidyfy.presentation.component.FolderField) view.lookup("#folderField"))
+                    .setFolder(Path.of("C:\\Users\\ana\\Downloads"));
+
+            ((javafx.scene.control.Button) view.lookup("#saveButton")).fire();
+
+            assertEquals(1, repository.findAll().size());
+        });
+    }
+
+    @Test
     void reloadDropsARemovedHelper() {
         Helper downloads = helper("Downloads");
         repository.with(downloads).with(helper("Fotos"));

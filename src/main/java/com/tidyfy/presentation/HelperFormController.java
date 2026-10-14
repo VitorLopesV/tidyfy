@@ -1,13 +1,23 @@
 package com.tidyfy.presentation;
 
+import com.tidyfy.application.usecase.SaveHelperUseCase;
+import com.tidyfy.domain.Helper;
+import com.tidyfy.domain.HelperId;
+import com.tidyfy.domain.HelperName;
+import com.tidyfy.domain.Schedule;
 import com.tidyfy.presentation.component.Animations;
 import com.tidyfy.presentation.component.Fxml;
 import com.tidyfy.presentation.component.ScheduleEditor;
+import com.tidyfy.presentation.component.Nodes;
 import com.tidyfy.presentation.component.ToggleSwitch;
 import com.tidyfy.presentation.component.UpcomingRunsCalendar;
 import com.tidyfy.presentation.model.HelperItem;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
@@ -54,11 +64,23 @@ public abstract class HelperFormController {
     /** Explicação do estado ligado/desligado. */
     @FXML private Label enabledHelp;
 
+    /** Erro do salvamento, exibido no rodapé; escondido enquanto não há erro. */
+    @FXML private Label saveError;
+
     /** Botão de salvar. */
     @FXML private Button saveButton;
 
     /** Ajudante em edição; {@code null} ao criar um novo. */
     private final HelperItem editing;
+
+    /** Caso de uso que grava o ajudante; {@code null} quando o formulário foi criado sem serviços. */
+    private final SaveHelperUseCase saveHelper;
+
+    /** Relógio que define o dia de hoje, usado como data de início da frequência. */
+    private final Clock clock;
+
+    /** Indica se o ajudante já foi salvo com sucesso por este formulário. */
+    private boolean saved;
 
     /** Indica se o usuário já mexeu no nome; o erro só aparece depois disso. */
     private final BooleanProperty nameTouched = new SimpleBooleanProperty();
@@ -104,6 +126,15 @@ public abstract class HelperFormController {
     /** Classe CSS do campo de nome com erro. */
     private static final String INVALID_STYLE_CLASS = "invalid";
 
+    /** Mensagem quando o formulário foi criado sem o caso de uso de salvar. */
+    private static final String SAVE_UNAVAILABLE = "Salvar não está disponível neste formulário.";
+
+    /** Mensagem quando a falha do salvamento não traz texto. */
+    private static final String SAVE_FAILED = "Não foi possível salvar o ajudante.";
+
+    /** Nome do parâmetro do relógio, usado na mensagem de valor nulo. */
+    private static final String CLOCK_NAME = "clock";
+
     /** Classe CSS do texto de erro. */
     private static final String ERROR_STYLE_CLASS = "error";
 
@@ -113,8 +144,45 @@ public abstract class HelperFormController {
      * @param editing ajudante sendo editado, ou {@code null} para criar um novo
      */
     protected HelperFormController(HelperItem editing) {
-        this.editing = editing;
+        this(editing, null, Clock.systemDefaultZone());
     }
+
+    /**
+     * Cria o formulário ligado ao caso de uso de salvar.
+     *
+     * @param editing    ajudante sendo editado, ou {@code null} para criar um novo
+     * @param saveHelper caso de uso que grava o ajudante; {@code null} deixa o formulário sem poder salvar
+     *                   (Salvar mostra um aviso e não fecha), o que basta para abri-lo em testes de tela
+     * @param clock      relógio que define a data de início da frequência
+     * @throws NullPointerException se {@code clock} for nulo
+     */
+    protected HelperFormController(HelperItem editing, SaveHelperUseCase saveHelper, Clock clock) {
+        this.editing = editing;
+        this.saveHelper = saveHelper;
+        this.clock = Objects.requireNonNull(clock, CLOCK_NAME);
+    }
+
+    /**
+     * Informa se o ajudante foi salvo com sucesso por este formulário.
+     *
+     * @return {@code true} depois de um Salvar bem-sucedido
+     */
+    public boolean saved() {
+        return saved;
+    }
+
+    /**
+     * Monta o ajudante do domínio com os dados da tela.
+     *
+     * @param id       identificador (novo ao criar; o do item ao editar)
+     * @param name     nome do ajudante
+     * @param schedule frequência
+     * @param enabled  se o ajudante está ligado
+     * @param editing  ajudante em edição, ou {@code null} ao criar
+     * @return o ajudante do domínio
+     */
+    protected abstract Helper buildHelper(HelperId id, HelperName name, Schedule schedule, boolean enabled,
+                                          HelperItem editing);
 
     /**
      * Carrega o formulário.
@@ -155,6 +223,7 @@ public abstract class HelperFormController {
         titleLabel.setText(creating ? CREATE_TITLE : EDIT_TITLE);
         saveButton.setText(creating ? CREATE_BUTTON : EDIT_BUTTON);
         nameTitle.setLabelFor(nameField);
+        Nodes.setShown(saveError, false);
 
         if (creating) {
             scheduleEditor.setTimes(List.of(LocalTime.of(9, 0)));
@@ -217,10 +286,57 @@ public abstract class HelperFormController {
     }
 
     /**
-     * Salva o ajudante. Por enquanto só fecha o formulário: salvar de verdade chega com o SaveHelperUseCase.
+     * Monta o ajudante e o grava pelo caso de uso. Se der certo, marca o formulário como salvo e o fecha;
+     * se falhar, mantém o formulário aberto e preenchido e mostra a mensagem do erro no rodapé.
      */
     @FXML
     protected void onSave() {
+        Nodes.setShown(saveError, false);
+        if (saveHelper == null) {
+            showSaveError(SAVE_UNAVAILABLE);
+            return;
+        }
+        try {
+            saveHelper.execute(buildHelper(editingId(), new HelperName(nameField.getText()), schedule(),
+                    enabledSwitch.isSelected(), editing));
+        } catch (RuntimeException error) {
+            showSaveError(error.getMessage() == null || error.getMessage().isBlank()
+                    ? SAVE_FAILED : error.getMessage());
+            return;
+        }
+        saved = true;
         onClose();
+    }
+
+    /**
+     * Identificador do ajudante: o do item em edição, ou um novo ao criar.
+     */
+    private HelperId editingId() {
+        return editing == null ? HelperId.newId() : new HelperId(UUID.fromString(editing.id()));
+    }
+
+    /**
+     * Frequência da tela. A data de início é hoje ao criar ou quando a frequência (intervalo ou horários)
+     * mudou; do contrário mantém a do ajudante em edição.
+     */
+    private Schedule schedule() {
+        int interval = scheduleEditor.getIntervalDays();
+        List<LocalTime> times = scheduleEditor.getTimes().stream().sorted().toList();
+        LocalDate start = LocalDate.now(clock);
+        if (editing != null && editing.startDate() != null
+                && editing.intervalDays() == interval && editing.times().equals(times)) {
+            start = editing.startDate();
+        }
+        return new Schedule(interval, times, start);
+    }
+
+    /**
+     * Mostra o erro do salvamento no rodapé.
+     *
+     * @param message texto do erro
+     */
+    private void showSaveError(String message) {
+        saveError.setText(message);
+        Nodes.setShown(saveError, true);
     }
 }

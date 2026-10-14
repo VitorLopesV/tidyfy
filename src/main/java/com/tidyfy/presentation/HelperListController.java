@@ -1,6 +1,7 @@
 package com.tidyfy.presentation;
 
 import com.tidyfy.application.usecase.ListHelpersUseCase;
+import com.tidyfy.application.usecase.SaveHelperUseCase;
 import com.tidyfy.presentation.component.Animations;
 import com.tidyfy.presentation.component.CardGrid;
 import com.tidyfy.presentation.component.Fxml;
@@ -16,6 +17,7 @@ import com.tidyfy.presentation.model.HelperItemMapper;
 import com.tidyfy.presentation.model.HelperKind;
 import com.tidyfy.presentation.model.HelperSelection;
 import com.tidyfy.presentation.model.TypeFilter;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -162,6 +164,12 @@ public class HelperListController {
     /** Busca o histórico de um ajudante pelo id; por padrão devolve sempre uma lista vazia. */
     private Function<String, List<ExecutionItem>> historyLoader = id -> List.of();
 
+    /** Caso de uso que grava os ajudantes; {@code null} até {@link #setSaveServices}. */
+    private SaveHelperUseCase saveHelper;
+
+    /** Relógio entregue aos formulários; {@code null} até {@link #setSaveServices}. */
+    private Clock clock;
+
     // Constantes
 
     /** Título da janela do diálogo de erro. */
@@ -169,6 +177,12 @@ public class HelperListController {
 
     /** Nome do parâmetro do erro, usado na mensagem de valor nulo. */
     private static final String ERROR_NAME = "error";
+
+    /** Nome do parâmetro do caso de uso de salvar, usado na mensagem de valor nulo. */
+    private static final String SAVE_HELPER_NAME = "saveHelper";
+
+    /** Nome do parâmetro do relógio, usado na mensagem de valor nulo. */
+    private static final String CLOCK_NAME = "clock";
 
     /** Título do diálogo de histórico. */
     private static final String HISTORY_TITLE = "Histórico";
@@ -520,6 +534,19 @@ public class HelperListController {
     }
 
     /**
+     * Liga os formulários ao caso de uso de salvar. Sem isso, os formulários abrem mas Salvar mostra um
+     * aviso e não grava (útil só em testes de tela).
+     *
+     * @param saveHelper caso de uso que cria e edita ajudantes
+     * @param clock      relógio que define a data de início da frequência
+     * @throws NullPointerException se algum argumento for nulo
+     */
+    public void setSaveServices(SaveHelperUseCase saveHelper, Clock clock) {
+        this.saveHelper = Objects.requireNonNull(saveHelper, SAVE_HELPER_NAME);
+        this.clock = Objects.requireNonNull(clock, CLOCK_NAME);
+    }
+
+    /**
      * Abre o histórico do ajudante do cartão cuja ação foi acionada.
      *
      * @param item ajudante escolhido
@@ -554,10 +581,38 @@ public class HelperListController {
      * @param editing ajudante a editar, ou {@code null} para criar um novo
      */
     private void openForm(HelperKind kind, HelperItem editing) {
-        HelperFormController form = kind == HelperKind.ORGANIZER
-                ? new FolderOrganizerFormController(editing)
-                : new CleanerFormController(editing);
+        HelperFormController form = createForm(kind, editing);
         showDialog(form.createView(), editing == null ? NEW_HELPER_TITLE : EDIT_HELPER_TITLE);
+        afterForm(form);
+    }
+
+    /**
+     * Cria o formulário do tipo informado, ligado ao caso de uso de salvar quando ele foi entregue.
+     *
+     * @param kind    tipo do ajudante
+     * @param editing ajudante a editar, ou {@code null} para criar um novo
+     * @return o formulário
+     */
+    HelperFormController createForm(HelperKind kind, HelperItem editing) {
+        if (saveHelper == null) {
+            return kind == HelperKind.ORGANIZER
+                    ? new FolderOrganizerFormController(editing)
+                    : new CleanerFormController(editing);
+        }
+        return kind == HelperKind.ORGANIZER
+                ? new FolderOrganizerFormController(editing, saveHelper, clock)
+                : new CleanerFormController(editing, saveHelper, clock);
+    }
+
+    /**
+     * Chamado depois que o formulário fecha: se o ajudante foi salvo, recarrega a lista.
+     *
+     * @param form formulário que acabou de fechar
+     */
+    void afterForm(HelperFormController form) {
+        if (form.saved()) {
+            reload();
+        }
     }
 
     /**

@@ -133,6 +133,7 @@
             <VBox spacing="2" HBox.hgrow="ALWAYS">
                 <Label fx:id="enabledTitle" styleClass="field-label"/>
                 <Label fx:id="enabledHelp" styleClass="help"/>
+                <Label fx:id="saveError" styleClass="help, error" wrapText="true"/>
             </VBox>
             <Button text="Cancelar" styleClass="btn, btn-ghost, btn-tall" onAction="#onClose"/>
             <Button fx:id="saveButton" styleClass="btn, btn-primary, btn-tall" onAction="#onSave">

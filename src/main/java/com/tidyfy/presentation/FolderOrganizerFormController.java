@@ -1,7 +1,14 @@
 package com.tidyfy.presentation;
 
+import com.tidyfy.application.usecase.SaveHelperUseCase;
+import com.tidyfy.domain.FolderOrganizerHelper;
+import com.tidyfy.domain.Helper;
+import com.tidyfy.domain.HelperId;
+import com.tidyfy.domain.HelperName;
+import com.tidyfy.domain.Schedule;
 import com.tidyfy.presentation.component.FolderField;
 import com.tidyfy.presentation.model.HelperItem;
+import java.time.Clock;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.fxml.FXML;
@@ -33,6 +40,28 @@ public class FolderOrganizerFormController extends HelperFormController {
      */
     public FolderOrganizerFormController(HelperItem editing) {
         super(editing);
+    }
+
+    /**
+     * Cria o formulário ligado ao caso de uso de salvar.
+     *
+     * @param editing    ajudante sendo editado, ou {@code null} para criar um novo
+     * @param saveHelper caso de uso que grava o ajudante
+     * @param clock      relógio que define a data de início da frequência
+     */
+    public FolderOrganizerFormController(HelperItem editing, SaveHelperUseCase saveHelper, Clock clock) {
+        super(editing, saveHelper, clock);
+    }
+
+    /**
+     * Monta o ajudante de organização com a pasta escolhida.
+     *
+     * @return o ajudante do domínio
+     */
+    @Override
+    protected Helper buildHelper(HelperId id, HelperName name, Schedule schedule, boolean enabled,
+                                 HelperItem editing) {
+        return new FolderOrganizerHelper(id, name, schedule, enabled, folderField.getFolder());
     }
 
     /**

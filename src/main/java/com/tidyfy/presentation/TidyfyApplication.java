@@ -58,6 +58,7 @@ public class TidyfyApplication extends Application {
         HelperListController helperList =
                 new HelperListController(ui.listHelpers(), new HelperItemMapper(ui.clock()));
         helperList.setErrorHandler(helperList::showError);
+        helperList.setSaveServices(ui.saveHelper(), ui.clock());
         helperList.setHistoryLoader(new HistoryLoader(ui.listExecutionHistory(),
                 new ExecutionItemMapper(ZoneId.systemDefault())));
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();

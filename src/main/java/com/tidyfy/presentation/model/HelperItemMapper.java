@@ -87,7 +87,7 @@ public final class HelperItemMapper {
         return switch (helper) {
             case FolderOrganizerHelper organizer -> new HelperItem(id, name, HelperKind.ORGANIZER,
                     organizer.folder(), schedule.intervalDays(), schedule.times(), organizer.enabled(),
-                    nextRun, progress, null, null);
+                    nextRun, progress, null, null, schedule.startDate());
             case CleanerHelper cleaner -> toCleanerItem(cleaner, id, name, nextRun, progress);
         };
     }
@@ -109,10 +109,10 @@ public final class HelperItemMapper {
         return switch (cleaner.target()) {
             case FolderTarget folder -> new HelperItem(id, name, HelperKind.CLEANER, folder.folder(),
                     schedule.intervalDays(), schedule.times(), cleaner.enabled(), nextRun, progress,
-                    ageLimitDays, toReference(folder.ageReference()));
+                    ageLimitDays, toReference(folder.ageReference()), schedule.startDate());
             case RecycleBinTarget recycleBin -> new HelperItem(id, name, HelperKind.CLEANER, null,
                     schedule.intervalDays(), schedule.times(), cleaner.enabled(), nextRun, progress,
-                    ageLimitDays, null);
+                    ageLimitDays, null, schedule.startDate());
         };
     }
 

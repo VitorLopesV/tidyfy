@@ -1,9 +1,22 @@
 package com.tidyfy.presentation;
 
+import com.tidyfy.application.usecase.SaveHelperUseCase;
+import com.tidyfy.domain.AgeLimit;
+import com.tidyfy.domain.AgeReference;
+import com.tidyfy.domain.CleanerHelper;
+import com.tidyfy.domain.CleanupTarget;
+import com.tidyfy.domain.FolderTarget;
+import com.tidyfy.domain.Helper;
+import com.tidyfy.domain.HelperId;
+import com.tidyfy.domain.HelperName;
+import com.tidyfy.domain.RecycleBinTarget;
+import com.tidyfy.domain.Schedule;
 import com.tidyfy.presentation.component.Animations;
 import com.tidyfy.presentation.component.FolderField;
 import com.tidyfy.presentation.component.Nodes;
+import com.tidyfy.presentation.model.HelperAgeReference;
 import com.tidyfy.presentation.model.HelperItem;
+import java.time.Clock;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.fxml.FXML;
@@ -64,6 +77,44 @@ public class CleanerFormController extends HelperFormController {
      */
     public CleanerFormController(HelperItem editing) {
         super(editing);
+    }
+
+    /**
+     * Cria o formulário ligado ao caso de uso de salvar.
+     *
+     * @param editing    ajudante sendo editado, ou {@code null} para criar um novo
+     * @param saveHelper caso de uso que grava o ajudante
+     * @param clock      relógio que define a data de início da frequência
+     */
+    public CleanerFormController(HelperItem editing, SaveHelperUseCase saveHelper, Clock clock) {
+        super(editing, saveHelper, clock);
+    }
+
+    /**
+     * Monta o ajudante de limpeza. O formulário ainda não tem campos de limite de idade nem de data de
+     * referência: ao criar, limpa tudo e mede pela modificação; ao editar, preserva os do ajudante original.
+     *
+     * @return o ajudante do domínio
+     */
+    @Override
+    protected Helper buildHelper(HelperId id, HelperName name, Schedule schedule, boolean enabled,
+                                 HelperItem editing) {
+        AgeLimit ageLimit = editing == null || editing.ageLimitDays() == null
+                ? null : new AgeLimit(editing.ageLimitDays());
+        CleanupTarget cleanupTarget = folderChoice.isSelected()
+                ? new FolderTarget(folderField.getFolder(), referenceOf(editing))
+                : new RecycleBinTarget();
+        return new CleanerHelper(id, name, schedule, enabled, cleanupTarget, ageLimit);
+    }
+
+    /**
+     * Data de referência da idade: a do ajudante em edição, ou a modificação quando não há.
+     */
+    private static AgeReference referenceOf(HelperItem editing) {
+        if (editing == null || editing.ageReference() == null) {
+            return AgeReference.MODIFIED;
+        }
+        return editing.ageReference() == HelperAgeReference.CREATED ? AgeReference.CREATED : AgeReference.MODIFIED;
     }
 
     /**

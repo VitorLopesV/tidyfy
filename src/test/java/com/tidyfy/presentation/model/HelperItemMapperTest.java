@@ -54,6 +54,17 @@ class HelperItemMapperTest {
         assertTrue(item.enabled());
         assertNull(item.ageLimitDays());
         assertNull(item.ageReference());
+        assertEquals(START, item.startDate());
+    }
+
+    @Test
+    void keepsTheScheduleStartDateOfACleaner() {
+        HelperItem folder = mapper.toItem(cleaner(new FolderTarget(Path.of("C:\\Temp"), AgeReference.CREATED),
+                null, true));
+        HelperItem bin = mapper.toItem(cleaner(new RecycleBinTarget(), null, true));
+
+        assertEquals(START, folder.startDate());
+        assertEquals(START, bin.startDate());
     }
 
     @Test
