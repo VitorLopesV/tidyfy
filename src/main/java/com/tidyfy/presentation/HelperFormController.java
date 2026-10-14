@@ -63,6 +63,12 @@ public abstract class HelperFormController {
     /** Indica se o usuário já mexeu no nome; o erro só aparece depois disso. */
     private final BooleanProperty nameTouched = new SimpleBooleanProperty();
 
+    /**
+     * Indica se o erro do nome deve aparecer. Fica em atributo porque as dependências de um binding só o
+     * seguram por referência fraca: como variável local, ele podia ser coletado e o erro nunca aparecia.
+     */
+    private BooleanBinding nameError;
+
     // Constantes
 
     /** Ajuda do campo de nome. */
@@ -164,7 +170,7 @@ public abstract class HelperFormController {
         nameField.textProperty().addListener((obs, old, now) -> nameTouched.set(true));
         BooleanBinding nameMissing = Bindings.createBooleanBinding(
                 () -> nameField.getText() == null || nameField.getText().isBlank(), nameField.textProperty());
-        BooleanBinding nameError = nameTouched.and(nameMissing);
+        nameError = nameTouched.and(nameMissing);
         showNameError(false);
         nameError.addListener((obs, was, error) -> showNameError(error));
         saveButton.disableProperty().bind(nameMissing.or(targetMissing()));

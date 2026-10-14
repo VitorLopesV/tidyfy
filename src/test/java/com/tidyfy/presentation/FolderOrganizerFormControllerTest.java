@@ -74,6 +74,21 @@ class FolderOrganizerFormControllerTest {
     }
 
     @Test
+    void nameErrorSurvivesGarbageCollection() {
+        JavaFx.run(() -> {
+            Parent view = form(null);
+
+            for (int i = 0; i < 5; i++) {
+                System.gc();
+            }
+            name(view).setText("a");
+            name(view).setText("");
+
+            assertTrue(name(view).getStyleClass().contains("invalid"));
+        });
+    }
+
+    @Test
     void nameErrorAppearsOnlyAfterTyping() {
         JavaFx.run(() -> {
             Parent view = form(null);
