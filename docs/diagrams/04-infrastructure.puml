@@ -58,6 +58,14 @@ package "com.tidyfy.infrastructure.persistence" {
     + delete(id : HelperId) : void
   }
 
+  class HelperJsonMapper {
+    + {static} CURRENT_VERSION : int
+    + toJson(helpers : List<Helper>) : String
+    + fromJson(json : String) : List<Helper>
+  }
+
+  class HelperJsonException
+
   class JsonExecutionHistoryRepository {
     - storageFile : Path
     + add(record : ExecutionRecord) : void
@@ -79,6 +87,8 @@ RecycleBin <|.. PowerShellRecycleBin
 FileSystem <|.. NioFileSystem
 HelperRepository <|.. JsonHelperRepository
 ExecutionHistoryRepository <|.. JsonExecutionHistoryRepository
+JsonHelperRepository --> HelperJsonMapper
+HelperJsonMapper ..> HelperJsonException : lança
 
 SchtasksTaskScheduler --> CommandRunner
 PowerShellRecycleBin --> CommandRunner
