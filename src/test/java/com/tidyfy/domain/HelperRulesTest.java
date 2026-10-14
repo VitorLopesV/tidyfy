@@ -18,10 +18,143 @@ class HelperRulesTest {
 
     private static final Schedule SCHEDULE = new Schedule(1, List.of(LocalTime.of(9, 0)), LocalDate.of(2026, 1, 1));
 
-    private final HelperRules rules = new HelperRules();
+    private static final ProtectedFolders PROTECTED = ProtectedFolders.forWindows(
+            Path.of("C:\\Windows"), Path.of("C:\\Program Files"), Path.of("C:\\Program Files (x86)"),
+            Path.of("C:\\ProgramData"), Path.of("C:\\Users\\nome"));
+
+    private static final String DOWNLOADS = "C:\\Users\\nome\\Downloads";
+
+    private final HelperRules rules = new HelperRules(PROTECTED);
 
     private static Helper helper(String name) {
-        return new FolderOrganizerHelper(HelperId.newId(), new HelperName(name), SCHEDULE, true, Path.of("pasta"));
+        return organizer(name, "C:\\Users\\nome\\pasta-" + name.trim().toLowerCase());
+    }
+
+    private static Helper organizer(String name, String folder) {
+        return new FolderOrganizerHelper(HelperId.newId(), new HelperName(name), SCHEDULE, true, Path.of(folder));
+    }
+
+    private static Helper cleaner(String name, CleanupTarget target, boolean enabled) {
+        return new CleanerHelper(HelperId.newId(), new HelperName(name), SCHEDULE, enabled, target, null);
+    }
+
+    private static CleanupTarget folderTarget(String folder) {
+        return new FolderTarget(Path.of(folder), AgeReference.CREATED);
+    }
+
+    @Test
+    void rejectsSameFolderForTwoOrganizers() {
+        Helper existing = organizer("A", DOWNLOADS);
+
+        assertThrows(FolderAlreadyInUseException.class,
+                () -> rules.assertCanSave(organizer("B", DOWNLOADS), List.of(existing)));
+    }
+
+    @Test
+    void rejectsSameFolderIgnoringCaseAndRedundantSegments() {
+        Helper existing = organizer("A", DOWNLOADS);
+
+        assertThrows(FolderAlreadyInUseException.class, () -> rules.assertCanSave(
+                organizer("B", "c:\\users\\NOME\\x\\..\\downloads"), List.of(existing)));
+    }
+
+    @Test
+    void rejectsNestedFolderInsideAnotherOfTheSameType() {
+        Helper existing = organizer("A", DOWNLOADS);
+
+        assertThrows(FolderAlreadyInUseException.class,
+                () -> rules.assertCanSave(organizer("B", DOWNLOADS + "\\Imagens"), List.of(existing)));
+    }
+
+    @Test
+    void rejectsFolderThatContainsAnotherOfTheSameType() {
+        Helper existing = organizer("A", DOWNLOADS + "\\Imagens");
+
+        assertThrows(FolderAlreadyInUseException.class,
+                () -> rules.assertCanSave(organizer("B", DOWNLOADS), List.of(existing)));
+    }
+
+    @Test
+    void acceptsSiblingFolderWithSamePrefix() {
+        Helper existing = organizer("A", DOWNLOADS);
+
+        assertDoesNotThrow(() -> rules.assertCanSave(organizer("B", DOWNLOADS + "2"), List.of(existing)));
+    }
+
+    @Test
+    void rejectsNestedFolderForTwoCleaners() {
+        Helper existing = cleaner("A", folderTarget(DOWNLOADS), true);
+
+        assertThrows(FolderAlreadyInUseException.class, () -> rules.assertCanSave(
+                cleaner("B", folderTarget(DOWNLOADS + "\\Velhos"), true), List.of(existing)));
+    }
+
+    @Test
+    void acceptsOrganizerAndCleanerOnTheSameFolder() {
+        Helper existingOrganizer = organizer("A", DOWNLOADS);
+        Helper existingCleaner = cleaner("C", folderTarget(DOWNLOADS), true);
+
+        assertDoesNotThrow(() -> rules.assertCanSave(
+                cleaner("B", folderTarget(DOWNLOADS), true), List.of(existingOrganizer)));
+        assertDoesNotThrow(() -> rules.assertCanSave(organizer("D", DOWNLOADS), List.of(existingCleaner)));
+    }
+
+    @Test
+    void rejectsSecondCleanerOnTheRecycleBin() {
+        Helper existing = cleaner("A", new RecycleBinTarget(), true);
+
+        FolderAlreadyInUseException exception = assertThrows(FolderAlreadyInUseException.class,
+                () -> rules.assertCanSave(cleaner("B", new RecycleBinTarget(), true), List.of(existing)));
+
+        assertTrue(exception.getMessage().contains("\"A\""));
+    }
+
+    @Test
+    void acceptsRecycleBinCleanerBesideFolderCleaner() {
+        Helper existing = cleaner("A", folderTarget(DOWNLOADS), true);
+
+        assertDoesNotThrow(() -> rules.assertCanSave(cleaner("B", new RecycleBinTarget(), true), List.of(existing)));
+    }
+
+    @Test
+    void disabledHelpersStillCountForOverlap() {
+        Helper disabled = cleaner("A", new RecycleBinTarget(), false);
+
+        assertThrows(FolderAlreadyInUseException.class,
+                () -> rules.assertCanSave(cleaner("B", new RecycleBinTarget(), true), List.of(disabled)));
+    }
+
+    @Test
+    void acceptsEditingHelperWhenOthersExcludeIt() {
+        assertDoesNotThrow(() -> rules.assertCanSave(organizer("A", DOWNLOADS), List.of()));
+    }
+
+    @Test
+    void rejectsProtectedFolderForOrganizer() {
+        assertThrows(ProtectedFolderException.class,
+                () -> rules.assertCanSave(organizer("A", "C:\\Windows\\System32"), List.of()));
+    }
+
+    @Test
+    void rejectsProtectedFolderForCleaner() {
+        assertThrows(ProtectedFolderException.class, () -> rules.assertCanSave(
+                cleaner("A", folderTarget("C:\\Program Files\\App"), true), List.of()));
+    }
+
+    @Test
+    void acceptsRecycleBinCleanerWhenThereAreNoOthers() {
+        assertDoesNotThrow(() -> rules.assertCanSave(cleaner("A", new RecycleBinTarget(), true), List.of()));
+    }
+
+    @Test
+    void folderAlreadyInUseExceptionIsADomainException() {
+        assertInstanceOf(DomainException.class,
+                FolderAlreadyInUseException.forFolder(Path.of(DOWNLOADS), new HelperName("A")));
+    }
+
+    @Test
+    void rejectsNullProtectedFolders() {
+        assertThrows(NullPointerException.class, () -> new HelperRules(null));
     }
 
     @Test
