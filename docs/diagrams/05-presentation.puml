@@ -12,6 +12,30 @@ package "com.tidyfy" {
     + {static} main(args : String[]) : void
   }
 
+  class LaunchArguments <<record>> {
+    + mode : Mode
+    + helperId : HelperId
+    + error : String
+    + {static} parse(args : String[]) : LaunchArguments
+  }
+
+  enum Mode {
+    INTERFACE
+    RUN
+    INVALID
+  }
+
+  class HeadlessRunner {
+    + EXIT_OK : int = 0
+    + EXIT_FAILURE : int = 1
+    + EXIT_INVALID_ARGUMENTS : int = 2
+    + run(arguments : LaunchArguments) : int
+  }
+
+  class InterfaceLauncher {
+    ~ {static} launch(args : String[]) : void
+  }
+
   class AppContainer {
     + {static} create() : AppContainer
     + saveHelper() : SaveHelperUseCase
@@ -139,6 +163,10 @@ package "javafx.application" {
   abstract class Application
 }
 
+package "com.tidyfy.infrastructure.logging" {
+  class ExecutionLog
+}
+
 package "com.tidyfy.application.usecase" {
   class SaveHelperUseCase
   class RemoveHelperUseCase
@@ -148,9 +176,14 @@ package "com.tidyfy.application.usecase" {
 
 Application <|-- TidyfyApplication
 
-Main --> AppContainer : cria
-Main ..> TidyfyApplication : sem argumentos
-Main ..> RunHelperUseCase : --run {id}
+Main --> LaunchArguments : interpreta os argumentos
+LaunchArguments +-- Mode
+Main ..> InterfaceLauncher : sem argumentos
+InterfaceLauncher ..> TidyfyApplication : Application.launch
+Main ..> HeadlessRunner : --run {id}
+HeadlessRunner ..> AppContainer : cria sob demanda
+HeadlessRunner ..> RunHelperUseCase : execute(id)
+HeadlessRunner ..> ExecutionLog : started / finished / failed
 
 TidyfyApplication --> HelperListController
 HelperListController ..> HelperTypeChooserController : "Novo ajudante"
@@ -183,7 +216,10 @@ note right of Main
   * --run {id} → executa o ajudante e encerra,
     sem abrir interface (chamado pelo
     Agendador de Tarefas do Windows)
-  Hoje só o primeiro existe.
+  Só o InterfaceLauncher referencia o JavaFX:
+  o modo --run nunca o carrega. O HeadlessRunner
+  devolve o código de saída (0 sucesso, 1 falha,
+  2 argumentos inválidos); só o Main chama System.exit.
 end note
 
 note right of AppContainer

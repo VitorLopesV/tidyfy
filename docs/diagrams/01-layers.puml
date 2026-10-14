@@ -7,6 +7,9 @@ set namespaceSeparator none
 
 package "com.tidyfy (composição)" as bootstrap {
   class Main
+  class LaunchArguments
+  class HeadlessRunner
+  class InterfaceLauncher
   class AppContainer
 }
 
@@ -23,6 +26,7 @@ package "com.tidyfy.domain" as domain {
 }
 
 bootstrap ..> presentation : inicia a interface
+(só InterfaceLauncher; --run não carrega JavaFX)
 bootstrap ..> infrastructure : instancia
 bootstrap ..> application : monta casos de uso
 presentation ..> application : chama casos de uso

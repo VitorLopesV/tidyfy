@@ -238,6 +238,26 @@ class RunHelperUseCaseTest {
     }
 
     @Test
+    void executeReturnsTheRecordThatWasSaved() {
+        FolderOrganizerHelper helper = organizer(true);
+        repository.with(helper);
+        fileSystem.addFolder(FOLDER);
+
+        ExecutionRecord returned = useCase.execute(helper.id()).orElseThrow();
+
+        assertEquals(history.all().get(0), returned);
+    }
+
+    @Test
+    void executeReturnsEmptyForDisabledOrMissingHelper() {
+        FolderOrganizerHelper helper = organizer(false);
+        repository.with(helper);
+
+        assertTrue(useCase.execute(helper.id()).isEmpty());
+        assertTrue(useCase.execute(HelperId.newId()).isEmpty());
+    }
+
+    @Test
     void nullIdIsRejected() {
         assertThrows(NullPointerException.class, () -> useCase.execute(null));
     }

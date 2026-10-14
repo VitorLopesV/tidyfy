@@ -20,7 +20,7 @@ import java.util.Optional;
  * conforme o tipo, grava o {@link ExecutionRecord} no histórico e apaga os registros expirados.
  * Ajudante inexistente ou desligado não faz nada e não grava histórico. Se o caso de uso lançar uma
  * {@link RuntimeException}, ela não é propagada: vira uma única ação {@link ActionType#FAILED} no
- * registro. O log em arquivo da falha será ligado depois (infraestrutura); aqui só há o histórico.
+ * registro. O modo sem interface (HeadlessRunner) lê as ações FAILED do registro devolvido e grava o log em arquivo.
  * Falha ao gravar o histórico é propagada.
  */
 public final class RunHelperUseCase {
@@ -84,20 +84,23 @@ public final class RunHelperUseCase {
      * Não faz nada se o ajudante não existir ou estiver desligado.
      *
      * @param id identificador do ajudante
+     * @return o registro gravado no histórico, ou vazio se o ajudante não existe ou está desligado
      * @throws NullPointerException se {@code id} for nulo
      * @throws java.io.UncheckedIOException se o histórico não puder ser gravado
      */
-    public void execute(HelperId id) {
+    public Optional<ExecutionRecord> execute(HelperId id) {
         Objects.requireNonNull(id, ID_NAME);
         Optional<Helper> found = repository.findById(id);
         if (found.isEmpty() || !found.get().enabled()) {
-            return;
+            return Optional.empty();
         }
         Helper helper = found.get();
         List<HelperAction> actions = run(helper);
         Instant now = clock.instant();
-        history.add(new ExecutionRecord(helper.id(), helper.name().value(), now, actions));
+        ExecutionRecord record = new ExecutionRecord(helper.id(), helper.name().value(), now, actions);
+        history.add(record);
         history.deleteExpired(now);
+        return Optional.of(record);
     }
 
     /**

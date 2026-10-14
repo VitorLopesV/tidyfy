@@ -37,7 +37,7 @@ package "com.tidyfy.application.usecase" {
     - cleanup : CleanupUseCase
     - history : ExecutionHistoryRepository
     - clock : Clock
-    + execute(id : HelperId) : void
+    + execute(id : HelperId) : Optional<ExecutionRecord>
   }
 
   class OrganizeFolderUseCase {
