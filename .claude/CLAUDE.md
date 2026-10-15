@@ -285,6 +285,7 @@ Todas as regras são validadas no domínio, não só na UI.
 
 - JUnit 5, rodando via Surefire (`mvn test`).
 - **Cobertura:** o JaCoCo (`jacoco-maven-plugin`) mede a cobertura em todo `mvn test`/`mvn clean test` e grava o relatório em `target/site/jacoco/` (`index.html`, `jacoco.csv`, `jacoco.xml`). Só mede, sem limite mínimo que quebre o build. O agente entra pela propriedade `argLine`; as JVMs filhas do teste de concorrência usam `java.class.path` e não herdam o agente. O perfil `package` não é afetado (o `jpackage` não usa `argLine`).
+- **CI:** `.github/workflows/ci.yml` roda `mvn -B clean test` em `windows-latest` (JDK 21 Temurin) a cada push e pull request para a `master`, inclusive os testes de tela (os runners Windows têm sessão gráfica), e publica como artefatos os relatórios do Surefire e do JaCoCo. Não roda o perfil `package`.
 - A regra de dependência entre camadas é verificada por `ArchitectureTest` (ArchUnit).
 - `domain` e `application` são testados sem tocar no disco nem no Windows (use dublês das portas).
 - Testes que precisem do sistema de arquivos devem usar diretórios temporários (`@TempDir`) e nunca pastas reais do usuário.

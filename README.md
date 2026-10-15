@@ -1,5 +1,7 @@
 # Tidyfy
 
+[![CI](https://github.com/VitorLopesV/tidyfy/actions/workflows/ci.yml/badge.svg)](https://github.com/VitorLopesV/tidyfy/actions/workflows/ci.yml)
+
 Seu computador organizado sem você precisar lembrar disso.
 
 O Tidyfy é um aplicativo para **Windows** que cria **ajudantes**: pequenos robôs que cuidam, de tempos em tempos, das tarefas chatas de limpeza e organização da sua máquina. Você cria o ajudante, dá um nome a ele, diz onde e quando ele deve trabalhar, e ele faz o resto sozinho.
