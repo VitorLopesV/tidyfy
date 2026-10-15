@@ -277,6 +277,7 @@ Todas as regras são validadas no domínio, não só na UI.
 ## Testes
 
 - JUnit 5, rodando via Surefire (`mvn test`).
+- A regra de dependência entre camadas é verificada por `ArchitectureTest` (ArchUnit).
 - `domain` e `application` são testados sem tocar no disco nem no Windows (use dublês das portas).
 - Testes que precisem do sistema de arquivos devem usar diretórios temporários (`@TempDir`) e nunca pastas reais do usuário.
 - Código que chama `schtasks.exe`/lixeira real não deve rodar em testes unitários; teste o comando montado e o tratamento da resposta, não a execução real.
