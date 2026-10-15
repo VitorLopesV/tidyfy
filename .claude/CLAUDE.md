@@ -296,4 +296,7 @@ Todas as regras são validadas no domínio, não só na UI.
 mvn clean test       # compila e roda os testes
 mvn javafx:run       # abre a interface
 mvn clean package    # gera target/tidyfy-1.0-SNAPSHOT.jar
+mvn clean package -Ppackage -DskipTests  # gera o executável: target/dist/Tidyfy/Tidyfy.exe
 ```
+
+O perfil `package` (fora dele o build não muda) gera um JAR único em `target/jpackage-input/tidyfy.jar` (`maven-shade-plugin`, com os jars do JavaFX para Windows) e chama o `jpackage` do JDK em uso (`exec-maven-plugin`) para montar a **imagem de aplicação** `target/dist/Tidyfy` (~87 MB), com runtime embutido (os módulos ficam em `jpackage.modules` no `pom.xml`; confira com `jdeps --print-module-deps` ao adicionar dependências). Não exige JDK nem JavaFX na máquina. `Tidyfy.exe` é aplicativo GUI (sem console): sem argumentos abre a interface; `Tidyfy.exe --run <id>` executa o ajudante sem carregar o JavaFX. Não gera instalador.

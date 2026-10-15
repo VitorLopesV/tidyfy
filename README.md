@@ -117,3 +117,5 @@ Ideias para as próximas rodadas, como novos tipos de ajudante:
 ## Para quem vai desenvolver
 
 Informações técnicas (arquitetura, tecnologias, padrões e comandos) ficam no arquivo [CLAUDE.md](.claude/CLAUDE.md).
+
+Para gerar o executável (sem precisar de Java instalado): `mvn clean package -Ppackage -DskipTests`; o resultado fica em `target/dist/Tidyfy/Tidyfy.exe`.
