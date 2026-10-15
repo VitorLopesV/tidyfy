@@ -74,6 +74,8 @@ class InstallerContractTest {
         assertTrue(profile.contains("<argument>--app-image</argument>"));
         assertTrue(profile.contains("${project.build.directory}/dist/${app.name}"));
         assertTrue(profile.contains("<argument>--win-menu</argument>"));
+        assertTrue(profile.replaceAll("\\s+", "")
+                .contains("<argument>--win-menu-group</argument><argument>Tidyfy</argument>"));
         assertTrue(profile.contains("<argument>--win-shortcut</argument>"));
         assertTrue(profile.contains("<argument>--win-per-user-install</argument>"));
         assertTrue(profile.contains("<argument>--resource-dir</argument>"));

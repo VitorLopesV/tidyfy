@@ -126,7 +126,7 @@ Para gerar o executável (sem precisar de Java instalado): `mvn clean package -P
 
 Para gerar o instalador (MSI, com atalhos no menu Iniciar e na área de trabalho, instalação por usuário e atualização por cima de versões anteriores): `mvn clean verify -Ppackage,installer -DskipTests`; o resultado fica em `target/installer`. É preciso ter o **WiX Toolset 3.x** instalado e no PATH (`candle.exe` e `light.exe`). Ao desinstalar, o instalador executa `Tidyfy.exe --remove-tasks`, que remove todas as tarefas do Tidyfy do Agendador de Tarefas do Windows (o histórico e a configuração em `%APPDATA%\Tidyfy` ficam).
 
-> **Atenção:** o instalador ainda não foi gerado nem validado numa máquina com o WiX; a configuração está pronta, mas instalar, abrir o aplicativo e desinstalar precisam ser testados.
+> **Validação:** o instalador foi gerado, instalado e desinstalado de verdade no Windows 11 (instalação por usuário, atalhos na pasta «Tidyfy» do menu Iniciar e na área de trabalho, app aberto a partir da pasta instalada, e a desinstalação removeu uma tarefa de teste do Agendador, os arquivos, os atalhos e a entrada em «Aplicativos instalados»). Ainda não foram testadas a atualização por cima de uma versão anterior nem a desinstalação pelas Configurações do Windows; o instalador não é assinado, então o Windows pode exibir um aviso de segurança.
 
 Para ver a cobertura dos testes: `mvn clean test` e abra `target/site/jacoco/index.html`.
 

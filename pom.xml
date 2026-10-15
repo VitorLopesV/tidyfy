@@ -262,6 +262,8 @@
                                         <argument>--resource-dir</argument>
                                         <argument>${installer.resources}</argument>
                                         <argument>--win-menu</argument>
+                                        <argument>--win-menu-group</argument>
+                                        <argument>Tidyfy</argument>
                                         <argument>--win-shortcut</argument>
                                         <argument>--win-per-user-install</argument>
                                         <argument>--win-upgrade-uuid</argument>

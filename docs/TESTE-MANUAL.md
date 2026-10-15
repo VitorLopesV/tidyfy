@@ -205,9 +205,9 @@ Cada violação aparece em um diálogo de erro (botão «Fechar») e o ajudante 
 
 - [ ] Seção 12 conferida
 
-## 13. Instalador e desinstalação (pendente de validação)
+## 13. Instalador e desinstalação (validado em parte)
 
-> **Pendente de validação:** o instalador ainda não foi gerado nem testado, porque o WiX Toolset 3.x não estava instalado (veja a issue #71). Todos os itens abaixo ainda precisam ser verificados por alguém numa máquina com o WiX. Quando todos passarem, a issue #71 pode ser fechada.
+> **Validado em parte (15/10/2026, issue #71):** os itens 1 a 4, 7 e 8 foram executados de verdade, de forma silenciosa (`msiexec`), com uma tarefa de teste no lugar de ajudantes reais: o MSI foi gerado, instalou por usuário, criou os atalhos (menu Iniciar na pasta «Tidyfy» e área de trabalho), abriu a janela «Tidyfy» e a desinstalação removeu a tarefa, os arquivos, os atalhos e a entrada em «Aplicativos instalados». **Continuam pendentes:** o item 5 com ajudantes reais, a atualização por cima (itens 6 e 9) e a desinstalação pela tela de Configurações (item 7, pela interface).
 
 1. **Pré-requisito:** instale o WiX Toolset 3.x e confirme `candle.exe` e `light.exe` no PATH.
 2. **Gerar o MSI:** `mvn clean verify -Ppackage,installer -DskipTests`.
@@ -226,7 +226,7 @@ Cada violação aparece em um diálogo de erro (botão «Fechar») e o ajudante 
 9. **Atualização não remove tarefas:** repita o item 6 e confirme que as tarefas não foram apagadas (a remoção só ocorre na desinstalação, não na atualização).
 10. (Direto, sem MSI) Com o pacote gerado, rode `target\dist\Tidyfy\Tidyfy.exe --remove-tasks` e confira o Agendador; o código de saída é 0 (`echo %ERRORLEVEL%` no `cmd`; o `.exe` é GUI, então use `start /wait`).
 
-- [ ] Seção 13 conferida (pendente de validação)
+- [ ] Seção 13 conferida (itens 5, 6 e 9 e a desinstalação pelas Configurações ainda pendentes)
 
 ## 14. Aparência (ainda não conferida numa janela real)
 
@@ -259,7 +259,7 @@ Preencha ao terminar (data, versão/commit testado e máquina: _________________
 | 10. Remover | | | |
 | 11. Falhas e robustez | | | |
 | 12. Comportamento do Agendador | | | |
-| 13. Instalador e desinstalação (pendente) | | | |
+| 13. Instalador e desinstalação (itens 1–4, 7 e 8 validados em 15/10/2026; 5, 6 e 9 pendentes) | | | |
 | 14. Aparência | | | |
 
 ## Limpeza final
