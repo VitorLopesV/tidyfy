@@ -53,6 +53,16 @@ package "com.tidyfy.application.usecase" {
     failures : List<Failure>
   }
 
+  class RemoveAllTasksUseCase {
+    - scheduler : TaskScheduler
+    + execute() : RemoveTasksResult
+  }
+
+  class RemoveTasksResult {
+    removed : int
+    failures : List<Failure>
+  }
+
   class OrganizeFolderUseCase {
     - fileSystem : FileSystem
     - planner : FolderOrganizationPlanner
@@ -126,6 +136,8 @@ ListExecutionHistoryUseCase --> ExecutionHistoryRepository
 SyncSchedulerUseCase --> HelperRepository
 SyncSchedulerUseCase --> TaskScheduler
 SyncSchedulerUseCase ..> SyncResult
+RemoveAllTasksUseCase --> TaskScheduler
+RemoveAllTasksUseCase ..> RemoveTasksResult
 RunHelperUseCase --> HelperRepository
 RunHelperUseCase --> OrganizeFolderUseCase
 RunHelperUseCase --> CleanupUseCase

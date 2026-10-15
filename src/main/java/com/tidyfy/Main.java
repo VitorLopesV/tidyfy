@@ -6,8 +6,9 @@ import com.tidyfy.infrastructure.persistence.StorageLocation;
 import java.time.Clock;
 
 /**
- * Ponto de entrada do Tidyfy, com dois modos: sem argumentos abre a interface gráfica; com
- * {@code --run <id>} executa o ajudante sem interface e encerra com código de saída (0 em sucesso).
+ * Ponto de entrada do Tidyfy, com três modos: sem argumentos abre a interface gráfica; com
+ * {@code --run <id>} executa o ajudante sem interface e encerra com código de saída (0 em sucesso); com
+ * {@code --remove-tasks} remove todas as tarefas do agendador (desinstalação) e encerra.
  * A decisão é tomada antes de qualquer código do JavaFX: esta classe não o referencia, e o JavaFX só é
  * carregado por {@link InterfaceLauncher}, que o modo {@code --run} nunca usa.
  */
@@ -53,6 +54,9 @@ public final class Main {
             return;
         }
         ExecutionLog log = createLog();
+        if (arguments.mode() == LaunchArguments.Mode.REMOVE_TASKS) {
+            System.exit(new RemoveTasksRunner(() -> AppContainer.create().removeAllTasks(), log, System.err).run());
+        }
         System.exit(new HeadlessRunner(() -> AppContainer.create().runHelper(), log, System.err).run(arguments));
     }
 }

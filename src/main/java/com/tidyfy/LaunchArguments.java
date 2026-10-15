@@ -7,7 +7,8 @@ import java.util.UUID;
 
 /**
  * Interpretação dos argumentos de linha de comando do Tidyfy. Sem argumentos abre a interface;
- * {@code --run <id>} executa um ajudante sem interface; qualquer outra coisa é inválida e traz uma mensagem.
+ * {@code --run <id>} executa um ajudante sem interface; {@code --remove-tasks} remove todas as tarefas do
+ * Tidyfy do agendador (usado pelo desinstalador); qualquer outra coisa é inválida e traz uma mensagem.
  * Não depende de JavaFX nem do Windows, então é testável sem abrir a interface.
  *
  * @param mode     modo de execução pedido
@@ -22,6 +23,8 @@ public record LaunchArguments(Mode mode, HelperId helperId, String error) {
         INTERFACE,
         /** Executa um ajudante e encerra, sem interface. */
         RUN,
+        /** Remove todas as tarefas do Tidyfy do agendador e encerra, sem interface. */
+        REMOVE_TASKS,
         /** Argumentos inválidos. */
         INVALID
     }
@@ -30,6 +33,13 @@ public record LaunchArguments(Mode mode, HelperId helperId, String error) {
 
     /** Argumento que pede a execução de um ajudante. */
     public static final String RUN_ARGUMENT = "--run";
+
+    /** Argumento que pede a remoção de todas as tarefas do agendador. */
+    public static final String REMOVE_TASKS_ARGUMENT = "--remove-tasks";
+
+    /** Modelo da mensagem quando há argumentos junto de {@code --remove-tasks}. */
+    private static final String REMOVE_TASKS_EXTRA_ARGUMENTS =
+            "O argumento --remove-tasks não aceita outros argumentos: %s";
 
     /** Mensagem quando o identificador do ajudante não foi informado. */
     private static final String MISSING_ID = "Informe o identificador do ajudante: --run <id>";
@@ -41,7 +51,7 @@ public record LaunchArguments(Mode mode, HelperId helperId, String error) {
     private static final String EXTRA_ARGUMENTS = "Argumentos demais após o identificador: %s";
 
     /** Modelo da mensagem quando o argumento não é conhecido. */
-    private static final String UNKNOWN_ARGUMENT = "Argumento desconhecido: %s (uso: --run <id>)";
+    private static final String UNKNOWN_ARGUMENT = "Argumento desconhecido: %s (uso: --run <id> ou --remove-tasks)";
 
     /** Separador dos argumentos nas mensagens. */
     private static final String SEPARATOR = " ";
@@ -55,6 +65,13 @@ public record LaunchArguments(Mode mode, HelperId helperId, String error) {
     public static LaunchArguments parse(String[] args) {
         if (args.length == 0) {
             return new LaunchArguments(Mode.INTERFACE, null, null);
+        }
+        if (REMOVE_TASKS_ARGUMENT.equals(args[0])) {
+            if (args.length > 1) {
+                return invalid(String.format(REMOVE_TASKS_EXTRA_ARGUMENTS,
+                        String.join(SEPARATOR, Arrays.copyOfRange(args, 1, args.length))));
+            }
+            return new LaunchArguments(Mode.REMOVE_TASKS, null, null);
         }
         if (!RUN_ARGUMENT.equals(args[0])) {
             return invalid(String.format(UNKNOWN_ARGUMENT, args[0]));

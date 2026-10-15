@@ -64,6 +64,29 @@ class LaunchArgumentsTest {
     }
 
     @Test
+    void removeTasksAloneIsTheRemoveTasksMode() {
+        LaunchArguments result = LaunchArguments.parse(new String[] {"--remove-tasks"});
+
+        assertEquals(LaunchArguments.Mode.REMOVE_TASKS, result.mode());
+        assertNull(result.helperId());
+        assertNull(result.error());
+    }
+
+    @Test
+    void removeTasksWithExtraArgumentsIsInvalid() {
+        LaunchArguments result = LaunchArguments.parse(new String[] {"--remove-tasks", "x"});
+
+        assertEquals(LaunchArguments.Mode.INVALID, result.mode());
+        assertTrue(result.error().contains("x"));
+    }
+
+    @Test
+    void removeTasksAfterAnotherArgumentIsInvalid() {
+        assertEquals(LaunchArguments.Mode.INVALID,
+                LaunchArguments.parse(new String[] {"--run", "--remove-tasks"}).mode());
+    }
+
+    @Test
     void extraArgumentsAreInvalid() {
         LaunchArguments result = LaunchArguments.parse(new String[] {"--run", ID, "x", "y"});
 

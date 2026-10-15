@@ -134,6 +134,15 @@ public final class ExecutionLog {
     }
 
     /**
+     * Registra uma linha informativa que não pertence a um ajudante.
+     *
+     * @param message o texto da linha
+     */
+    public void info(String message) {
+        write(LEVEL_INFO, NO_HELPER, message);
+    }
+
+    /**
      * Registra um erro que não pertence a um ajudante (por exemplo, argumentos inválidos).
      *
      * @param message descrição do erro

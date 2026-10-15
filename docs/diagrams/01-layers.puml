@@ -9,6 +9,7 @@ package "com.tidyfy (composição)" as bootstrap {
   class Main
   class LaunchArguments
   class HeadlessRunner
+  class RemoveTasksRunner
   class InterfaceLauncher
   class SchedulerSyncStarter
   class AppContainer

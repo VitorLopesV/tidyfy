@@ -122,4 +122,10 @@ Informações técnicas (arquitetura, tecnologias, padrões e comandos) ficam no
 
 Para gerar o executável (sem precisar de Java instalado): `mvn clean package -Ppackage -DskipTests`; o resultado fica em `target/dist/Tidyfy/Tidyfy.exe`.
 
+### Instalação
+
+Para gerar o instalador (MSI, com atalhos no menu Iniciar e na área de trabalho, instalação por usuário e atualização por cima de versões anteriores): `mvn clean verify -Ppackage,installer -DskipTests`; o resultado fica em `target/installer`. É preciso ter o **WiX Toolset 3.x** instalado e no PATH (`candle.exe` e `light.exe`). Ao desinstalar, o instalador executa `Tidyfy.exe --remove-tasks`, que remove todas as tarefas do Tidyfy do Agendador de Tarefas do Windows (o histórico e a configuração em `%APPDATA%\Tidyfy` ficam).
+
+> **Atenção:** o instalador ainda não foi gerado nem validado numa máquina com o WiX; a configuração está pronta, mas instalar, abrir o aplicativo e desinstalar precisam ser testados.
+
 Para ver a cobertura dos testes: `mvn clean test` e abra `target/site/jacoco/index.html`.

@@ -4,6 +4,7 @@ import com.tidyfy.application.usecase.CleanupUseCase;
 import com.tidyfy.application.usecase.ListExecutionHistoryUseCase;
 import com.tidyfy.application.usecase.ListHelpersUseCase;
 import com.tidyfy.application.usecase.OrganizeFolderUseCase;
+import com.tidyfy.application.usecase.RemoveAllTasksUseCase;
 import com.tidyfy.application.usecase.RemoveHelperUseCase;
 import com.tidyfy.application.usecase.RunHelperUseCase;
 import com.tidyfy.application.usecase.SaveHelperUseCase;
@@ -57,6 +58,9 @@ public final class AppContainer {
     /** Caso de uso de sincronizar o agendador. */
     private final SyncSchedulerUseCase syncScheduler;
 
+    /** Caso de uso de remover todas as tarefas do agendador. */
+    private final RemoveAllTasksUseCase removeAllTasks;
+
     // Constantes
 
     /** Nome da subpasta da pasta do Tidyfy onde o agendador grava os XML temporários. */
@@ -96,6 +100,7 @@ public final class AppContainer {
         this.listExecutionHistory = new ListExecutionHistoryUseCase(history);
         this.runHelper = new RunHelperUseCase(helpers, organizeFolder, cleanup, history, clock);
         this.syncScheduler = new SyncSchedulerUseCase(helpers, scheduler);
+        this.removeAllTasks = new RemoveAllTasksUseCase(scheduler);
     }
 
     /**
@@ -173,5 +178,14 @@ public final class AppContainer {
      */
     public SyncSchedulerUseCase syncScheduler() {
         return syncScheduler;
+    }
+
+    /**
+     * Caso de uso de remover todas as tarefas do Tidyfy do agendador (usado na desinstalação).
+     *
+     * @return o caso de uso
+     */
+    public RemoveAllTasksUseCase removeAllTasks() {
+        return removeAllTasks;
     }
 }

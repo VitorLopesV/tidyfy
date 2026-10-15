@@ -22,7 +22,15 @@ package "com.tidyfy" {
   enum Mode {
     INTERFACE
     RUN
+    REMOVE_TASKS
     INVALID
+  }
+
+  class RemoveTasksRunner {
+    + RemoveTasksRunner(removeAllTasks : Supplier<RemoveAllTasksUseCase>, log : ExecutionLog, err : PrintStream)
+    + EXIT_OK : int = 0
+    + EXIT_FAILURE : int = 1
+    + run() : int
   }
 
   class HeadlessRunner {
@@ -51,6 +59,7 @@ package "com.tidyfy" {
     + listExecutionHistory() : ListExecutionHistoryUseCase
     + runHelper() : RunHelperUseCase
     + syncScheduler() : SyncSchedulerUseCase
+    + removeAllTasks() : RemoveAllTasksUseCase
   }
 }
 
@@ -270,6 +279,7 @@ package "com.tidyfy.application.usecase" {
   class ListExecutionHistoryUseCase
   class RunHelperUseCase
   class SyncSchedulerUseCase
+  class RemoveAllTasksUseCase
 }
 
 package "com.tidyfy.domain" {
@@ -289,6 +299,10 @@ Main ..> HeadlessRunner : --run {id}
 HeadlessRunner ..> AppContainer : cria sob demanda
 HeadlessRunner ..> RunHelperUseCase : execute(id)
 HeadlessRunner ..> ExecutionLog : started / finished / failed
+Main ..> RemoveTasksRunner : --remove-tasks (desinstalador)
+RemoveTasksRunner ..> AppContainer : cria sob demanda
+RemoveTasksRunner ..> RemoveAllTasksUseCase : execute()
+RemoveTasksRunner ..> ExecutionLog : info / error
 
 InterfaceLauncher ..> UiServices : monta com os casos de uso do AppContainer
 TidyfyApplication ..> UiServices : usa

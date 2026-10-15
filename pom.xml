@@ -211,5 +211,68 @@
                 </plugins>
             </build>
         </profile>
+        <!--
+            Comando: mvn clean verify -Ppackage,installer -DskipTests. Gera o instalador MSI em target/installer a partir da
+            imagem de aplicação do perfil package (que roda na fase package; este roda depois, na fase verify).
+            Exige o WiX Toolset 3.x (candle.exe e light.exe) no PATH. O main.wxs de src/installer/resources é o modelo
+            do jpackage do JDK 21 com uma ação que roda o Tidyfy.exe com o argumento remove-tasks na desinstalação.
+            Só é acionado com -Pinstaller: não afeta mvn test nem o perfil package.
+        -->
+        <profile>
+            <id>installer</id>
+            <properties>
+                <!-- Versão do MSI: só números (1 a 3 componentes), por isso não usa ${project.version} (1.0-SNAPSHOT). -->
+                <installer.version>1.0.0</installer.version>
+                <installer.vendor>Tidyfy</installer.vendor>
+                <installer.resources>${project.basedir}/src/installer/resources</installer.resources>
+                <installer.dest>${project.build.directory}/installer</installer.dest>
+                <!-- UUID FIXO: identifica o produto entre versões, para uma nova versão atualizar a instalada. Nunca mude. -->
+                <installer.upgrade.uuid>7c8794c1-e028-43a1-a5ae-b02417a2ed6a</installer.upgrade.uuid>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${exec-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>jpackage-installer</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${java.home}/bin/jpackage</executable>
+                                    <arguments>
+                                        <argument>--type</argument>
+                                        <argument>msi</argument>
+                                        <argument>--app-image</argument>
+                                        <argument>${project.build.directory}/dist/${app.name}</argument>
+                                        <argument>--name</argument>
+                                        <argument>${app.name}</argument>
+                                        <argument>--app-version</argument>
+                                        <argument>${installer.version}</argument>
+                                        <argument>--vendor</argument>
+                                        <argument>${installer.vendor}</argument>
+                                        <argument>--description</argument>
+                                        <argument>${project.name}</argument>
+                                        <argument>--dest</argument>
+                                        <argument>${installer.dest}</argument>
+                                        <argument>--resource-dir</argument>
+                                        <argument>${installer.resources}</argument>
+                                        <argument>--win-menu</argument>
+                                        <argument>--win-shortcut</argument>
+                                        <argument>--win-per-user-install</argument>
+                                        <argument>--win-upgrade-uuid</argument>
+                                        <argument>${installer.upgrade.uuid}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>
