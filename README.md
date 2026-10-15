@@ -4,7 +4,7 @@ Seu computador organizado sem você precisar lembrar disso.
 
 O Tidyfy é um aplicativo para **Windows** que cria **ajudantes**: pequenos robôs que cuidam, de tempos em tempos, das tarefas chatas de limpeza e organização da sua máquina. Você cria o ajudante, dá um nome a ele, diz onde e quando ele deve trabalhar, e ele faz o resto sozinho.
 
-> **Status:** projeto em fase inicial. Este documento descreve o que o Tidyfy se propõe a fazer e as regras que ele deve seguir.
+> **Status:** o Tidyfy já funciona de ponta a ponta no Windows: pela interface dá para criar, editar, ligar, desligar e remover ajudantes, que são agendados no Agendador de Tarefas, executam sozinhos e deixam um histórico. Ainda falta o empacotamento: por enquanto o aplicativo roda a partir do código-fonte (Maven), sem executável nem instalador. Este documento descreve o que o Tidyfy faz e as regras que ele segue.
 
 ---
 

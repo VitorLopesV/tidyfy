@@ -26,6 +26,7 @@ package "com.tidyfy" {
   }
 
   class HeadlessRunner {
+    + HeadlessRunner(runHelper : Supplier<RunHelperUseCase>, log : ExecutionLog, err : PrintStream)
     + EXIT_OK : int = 0
     + EXIT_FAILURE : int = 1
     + EXIT_INVALID_ARGUMENTS : int = 2
@@ -33,12 +34,13 @@ package "com.tidyfy" {
   }
 
   class SchedulerSyncStarter {
+    ~ SchedulerSyncStarter(syncScheduler : Supplier<SyncSchedulerUseCase>, log : ExecutionLog)
     ~ start() : Thread
     ~ run() : void
   }
 
   class InterfaceLauncher {
-    ~ {static} launch(args : String[]) : void
+    ~ {static} launch(container : AppContainer, clock : Clock, args : String[]) : void
   }
 
   class AppContainer {
@@ -83,6 +85,7 @@ package "com.tidyfy.presentation" {
     + showHelpers(items : List<HelperItem>) : void
     + setSaveServices(saveHelper : SaveHelperUseCase, clock : Clock) : void
     + setRemoveService(removeHelper : RemoveHelperUseCase) : void
+    + setHistoryLoader(historyLoader : Function<String, List<ExecutionItem>>) : void
     ~ afterRemoveConfirmation(confirmation : RemoveConfirmationController, chosen : List<HelperItem>) : void
     ~ createForm(kind : HelperKind, editing : HelperItem) : HelperFormController
     ~ afterForm(form : HelperFormController) : void
@@ -208,6 +211,17 @@ package "com.tidyfy.presentation.model" {
     + map(record : ExecutionRecord) : ExecutionItem
   }
 
+  class HelperItemMapper {
+    + HelperItemMapper(clock : Clock)
+    + toItems(helpers : List<Helper>) : List<HelperItem>
+    + toItem(helper : Helper) : HelperItem
+  }
+
+  enum HelperAgeReference {
+    CREATED
+    MODIFIED
+  }
+
   class HelperSelection {
     + set(id : String, selected : boolean) : void
     + count() : int
@@ -253,7 +267,14 @@ package "com.tidyfy.application.usecase" {
   class SaveHelperUseCase
   class RemoveHelperUseCase
   class ListHelpersUseCase
+  class ListExecutionHistoryUseCase
   class RunHelperUseCase
+  class SyncSchedulerUseCase
+}
+
+package "com.tidyfy.domain" {
+  class Helper
+  class ExecutionRecord
 }
 
 Application <|-- TidyfyApplication
@@ -271,9 +292,18 @@ HeadlessRunner ..> ExecutionLog : started / finished / failed
 
 InterfaceLauncher ..> UiServices : monta com os casos de uso do AppContainer
 TidyfyApplication ..> UiServices : usa
-TidyfyApplication --> HelperListController
+UiServices o-- ListHelpersUseCase
+UiServices o-- SaveHelperUseCase
+UiServices o-- RemoveHelperUseCase
+UiServices o-- ListExecutionHistoryUseCase
+TidyfyApplication --> HelperListController : cria e liga os serviços
+TidyfyApplication ..> HelperItemMapper : cria
+TidyfyApplication ..> HistoryLoader : cria
+TidyfyApplication ..> ExecutionItemMapper : cria
 HelperListController ..> ListHelpersUseCase : reload()
-HelperListController ..> HelperItemMapper : converte Helper em HelperItem
+HelperListController --> HelperItemMapper : converte Helper em HelperItem
+HelperItemMapper ..> Helper
+HelperItemMapper ..> HelperItem : cria
 HelperListController ..> HelperTypeChooserController : "Novo ajudante"
 HelperListController ..> FolderOrganizerFormController : abre
 HelperListController ..> CleanerFormController : abre
@@ -287,6 +317,7 @@ HelperListController ..> Dialogs
 ExecutionHistoryController ..> ExecutionItem
 ExecutionItem *-- ExecutionAction
 ExecutionItemMapper ..> ExecutionItem : converte ExecutionRecord
+ExecutionItemMapper ..> ExecutionRecord
 HistoryLoader --> ExecutionItemMapper
 HistoryLoader --> ListExecutionHistoryUseCase
 HelperListController --> HistoryLoader : historyLoader (Function)
@@ -302,6 +333,7 @@ HelperFormController ..> UpcomingRunsCalendar
 HelperCard ..> HelperItem
 UpcomingRunsCalendar ..> SchedulePreview
 HelperItem --> HelperKind
+HelperItem --> HelperAgeReference
 
 HelperListController --> ListHelpersUseCase
 HelperListController --> RemoveHelperUseCase : confirmar remoção
@@ -332,7 +364,7 @@ end note
 
 note bottom of HelperListController
   Lista os ajudantes e permite ligar/desligar,
-  editar e remover. "Novo ajudante" pede o tipo
+  editar, remover e ver o histórico. "Novo ajudante" pede o tipo
   e abre o formulário correspondente.
   Edição só com um ajudante selecionado;
   remoção com um ou vários. As ações da
@@ -342,9 +374,11 @@ note bottom of HelperListController
   Mostra o uso por tipo (ex.: 12/20) e bloqueia
   a criação no limite; quem garante a regra
   é o domínio.
-  A lista vem do ListHelpersUseCase; Salvar e
-  Remover chamam os casos de uso e a lista
-  é recarregada.
+  A lista vem do ListHelpersUseCase; Salvar,
+  Remover e o interruptor chamam os casos de uso
+  e a lista é recarregada. Erros aparecem no
+  diálogo de erro; o histórico, no diálogo
+  de histórico (carregado pelo HistoryLoader).
 end note
 
 note bottom of HelperFormController
@@ -361,7 +395,8 @@ end note
 
 note right of HelperItem
   Modelo de tela: o que a interface exibe.
-  Será montado a partir do Helper do domínio.
+  Montado a partir do Helper do domínio
+  pelo HelperItemMapper.
   folder nulo = lixeira do Windows.
 end note
 

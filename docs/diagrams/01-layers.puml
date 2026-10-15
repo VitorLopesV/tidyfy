@@ -10,6 +10,7 @@ package "com.tidyfy (composição)" as bootstrap {
   class LaunchArguments
   class HeadlessRunner
   class InterfaceLauncher
+  class SchedulerSyncStarter
   class AppContainer
 }
 
@@ -25,8 +26,7 @@ package "com.tidyfy.application" as application {
 package "com.tidyfy.domain" as domain {
 }
 
-bootstrap ..> presentation : inicia a interface
-(só InterfaceLauncher; --run não carrega JavaFX)
+bootstrap ..> presentation : inicia a interface\n(só InterfaceLauncher; --run não carrega JavaFX)
 bootstrap ..> infrastructure : instancia
 bootstrap ..> application : monta casos de uso
 presentation ..> application : chama casos de uso
