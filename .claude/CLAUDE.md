@@ -103,6 +103,13 @@ Os diagramas PlantUML em [docs/diagrams](../docs/diagrams) são a referência do
 - **Falha ao executar:** vai para o histórico (`FAILED`) e para o log.
 - **Log (`ExecutionLog`):** um arquivo por dia, `%APPDATA%\Tidyfy\logs	idyfy-yyyy-MM-dd.log` (UTF-8, anexando); apaga logs com mais de 30 dias e, ao chegar a 1 MiB no dia, para de gravar e registra o limite uma vez. Falhas ao gravar o log são engolidas, nunca derrubam a execução.
 
+#### Comando da tarefa agendada
+
+- **Resolução:** `LauncherLocator` (`infrastructure.windows`) decide o comando na composição (`AppContainer.create`) e entrega um `TaskCommand` (executável + argumentos base) ao `SchtasksTaskScheduler`. O XML fica `<Command>executável</Command><Arguments>argumentos base --run {id}</Arguments>`; o `Arguments` é uma única linha, com aspas nos argumentos que têm espaço (caminhos) e escape XML.
+- **Empacotado** (`mvn clean package -Ppackage`): o processo atual é `Tidyfy.exe`, então a tarefa executa `Tidyfy.exe --run {id}`.
+- **Desenvolvimento** (`mvn javafx:run`, IDE): o processo atual é o Java, então a tarefa executa `<java.home>\bin\javaw.exe -cp <java.class.path> com.tidyfy.Main --run {id}`. **Limitação:** depende do classpath do momento; se o projeto for recompilado, movido ou o classpath mudar, a tarefa quebra até o ajudante ser salvo de novo ou a interface abrir (a sincronização registra de novo com o classpath atual). Sem informação do sistema, usa `javaw.exe` do `java.home` (sem `-cp` se o classpath faltar).
+- **Comportamento da tarefa (DEC4):** roda **só com o usuário logado** (`LogonType` `InteractiveToken`, `RunLevel` `LeastPrivilege`, pois precisa das pastas e da lixeira dele); **roda na bateria** (`DisallowStartIfOnBatteries` e `StopIfGoingOnBatteries` falsos); se o computador estava desligado no horário, **executa assim que possível** (`StartWhenAvailable`); **instância única** (`MultipleInstancesPolicy` `IgnoreNew`: se a anterior ainda roda, a nova é ignorada).
+
 #### Enviar à lixeira sem interface
 
 A execução agendada não tem janela, então `FileSystem.moveToTrash` não pode depender de `java.awt.Desktop`. Testado no Windows 11 (Java 21), com arquivos e pastas de teste em um diretório temporário:

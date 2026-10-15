@@ -56,7 +56,7 @@ class SchtasksTaskSchedulerRegisterTest {
                 throw new UncheckedIOException(e);
             }
             return result;
-        }, LAUNCHER, tempDir);
+        }, TaskCommand.of(LAUNCHER), tempDir);
     }
 
     private static Helper helper(Schedule schedule) {
@@ -140,7 +140,7 @@ class SchtasksTaskSchedulerRegisterTest {
     @Test
     void escapesSpecialCharactersInLauncherPath() throws Exception {
         Path launcher = Path.of("C:\\Tom & Jerry's\\Tidyfy.exe");
-        SchtasksTaskScheduler special = new SchtasksTaskScheduler(command -> new CommandResult(0, ""), launcher, tempDir);
+        SchtasksTaskScheduler special = new SchtasksTaskScheduler(command -> new CommandResult(0, ""), TaskCommand.of(launcher), tempDir);
 
         String xml = special.buildXml(helper(schedule(1, LocalTime.of(9, 0))));
 
@@ -199,5 +199,29 @@ class SchtasksTaskSchedulerRegisterTest {
 
         // O arquivo já foi apagado; o dublê o lê como UTF-16 (que consome o BOM) e o XML declara UTF-16.
         assertTrue(xmlsSeen.get(0).startsWith("<?xml version=\"1.0\" encoding=\"UTF-16\"?>"));
+    }
+
+    @Test
+    void developmentCommandPutsClasspathAndMainClassBeforeRun() throws Exception {
+        TaskCommand dev = new TaskCommand(Path.of("C:\\Java & Co\\bin\\javaw.exe"),
+                List.of("-cp", "C:\\my app\\classes;lib<1>.jar", "com.tidyfy.Main"));
+        SchtasksTaskScheduler devScheduler = new SchtasksTaskScheduler(c -> new CommandResult(0, ""), dev, tempDir);
+        Helper helper = helper(schedule(1, LocalTime.of(9, 0)));
+
+        Document doc = parse(devScheduler.buildXml(helper));
+
+        assertEquals("C:\\Java & Co\\bin\\javaw.exe", doc.getElementsByTagName("Command").item(0).getTextContent());
+        assertEquals("-cp \"C:\\my app\\classes;lib<1>.jar\" com.tidyfy.Main --run " + helper.id().value(),
+                doc.getElementsByTagName("Arguments").item(0).getTextContent());
+    }
+
+    @Test
+    void escapesAmpersandLessThanAndQuotesInTheArgumentsXml() {
+        TaskCommand dev = new TaskCommand(Path.of("javaw.exe"), List.of("-cp", "a&b <c>"));
+        SchtasksTaskScheduler devScheduler = new SchtasksTaskScheduler(c -> new CommandResult(0, ""), dev, tempDir);
+
+        String xml = devScheduler.buildXml(helper(schedule(1, LocalTime.of(9, 0))));
+
+        assertTrue(xml.contains("-cp &quot;a&amp;b &lt;c&gt;&quot; --run"));
     }
 }

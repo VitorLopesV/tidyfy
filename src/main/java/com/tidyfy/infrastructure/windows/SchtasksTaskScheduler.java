@@ -31,8 +31,8 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
     /** Executa o {@code schtasks}. */
     private final CommandRunner commandRunner;
 
-    /** Executável do Tidyfy chamado pela tarefa. */
-    private final Path launcher;
+    /** Comando (executável e argumentos base) chamado pela tarefa. */
+    private final TaskCommand command;
 
     /** Pasta onde o XML temporário é gravado. */
     private final Path tempDirectory;
@@ -56,9 +56,6 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
 
     /** Modelo do nome da tarefa: pasta Tidyfy e id do ajudante. */
     private static final String TASK_NAME_TEMPLATE = "Tidyfy\\%s";
-
-    /** Modelo dos argumentos da ação: executa o ajudante pelo id. */
-    private static final String ARGUMENTS_TEMPLATE = "--run %s";
 
     /** Prefixo do arquivo XML temporário. */
     private static final String TEMP_FILE_PREFIX = "tidyfy-task-";
@@ -197,12 +194,12 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
      * Cria o agendador.
      *
      * @param commandRunner executa o {@code schtasks}
-     * @param launcher      executável do Tidyfy que a tarefa chama com {@code --run {id}}
+     * @param command       comando que a tarefa executa antes do {@code --run {id}}
      * @param tempDirectory pasta (existente) onde o XML temporário é gravado
      */
-    public SchtasksTaskScheduler(CommandRunner commandRunner, Path launcher, Path tempDirectory) {
+    public SchtasksTaskScheduler(CommandRunner commandRunner, TaskCommand command, Path tempDirectory) {
         this.commandRunner = Objects.requireNonNull(commandRunner);
-        this.launcher = Objects.requireNonNull(launcher);
+        this.command = Objects.requireNonNull(command);
         this.tempDirectory = Objects.requireNonNull(tempDirectory);
     }
 
@@ -257,8 +254,8 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
             xml.append(String.format(TRIGGER_TEMPLATE, start, schedule.intervalDays()));
         }
         xml.append(TRIGGERS_CLOSE).append(PRINCIPALS_AND_SETTINGS)
-                .append(String.format(ACTIONS_TEMPLATE, escape(launcher.toString()),
-                        escape(String.format(ARGUMENTS_TEMPLATE, helper.id().value()))))
+                .append(String.format(ACTIONS_TEMPLATE, escape(command.executable().toString()),
+                        escape(command.argumentsFor(helper.id()))))
                 .append(TASK_CLOSE);
         return xml.toString();
     }

@@ -13,6 +13,8 @@ import com.tidyfy.domain.Schedule;
 import com.tidyfy.infrastructure.persistence.StorageLocation;
 import com.tidyfy.infrastructure.windows.CommandResult;
 import com.tidyfy.infrastructure.windows.CommandRunner;
+import com.tidyfy.infrastructure.windows.LauncherLocator;
+import com.tidyfy.infrastructure.windows.TaskCommand;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -54,7 +56,7 @@ class AppContainerTest {
             commands.add(command);
             return new CommandResult(0, "");
         };
-        container = new AppContainer(new StorageLocation(storageFolder), Path.of("Tidyfy.exe"), CLOCK, PROTECTED,
+        container = new AppContainer(new StorageLocation(storageFolder), TaskCommand.of(Path.of("Tidyfy.exe")), CLOCK, PROTECTED,
                 runner);
     }
 
@@ -107,7 +109,7 @@ class AppContainerTest {
     }
 
     @Test
-    void resolvesTheLauncherOfTheCurrentProcess() {
-        assertNotNull(AppContainer.currentLauncher());
+    void resolvesTheTaskCommandOfTheCurrentProcess() {
+        assertNotNull(LauncherLocator.fromSystem().locate().executable());
     }
 }

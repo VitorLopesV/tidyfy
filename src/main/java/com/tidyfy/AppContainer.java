@@ -18,9 +18,11 @@ import com.tidyfy.infrastructure.persistence.JsonExecutionHistoryRepository;
 import com.tidyfy.infrastructure.persistence.JsonHelperRepository;
 import com.tidyfy.infrastructure.persistence.StorageLocation;
 import com.tidyfy.infrastructure.windows.CommandRunner;
+import com.tidyfy.infrastructure.windows.LauncherLocator;
 import com.tidyfy.infrastructure.windows.PowerShellRecycleBin;
 import com.tidyfy.infrastructure.windows.ProcessCommandRunner;
 import com.tidyfy.infrastructure.windows.SchtasksTaskScheduler;
+import com.tidyfy.infrastructure.windows.TaskCommand;
 import com.tidyfy.infrastructure.windows.WindowsProtectedFolders;
 
 import java.io.IOException;
@@ -63,34 +65,25 @@ public final class AppContainer {
     /** Mensagem de erro ao criar a pasta dos XML temporários. */
     private static final String TASKS_FOLDER_ERROR = "Não foi possível criar a pasta %s";
 
-    /** Nome da pasta do executável do Java, usada quando o executável do processo não é conhecido. */
-    private static final String JAVA_BIN_FOLDER = "bin";
-
-    /** Executável do Java sem janela de console, usado quando o executável do processo não é conhecido. */
-    private static final String JAVA_FALLBACK_EXECUTABLE = "javaw.exe";
-
-    /** Propriedade do sistema com a pasta de instalação do Java. */
-    private static final String JAVA_HOME_PROPERTY = "java.home";
-
     /**
      * Monta o container com as dependências externas informadas.
      * A pasta {@code tasks} (dos XML temporários do agendador) é criada dentro da pasta do Tidyfy,
      * pois o agendador exige que ela exista.
      *
      * @param storage          local de armazenamento (configuração, histórico e pasta temporária)
-     * @param launcher         executável que o Agendador do Windows chama com {@code --run {id}}
+     * @param taskCommand      comando que o Agendador do Windows chama, seguido de {@code --run {id}}
      * @param clock            relógio dos casos de uso
      * @param protectedFolders pastas sensíveis recusadas pelo domínio
      * @param commandRunner    executor de processos externos ({@code schtasks}, PowerShell)
      * @throws UncheckedIOException se a pasta {@code tasks} não puder ser criada
      */
-    public AppContainer(StorageLocation storage, Path launcher, Clock clock, ProtectedFolders protectedFolders,
+    public AppContainer(StorageLocation storage, TaskCommand taskCommand, Clock clock, ProtectedFolders protectedFolders,
                         CommandRunner commandRunner) {
         JsonHelperRepository helpers = new JsonHelperRepository(storage, new HelperJsonMapper(), clock);
         JsonExecutionHistoryRepository history =
                 new JsonExecutionHistoryRepository(storage, new ExecutionHistoryJsonMapper(), clock);
         SchtasksTaskScheduler scheduler =
-                new SchtasksTaskScheduler(commandRunner, launcher, createTasksDirectory(storage));
+                new SchtasksTaskScheduler(commandRunner, taskCommand, createTasksDirectory(storage));
         NioFileSystem fileSystem = new NioFileSystem(commandRunner);
         PowerShellRecycleBin recycleBin = new PowerShellRecycleBin(commandRunner);
 
@@ -107,25 +100,13 @@ public final class AppContainer {
 
     /**
      * Cria o container de produção: {@code %APPDATA%\Tidyfy}, pastas sensíveis lidas do Windows,
-     * relógio do sistema, processos reais e o executável do processo atual como launcher.
+     * relógio do sistema, processos reais e o comando da tarefa resolvido por {@link LauncherLocator}.
      *
      * @return o container de produção
      */
     public static AppContainer create() {
-        return new AppContainer(StorageLocation.defaultLocation(), currentLauncher(), Clock.systemDefaultZone(),
+        return new AppContainer(StorageLocation.defaultLocation(), LauncherLocator.fromSystem().locate(), Clock.systemDefaultZone(),
                 WindowsProtectedFolders.fromSystem(), new ProcessCommandRunner());
-    }
-
-    /**
-     * Devolve o executável do processo atual, que a tarefa agendada chama com {@code --run {id}}.
-     * Se o sistema não informar, usa o {@code javaw.exe} do Java em execução.
-     * Provisório: a issue P2 (empacotamento) substitui isso pelo executável instalado do Tidyfy.
-     *
-     * @return o caminho do executável
-     */
-    static Path currentLauncher() {
-        return ProcessHandle.current().info().command().map(Path::of).orElseGet(() ->
-                Path.of(System.getProperty(JAVA_HOME_PROPERTY), JAVA_BIN_FOLDER, JAVA_FALLBACK_EXECUTABLE));
     }
 
     /**

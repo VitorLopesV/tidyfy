@@ -10,7 +10,7 @@ package "com.tidyfy.infrastructure.windows" {
 
   class SchtasksTaskScheduler {
     - commandRunner : CommandRunner
-    - launcher : Path
+    - command : TaskCommand
     - tempDirectory : Path
     + register(helper : Helper) : void
     + unregister(id : HelperId) : void
@@ -20,6 +20,21 @@ package "com.tidyfy.infrastructure.windows" {
     ~ queryCommand(id : HelperId) : List<String>
     ~ listCommand() : List<String>
     + registeredIds() : List<HelperId>
+  }
+
+  class TaskCommand <<record>> {
+    + executable : Path
+    + baseArguments : List<String>
+    + {static} of(executable : Path) : TaskCommand
+    + argumentsFor(id : HelperId) : String
+  }
+
+  class LauncherLocator {
+    - processCommand : Optional<String>
+    - classPath : String
+    - javaHome : String
+    + {static} fromSystem() : LauncherLocator
+    + locate() : TaskCommand
   }
 
   class PowerShellRecycleBin {
@@ -112,6 +127,8 @@ JsonHelperRepository --> HelperJsonMapper
 HelperJsonMapper ..> HelperJsonException : lança
 
 SchtasksTaskScheduler --> CommandRunner
+SchtasksTaskScheduler --> TaskCommand
+LauncherLocator ..> TaskCommand : cria
 PowerShellRecycleBin --> CommandRunner
 NioFileSystem --> CommandRunner
 NioFileSystem ..> TrashCommands : usa
@@ -127,12 +144,13 @@ note right of SchtasksTaskScheduler
   falhar, /Query decide: tarefa inexistente e ignorada.
   registeredIds: schtasks /Query /FO CSV /NH; fica só com
   as linhas \Tidyfy\{uuid} (o resto e ignorado).
-  A ação chama "{launcher} --run {id}". Roda só com o
+  A ação chama "{executável} {argumentos base} --run {id}". Roda só com o
   usuário logado, permite bateria e, se perdeu o
   horário, roda assim que possível.
   Os testes verificam os comandos montados,
   sem executar o schtasks de verdade.
-  launcher = executável do Tidyfy (a definir).
+  Empacotado: Tidyfy.exe. Desenvolvimento: javaw.exe -cp
+  {classpath} com.tidyfy.Main (LauncherLocator).
 end note
 
 note right of CommandRunner

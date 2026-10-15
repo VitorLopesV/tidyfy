@@ -26,7 +26,7 @@ class SchtasksTaskSchedulerUnregisterTest {
     private final SchtasksTaskScheduler scheduler = new SchtasksTaskScheduler(command -> {
         commands.add(command);
         return command.get(1).equals("/Delete") ? deleteResult : queryResult;
-    }, Path.of("Tidyfy.exe"), Path.of("."));
+    }, TaskCommand.of(Path.of("Tidyfy.exe")), Path.of("."));
 
     @Test
     void buildsTheDeleteCommandForTheHelperTask() {

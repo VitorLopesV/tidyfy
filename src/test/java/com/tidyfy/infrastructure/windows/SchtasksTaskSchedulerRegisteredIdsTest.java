@@ -25,7 +25,7 @@ class SchtasksTaskSchedulerRegisteredIdsTest {
     private final SchtasksTaskScheduler scheduler = new SchtasksTaskScheduler(command -> {
         commands.add(command);
         return result;
-    }, Path.of("Tidyfy.exe"), Path.of("."));
+    }, TaskCommand.of(Path.of("Tidyfy.exe")), Path.of("."));
 
     private static String line(String name) {
         return "\"" + name + "\",\"N/A\",\"Ready\"";
