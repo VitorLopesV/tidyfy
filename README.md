@@ -129,3 +129,5 @@ Para gerar o instalador (MSI, com atalhos no menu Iniciar e na área de trabalho
 > **Atenção:** o instalador ainda não foi gerado nem validado numa máquina com o WiX; a configuração está pronta, mas instalar, abrir o aplicativo e desinstalar precisam ser testados.
 
 Para ver a cobertura dos testes: `mvn clean test` e abra `target/site/jacoco/index.html`.
+
+Para validar o Tidyfy de ponta a ponta no Windows, siga o [checklist de teste manual](docs/TESTE-MANUAL.md).
