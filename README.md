@@ -107,6 +107,28 @@ O trabalho dos ajudantes é agendado através do **Agendador de Tarefas do Windo
 
 ---
 
+## Como instalar e desinstalar
+
+### Instalar
+
+1. Dê dois cliques no instalador do Tidyfy (o arquivo que termina em `.msi`).
+2. Se o Windows mostrar «O Windows protegeu seu computador», clique em **Mais informações** e depois em **Executar assim mesmo**.
+3. Siga o assistente até o fim.
+4. Abra o Tidyfy pelo atalho na área de trabalho ou pelo menu Iniciar.
+
+### Atualizar
+
+Dê dois cliques no instalador da versão nova. Seus ajudantes e o histórico continuam como estavam.
+
+### Desinstalar
+
+1. Abra **Configurações > Aplicativos > Aplicativos instalados**.
+2. Procure **Tidyfy**, clique nos três pontinhos e em **Desinstalar**.
+
+Os ajudantes param de trabalhar. Suas configurações e o histórico ficam guardados no computador: se instalar o Tidyfy de novo, tudo volta.
+
+---
+
 ## Ideias para o futuro
 
 Ideias para as próximas rodadas, como novos tipos de ajudante:
@@ -124,7 +146,7 @@ Para gerar o executável (sem precisar de Java instalado): `mvn clean package -P
 
 ### Instalação
 
-Para gerar o instalador (MSI, com atalhos no menu Iniciar e na área de trabalho, instalação por usuário e atualização por cima de versões anteriores): `mvn clean verify -Ppackage,installer -DskipTests`; o resultado fica em `target/installer`. É preciso ter o **WiX Toolset 3.x** instalado e no PATH (`candle.exe` e `light.exe`). Ao desinstalar, o instalador executa `Tidyfy.exe --remove-tasks`, que remove todas as tarefas do Tidyfy do Agendador de Tarefas do Windows (o histórico e a configuração em `%APPDATA%\Tidyfy` ficam).
+Para gerar o instalador (MSI, com atalhos no menu Iniciar e na área de trabalho, instalação por usuário e atualização por cima de versões anteriores): `mvn clean verify -Ppackage,installer -DskipTests`; o resultado fica em `target/installer`. É preciso ter o **WiX Toolset 3.x** instalado e no PATH (`candle.exe` e `light.exe`). O instalador ainda não está publicado para download: ele só existe depois de gerado. A instalação é por usuário (sem administrador), em `%LOCALAPPDATA%\Tidyfy`, com atalhos na pasta «Tidyfy» do menu Iniciar e na área de trabalho. O instalador não é assinado, por isso o Windows mostra o aviso de segurança. A configuração, o histórico e os logs ficam em `%APPDATA%\Tidyfy` e não são apagados na desinstalação; para começar do zero, apague essa pasta. Ao desinstalar, o instalador executa `Tidyfy.exe --remove-tasks`, que remove todas as tarefas do Tidyfy do Agendador de Tarefas do Windows.
 
 > **Validação:** o instalador foi gerado, instalado e desinstalado de verdade no Windows 11 (instalação por usuário, atalhos na pasta «Tidyfy» do menu Iniciar e na área de trabalho, app aberto a partir da pasta instalada, e a desinstalação removeu uma tarefa de teste do Agendador, os arquivos, os atalhos e a entrada em «Aplicativos instalados»). Ainda não foram testadas a atualização por cima de uma versão anterior nem a desinstalação pelas Configurações do Windows; o instalador não é assinado, então o Windows pode exibir um aviso de segurança.
 
