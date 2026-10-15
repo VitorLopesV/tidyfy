@@ -284,6 +284,7 @@ Todas as regras são validadas no domínio, não só na UI.
 ## Testes
 
 - JUnit 5, rodando via Surefire (`mvn test`).
+- **Cobertura:** o JaCoCo (`jacoco-maven-plugin`) mede a cobertura em todo `mvn test`/`mvn clean test` e grava o relatório em `target/site/jacoco/` (`index.html`, `jacoco.csv`, `jacoco.xml`). Só mede, sem limite mínimo que quebre o build. O agente entra pela propriedade `argLine`; as JVMs filhas do teste de concorrência usam `java.class.path` e não herdam o agente. O perfil `package` não é afetado (o `jpackage` não usa `argLine`).
 - A regra de dependência entre camadas é verificada por `ArchitectureTest` (ArchUnit).
 - `domain` e `application` são testados sem tocar no disco nem no Windows (use dublês das portas).
 - Testes que precisem do sistema de arquivos devem usar diretórios temporários (`@TempDir`) e nunca pastas reais do usuário.
@@ -300,7 +301,7 @@ Todas as regras são validadas no domínio, não só na UI.
 ## Comandos
 
 ```bash
-mvn clean test       # compila e roda os testes
+mvn clean test       # compila, roda os testes e gera a cobertura (JaCoCo): target/site/jacoco/index.html (e jacoco.csv/jacoco.xml)
 mvn javafx:run       # abre a interface
 mvn clean package    # gera target/tidyfy-1.0-SNAPSHOT.jar
 mvn clean package -Ppackage -DskipTests  # gera o executável: target/dist/Tidyfy/Tidyfy.exe

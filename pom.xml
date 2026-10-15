@@ -27,6 +27,7 @@
         <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
         <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
         <exec-maven-plugin.version>3.5.0</exec-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
         <app.name>Tidyfy</app.name>
         <jpackage.input>${project.build.directory}/jpackage-input</jpackage.input>
         <jpackage.modules>java.base,java.desktop,java.logging,java.xml,java.sql,java.prefs,java.naming,java.management,java.scripting,jdk.jfr,jdk.unsupported,jdk.jsobject,jdk.xml.dom</jpackage.modules>
@@ -86,6 +87,27 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+            <!-- Cobertura: o prepare-agent define a propriedade argLine, que o Surefire usa; o relatório sai em target/site/jacoco na fase test. Sem limite mínimo. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.openjfx</groupId>
