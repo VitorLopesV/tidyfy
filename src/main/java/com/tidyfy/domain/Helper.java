@@ -2,9 +2,9 @@ package com.tidyfy.domain;
 
 /**
  * Ajudante: uma tarefa de limpeza ou organização que roda periodicamente.
- * Cada ajudante atua em um único alvo e só existem os dois tipos listados em {@link HelperType}.
+ * Cada ajudante atua em um único alvo e só existem os tipos listados em {@link HelperType}.
  */
-public sealed interface Helper permits FolderOrganizerHelper, CleanerHelper {
+public sealed interface Helper permits FolderOrganizerHelper, CleanerHelper, DesktopArrangerHelper {
 
     /**
      * Identificador único do ajudante.

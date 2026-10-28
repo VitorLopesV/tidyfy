@@ -38,6 +38,11 @@ class HelperRulesTest {
         return new CleanerHelper(HelperId.newId(), new HelperName(name), SCHEDULE, enabled, target, null);
     }
 
+    private static Helper desktopArranger(String name) {
+        return new DesktopArrangerHelper(HelperId.newId(), new HelperName(name), SCHEDULE, true,
+                DesktopLayout.LEFT);
+    }
+
     private static CleanupTarget folderTarget(String folder) {
         return new FolderTarget(Path.of(folder), AgeReference.CREATED);
     }
@@ -127,6 +132,19 @@ class HelperRulesTest {
     @Test
     void acceptsEditingHelperWhenOthersExcludeIt() {
         assertDoesNotThrow(() -> rules.assertCanSave(organizer("A", DOWNLOADS), List.of()));
+    }
+
+    @Test
+    void acceptsDesktopArrangerBesideFolderHelpers() {
+        assertDoesNotThrow(() -> rules.assertCanSave(desktopArranger("Área de trabalho"),
+                List.of(organizer("A", DOWNLOADS), cleaner("B", folderTarget(DOWNLOADS), true),
+                        cleaner("C", new RecycleBinTarget(), true))));
+    }
+
+    @Test
+    void rejectsDesktopArrangerNameUsedByAnotherHelper() {
+        assertThrows(HelperNameAlreadyUsedException.class, () -> rules.assertCanSave(
+                desktopArranger("downloads"), List.of(organizer("Downloads", DOWNLOADS))));
     }
 
     @Test

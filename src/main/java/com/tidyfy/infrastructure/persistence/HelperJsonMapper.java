@@ -9,6 +9,7 @@ import com.tidyfy.domain.AgeLimit;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.CleanupTarget;
+import com.tidyfy.domain.DesktopArrangerHelper;
 import com.tidyfy.domain.FolderOrganizerHelper;
 import com.tidyfy.domain.FolderTarget;
 import com.tidyfy.domain.Helper;
@@ -41,6 +42,9 @@ public final class HelperJsonMapper {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Constantes
+
+    /** Mensagem de erro: o tipo ainda não é tratado nesta camada (será ligado nas próximas etapas). */
+    private static final String UNSUPPORTED_TYPE = "O Organizador da área de trabalho ainda não é suportado aqui.";
 
     /** Campo da versão do formato. */
     private static final String VERSION_FIELD = "version";
@@ -214,6 +218,7 @@ public final class HelperJsonMapper {
                     node.put(AGE_LIMIT_DAYS_FIELD, cleaner.ageLimit().days());
                 }
             }
+            case DesktopArrangerHelper desktop -> throw new UnsupportedOperationException(UNSUPPORTED_TYPE);
         }
         return node;
     }

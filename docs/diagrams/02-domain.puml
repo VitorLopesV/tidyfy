@@ -20,8 +20,10 @@ package "com.tidyfy.domain" {
   enum HelperType {
     FOLDER_ORGANIZER
     CLEANER
+    DESKTOP_ARRANGER
     --
     + {static} MAX_PER_TYPE : int = 20
+    + {static} MAX_DESKTOP_ARRANGERS : int = 1
     + assertCanCreate(existingCount : int) : void
   }
 
@@ -44,6 +46,25 @@ package "com.tidyfy.domain" {
     + ageLimit : AgeLimit [0..1]
     + type() : HelperType
     + withEnabled(enabled : boolean) : CleanerHelper
+  }
+
+  class DesktopArrangerHelper <<record>> {
+    + id : HelperId
+    + name : HelperName
+    + schedule : Schedule
+    + enabled : boolean
+    + layout : DesktopLayout
+    + type() : HelperType
+    + withEnabled(enabled : boolean) : DesktopArrangerHelper
+  }
+
+  enum DesktopLayout {
+    LEFT
+    RIGHT
+    TOP
+    BOTTOM
+    BORDERS
+    BY_TYPE_LEFT
   }
 
   interface CleanupTarget <<sealed>> {
@@ -168,6 +189,9 @@ package "com.tidyfy.domain" {
   class HelperLimitReachedException <<exception>> {
   }
 
+  class DesktopArrangerAlreadyExistsException <<exception>> {
+  }
+
   class HelperNameAlreadyUsedException <<exception>> {
   }
 
@@ -180,12 +204,14 @@ package "com.tidyfy.domain" {
 
 Helper <|.. FolderOrganizerHelper
 Helper <|.. CleanerHelper
+Helper <|.. DesktopArrangerHelper
 Helper --> "1" HelperId
 Helper --> "1" HelperName
 Helper --> "1" Schedule
 ScheduleCalculator ..> Schedule : calcula
 Helper ..> HelperType
 
+DesktopArrangerHelper --> "1" DesktopLayout
 CleanerHelper --> "1" CleanupTarget
 CleanerHelper --> "0..1" AgeLimit
 CleanupTarget <|.. RecycleBinTarget
@@ -209,22 +235,25 @@ HelperAction --> "1" ActionType
 ExecutionRecord --> "1" HelperId
 
 DomainException <|-- HelperLimitReachedException
+DomainException <|-- DesktopArrangerAlreadyExistsException
 DomainException <|-- HelperNameAlreadyUsedException
 DomainException <|-- FolderAlreadyInUseException
 DomainException <|-- ProtectedFolderException
 HelperType ..> HelperLimitReachedException : lança
+HelperType ..> DesktopArrangerAlreadyExistsException : lança
 
 note right of Helper
   Interface selada (sealed): só os
   ajudantes conhecidos. Cada ajudante
-  atua em um único alvo (uma pasta
-  ou a lixeira).
+  atua em um único alvo (uma pasta,
+  a lixeira ou a área de trabalho).
 end note
 
 note right of HelperType
-  Limite de 20 ajudantes por tipo.
-  assertCanCreate lança exceção quando
-  existingCount >= MAX_PER_TYPE.
+  Limite de 20 ajudantes por tipo, exceto
+  DESKTOP_ARRANGER, que é único (a área de
+  trabalho é única). assertCanCreate lança
+  exceção quando existingCount atinge o limite.
   Só é chamado na criação, nunca na edição.
 end note
 

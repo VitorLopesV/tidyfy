@@ -4,6 +4,7 @@ import com.tidyfy.application.port.ExecutionHistoryRepository;
 import com.tidyfy.application.port.HelperRepository;
 import com.tidyfy.domain.ActionType;
 import com.tidyfy.domain.CleanerHelper;
+import com.tidyfy.domain.DesktopArrangerHelper;
 import com.tidyfy.domain.ExecutionRecord;
 import com.tidyfy.domain.FolderOrganizerHelper;
 import com.tidyfy.domain.Helper;
@@ -41,6 +42,9 @@ public final class RunHelperUseCase {
     private final Clock clock;
 
     // Constantes
+
+    /** Mensagem de erro: o tipo ainda não é tratado nesta camada (será ligado nas próximas etapas). */
+    private static final String UNSUPPORTED_TYPE = "O Organizador da área de trabalho ainda não é suportado aqui.";
 
     /** Nome do parâmetro do repositório, usado na mensagem de valor nulo. */
     private static final String REPOSITORY_NAME = "repository";
@@ -114,6 +118,7 @@ public final class RunHelperUseCase {
             return switch (helper) {
                 case FolderOrganizerHelper organizer -> organizeFolder.execute(organizer);
                 case CleanerHelper cleaner -> cleanup.execute(cleaner);
+                case DesktopArrangerHelper desktop -> throw new UnsupportedOperationException(UNSUPPORTED_TYPE);
             };
         } catch (RuntimeException failure) {
             String message = failure.getMessage() != null ? failure.getMessage()

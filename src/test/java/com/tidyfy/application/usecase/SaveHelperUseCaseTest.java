@@ -10,6 +10,9 @@ import com.tidyfy.application.fake.FakeHelperRepository;
 import com.tidyfy.application.fake.FakeTaskScheduler;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
+import com.tidyfy.domain.DesktopArrangerAlreadyExistsException;
+import com.tidyfy.domain.DesktopArrangerHelper;
+import com.tidyfy.domain.DesktopLayout;
 import com.tidyfy.domain.FolderAlreadyInUseException;
 import com.tidyfy.domain.FolderOrganizerHelper;
 import com.tidyfy.domain.FolderTarget;
@@ -109,6 +112,42 @@ class SaveHelperUseCaseTest {
         useCase.execute(recycleBinCleaner("Lixeira"));
 
         assertEquals(1, repository.countByType(HelperType.CLEANER));
+    }
+
+    private static Helper desktopArranger(HelperId id, String name, DesktopLayout layout) {
+        return new DesktopArrangerHelper(id, new HelperName(name), SCHEDULE, true, layout);
+    }
+
+    @Test
+    void createsTheFirstDesktopArranger() {
+        Helper helper = desktopArranger(HelperId.newId(), "Área de trabalho", DesktopLayout.LEFT);
+
+        useCase.execute(helper);
+
+        assertEquals(1, repository.countByType(HelperType.DESKTOP_ARRANGER));
+        assertTrue(scheduler.isRegistered(helper.id()));
+    }
+
+    @Test
+    void rejectsASecondDesktopArranger() {
+        repository.with(desktopArranger(HelperId.newId(), "Primeiro", DesktopLayout.LEFT));
+
+        assertThrows(DesktopArrangerAlreadyExistsException.class,
+                () -> useCase.execute(desktopArranger(HelperId.newId(), "Segundo", DesktopLayout.TOP)));
+        assertEquals(0, repository.saveCount());
+        assertTrue(scheduler.registerCalls().isEmpty());
+    }
+
+    @Test
+    void allowsEditingTheExistingDesktopArranger() {
+        HelperId id = HelperId.newId();
+        repository.with(desktopArranger(id, "Área", DesktopLayout.LEFT));
+
+        Helper edited = desktopArranger(id, "Área", DesktopLayout.BORDERS);
+        useCase.execute(edited);
+
+        assertEquals(edited, repository.findById(id).orElseThrow());
+        assertEquals(1, repository.countByType(HelperType.DESKTOP_ARRANGER));
     }
 
     @Test

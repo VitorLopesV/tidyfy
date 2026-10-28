@@ -3,6 +3,7 @@ package com.tidyfy.presentation.model;
 import com.tidyfy.domain.AgeLimit;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
+import com.tidyfy.domain.DesktopArrangerHelper;
 import com.tidyfy.domain.FolderOrganizerHelper;
 import com.tidyfy.domain.FolderTarget;
 import com.tidyfy.domain.Helper;
@@ -29,6 +30,9 @@ public final class HelperItemMapper {
     private final Clock clock;
 
     // Constantes
+
+    /** Mensagem de erro: o tipo ainda não é tratado nesta camada (será ligado nas próximas etapas). */
+    private static final String UNSUPPORTED_TYPE = "O Organizador da área de trabalho ainda não é suportado aqui.";
 
     /** Nome do parâmetro do relógio, usado na mensagem de valor nulo. */
     private static final String CLOCK_NAME = "clock";
@@ -89,6 +93,7 @@ public final class HelperItemMapper {
                     organizer.folder(), schedule.intervalDays(), schedule.times(), organizer.enabled(),
                     nextRun, progress, null, null, schedule.startDate());
             case CleanerHelper cleaner -> toCleanerItem(cleaner, id, name, nextRun, progress);
+            case DesktopArrangerHelper desktop -> throw new UnsupportedOperationException(UNSUPPORTED_TYPE);
         };
     }
 

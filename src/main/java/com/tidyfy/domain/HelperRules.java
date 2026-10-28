@@ -76,6 +76,9 @@ public final class HelperRules {
      * @throws FolderAlreadyInUseException se houver sobreposição
      */
     private void assertFolderIsFree(Helper helper, List<Helper> others) {
+        if (helper instanceof DesktopArrangerHelper) {
+            return;
+        }
         Optional<Path> folder = folderOf(helper);
         for (Helper other : others) {
             if (other.type() != helper.type()) {
@@ -96,10 +99,11 @@ public final class HelperRules {
      * Devolve a pasta em que o ajudante atua.
      *
      * @param helper o ajudante
-     * @return a pasta, ou vazio quando o alvo é a lixeira
+     * @return a pasta, ou vazio quando o alvo é a lixeira ou a área de trabalho
      */
     private static Optional<Path> folderOf(Helper helper) {
         return switch (helper) {
+            case DesktopArrangerHelper desktop -> Optional.empty();
             case FolderOrganizerHelper organizer -> Optional.of(organizer.folder());
             case CleanerHelper cleaner -> switch (cleaner.target()) {
                 case FolderTarget folderTarget -> Optional.of(folderTarget.folder());
