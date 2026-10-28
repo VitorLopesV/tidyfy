@@ -67,6 +67,25 @@ package "com.tidyfy.domain" {
     BY_TYPE_LEFT
   }
 
+  class DesktopIcon <<record>> {
+    + name : String
+    + position : IconPosition
+  }
+
+  class IconPosition <<record>> {
+    + x : int
+    + y : int
+  }
+
+  class DesktopGrid <<record>> {
+    + left : int
+    + top : int
+    + width : int
+    + height : int
+    + cellWidth : int
+    + cellHeight : int
+  }
+
   interface CleanupTarget <<sealed>> {
   }
 
@@ -212,6 +231,7 @@ ScheduleCalculator ..> Schedule : calcula
 Helper ..> HelperType
 
 DesktopArrangerHelper --> "1" DesktopLayout
+DesktopIcon --> "1" IconPosition
 CleanerHelper --> "1" CleanupTarget
 CleanerHelper --> "0..1" AgeLimit
 CleanupTarget <|.. RecycleBinTarget

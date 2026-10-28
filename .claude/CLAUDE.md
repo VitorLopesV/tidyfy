@@ -90,6 +90,7 @@ Os diagramas PlantUML em [docs/diagrams](../docs/diagrams) são a referência do
 | Agendador de tarefas | Criar, atualizar, pausar e remover tarefas agendadas | Wrapper do `schtasks.exe` |
 | Sistema de arquivos | Listar o que há na pasta, comparar conteúdo, mover e enviar à lixeira | `java.nio.file` (lixeira: PowerShell + `Microsoft.VisualBasic`, veja "Enviar à lixeira sem interface") |
 | Lixeira | Esvaziar a lixeira do Windows, tudo ou só o que está lá há mais de X dias | A definir (ex.: PowerShell `Clear-RecycleBin` ou chamada nativa) |
+| Área de trabalho | Listar os ícones (nome e posição), informar a área visível e a grade do monitor principal e gravar novas posições | `PowerShellDesktopIcons` (`infrastructure.windows`): PowerShell + mensagens do ListView do Explorer, veja "Ler e gravar os ícones da área de trabalho" |
 | Repositório de ajudantes | Salvar/carregar a configuração dos ajudantes e contar por tipo | Arquivo `%APPDATA%\Tidyfy\helpers.txt` (JSON) |
 | Histórico de execuções | Registrar e consultar quando cada ajudante rodou e o que fez | Arquivo `%APPDATA%\Tidyfy\history.txt` (JSON) |
 
@@ -125,6 +126,29 @@ A execução agendada não tem janela, então `FileSystem.moveToTrash` não pode
 - **Erros:** o código de saída é `0` em sucesso e `1` em falha, com a exceção do .NET na saída; a implementação deve virar `UncheckedIOException` e deixar o item como está.
 - **Limitação:** caminhos com mais de 260 caracteres falham (`Could not find file`, código 1), porque o `Microsoft.VisualBasic` do Windows PowerShell 5.1 não aceita caminho longo. Vira falha da execução (`FAILED` no histórico).
 - A API nativa do Java 21 (FFM) segue em preview e não foi usada.
+
+#### Ler e gravar os ícones da área de trabalho
+
+A porta `DesktopIcons` (`application.port`) devolve um `DesktopState` (ícones, `DesktopGrid` e as opções "Organizar ícones automaticamente" e "Alinhar ícones à grade") e grava posições (`move`, tudo ou nada). A implementação é `PowerShellDesktopIcons` (`infrastructure.windows`): copia o recurso `desktop-icons.ps1` para um arquivo temporário e roda `powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File <script> -Mode list|move [-MovesFile <arquivo>]`. O script acha a lista de ícones do Explorer (`Progman`/`WorkerW` → `SHELLDLL_DefView` → `SysListView32`) e envia `LVM_GETITEMPOSITION`, `LVM_GETITEMTEXTW` e `LVM_SETITEMPOSITION`; os dois primeiros usam memória alocada no Explorer (`VirtualAllocEx`, `ReadProcessMemory`, `WriteProcessMemory`). Testado no Windows 11 (PowerShell 5.1), na área de trabalho real, com 13 ícones:
+
+| Teste | Resultado |
+|---|---|
+| Sem janela e sem interface, com o usuário logado | **Funciona** |
+| Ler 13 ícones (nomes com acento e espaço) | ok; ~2,5 a 2,7 s por chamada (cada chamada compila o `Add-Type` de novo) |
+| Chamar pela classe Java (`ProcessCommandRunner`), com a pasta temporária com espaço no caminho | ok; nenhum arquivo temporário sobra |
+| Gravar a posição de 1 ícone e ler de volta | ok (`707,181` → `1000,500` → `707,181`) |
+| Erro no meio da gravação (um dos nomes não existe) | o script devolve os já movidos ao lugar original e sai com código 1; mensagem em ASCII na saída |
+| Escala de tela (150%) | **Atenção:** sem declarar o processo sensível ao DPI, `GetClientRect` devolve 1280×720 (virtualizado) enquanto os ícones estão em coordenadas reais (até y=863 numa tela 1920×1080). O script chama `SetProcessDPIAware` e a área visível sai correta: 1920×1008 (descontada a barra de tarefas) |
+| Procurar a janela com `FindWindow('Progman', $null)` | **Armadilha:** o PowerShell converte `$null` em texto vazio no P/Invoke e a busca falha. O script usa `GetShellWindow` e `[NullString]::Value` |
+| Nomes na saída | em Base64 (UTF-8), porque o `ProcessCommandRunner` decodifica com o charset do console |
+| Vários monitores | **Não testado** (só havia um monitor). O script desloca a área do monitor principal para as coordenadas do ListView (`ClientToScreen` + `SPI_GETWORKAREA`), então `DesktopGrid.left/top` podem ser diferentes de zero ou negativos |
+| "Organizar ícones automaticamente" ligado | **Não testado ligado** (o Tidyfy não muda opções do usuário). O script detecta `LVS_AUTOARRANGE` e recusa gravar, com mensagem clara |
+| "Alinhar ícones à grade" ligado | **Não testado ligado.** É informado em `DesktopState.snapToGrid`; o Windows só ajusta cada posição à célula mais próxima |
+| Sem sessão gráfica | **Não testado.** `GetShellWindow` zero vira "A área de trabalho não está disponível (sem sessão gráfica)" e a execução falha com código 1 |
+
+- **Decisão sobre as opções do Windows:** o Tidyfy **avisa e não desliga**. Com "Organizar ícones automaticamente" ligado a gravação falha com uma mensagem clara (vira `FAILED` no histórico); mudar essa opção do usuário seria uma alteração de configuração do Windows que ele não pediu. "Alinhar à grade" não impede nada, só ajusta as posições.
+- **Grade:** os ícones do usuário ficam em posições livres (ex.: `827,648`) e o canto de cada célula do Windows tem um deslocamento próprio (colunas em `x=32` e `x=144`, linhas em `y=2`, `125`, `248`...; célula `112×123`). O planejador usa a célula informada a partir do canto da área visível; não tenta reproduzir o deslocamento do Windows.
+- **Arquitetura:** o `LVITEM` do script usa o layout de 64 bits, o do Explorer; um Java de 32 bits em Windows de 64 bits (que chamaria o PowerShell de 32 bits) não foi testado.
 
 #### Formato do `helpers.txt`
 

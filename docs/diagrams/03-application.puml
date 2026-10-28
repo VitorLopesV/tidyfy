@@ -111,6 +111,18 @@ package "com.tidyfy.application.port" {
     + emptyAll() : int
     + emptyOlderThan(cutoff : Instant) : int
   }
+
+  interface DesktopIcons {
+    + read() : DesktopState
+    + move(placements : List<DesktopIcon>) : void
+  }
+
+  class DesktopState <<record>> {
+    + icons : List<DesktopIcon>
+    + grid : DesktopGrid
+    + autoArrange : boolean
+    + snapToGrid : boolean
+  }
 }
 
 package "com.tidyfy.domain" {
@@ -119,6 +131,8 @@ package "com.tidyfy.domain" {
   class FolderOrganizerHelper
   class CleanerHelper
   class HelperRules
+  class DesktopIcon
+  class DesktopGrid
   class FolderOrganizationPlanner
   class NumberedName
   class FolderEntry
@@ -147,6 +161,9 @@ OrganizeFolderUseCase --> FolderOrganizationPlanner
 OrganizeFolderUseCase ..> NumberedName
 CleanupUseCase --> FileSystem
 CleanupUseCase --> RecycleBin
+DesktopIcons ..> DesktopState : devolve
+DesktopState --> "*" DesktopIcon
+DesktopState --> "1" DesktopGrid
 
 SaveHelperUseCase ..> Helper
 SaveHelperUseCase ..> HelperType : assertCanCreate
