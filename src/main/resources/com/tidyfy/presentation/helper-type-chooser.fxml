@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="root" styleClass="dialog" prefWidth="680" prefHeight="560"
+<VBox fx:id="root" styleClass="dialog" prefWidth="960" prefHeight="560"
       xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
 
     <HBox styleClass="drag-handle" alignment="TOP_LEFT" spacing="16">
@@ -31,8 +31,9 @@
     <GridPane hgap="16" VBox.vgrow="ALWAYS">
         <padding><Insets top="24" right="32" bottom="24" left="32"/></padding>
         <columnConstraints>
-            <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
-            <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+            <ColumnConstraints percentWidth="33.33" hgrow="ALWAYS"/>
+            <ColumnConstraints percentWidth="33.33" hgrow="ALWAYS"/>
+            <ColumnConstraints percentWidth="33.34" hgrow="ALWAYS"/>
         </columnConstraints>
         <rowConstraints>
             <RowConstraints vgrow="ALWAYS"/>
@@ -111,11 +112,50 @@
                 </VBox>
             </graphic>
         </Button>
+
+        <Button fx:id="desktopCard" styleClass="type-card, kind-desktop" maxWidth="Infinity" maxHeight="Infinity"
+                GridPane.columnIndex="2" onAction="#onDesktop" accessibleText="Organizador da área de trabalho">
+            <graphic>
+                <VBox spacing="16">
+                    <HBox alignment="CENTER_LEFT">
+                        <StackPane styleClass="kind-badge, badge-52"><Icon glyph="DESKTOP" size="26"/></StackPane>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="desktopLimitBadge" text="Limite atingido" styleClass="limit-badge">
+                            <graphic><Icon glyph="LOCK" size="14"/></graphic>
+                        </Label>
+                        <Icon fx:id="desktopArrow" glyph="ARROW_RIGHT" size="22" styleClass="arrow-icon"/>
+                    </HBox>
+                    <VBox spacing="6">
+                        <Label text="Organizador da área de trabalho" styleClass="type-title" wrapText="true"/>
+                        <Label fx:id="desktopDescription" text="Reposiciona os ícones da área de trabalho em um layout, sem mover arquivos."
+                               styleClass="type-desc" wrapText="true"/>
+                    </VBox>
+                    <FlowPane hgap="6" vgap="6">
+                        <Label text="Esquerda" styleClass="category-chip"/>
+                        <Label text="Direita" styleClass="category-chip"/>
+                        <Label text="Topo" styleClass="category-chip"/>
+                        <Label text="Base" styleClass="category-chip"/>
+                        <Label text="Bordas" styleClass="category-chip"/>
+                        <Label text="Por tipo" styleClass="category-chip"/>
+                    </FlowPane>
+                    <Region VBox.vgrow="ALWAYS"/>
+                    <VBox spacing="8">
+                        <HBox alignment="BASELINE_LEFT">
+                            <Label text="Criados" styleClass="stat-sub"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="desktopCount" styleClass="meter-count"/>
+                            <Label text="/1" styleClass="stat-max"/>
+                        </HBox>
+                        <UsageMeter fx:id="desktopUsage" styleClass="compact"/>
+                    </VBox>
+                </VBox>
+            </graphic>
+        </Button>
     </GridPane>
 
     <HBox styleClass="dialog-footer" alignment="CENTER_LEFT" spacing="10">
         <Icon glyph="INFO" size="18"/>
-        <Label text="Cada tipo permite até 20 ajudantes." styleClass="help"/>
+        <Label text="Organização e limpeza permitem até 20 ajudantes cada; a área de trabalho, só um." styleClass="help"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Button text="Cancelar" styleClass="btn, btn-ghost" onAction="#onClose"/>
     </HBox>

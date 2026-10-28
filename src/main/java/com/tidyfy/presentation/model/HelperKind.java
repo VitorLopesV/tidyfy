@@ -9,7 +9,10 @@ public enum HelperKind {
     ORGANIZER(HelperKind.ORGANIZER_LABEL, HelperKind.ORGANIZER_SHORT_LABEL, HelperKind.ORGANIZER_STYLE_CLASS),
 
     /** Esvazia a lixeira ou remove os arquivos de uma pasta. */
-    CLEANER(HelperKind.CLEANER_LABEL, HelperKind.CLEANER_SHORT_LABEL, HelperKind.CLEANER_STYLE_CLASS);
+    CLEANER(HelperKind.CLEANER_LABEL, HelperKind.CLEANER_SHORT_LABEL, HelperKind.CLEANER_STYLE_CLASS),
+
+    /** Reposiciona os ícones da área de trabalho; só pode haver um. */
+    DESKTOP(HelperKind.DESKTOP_LABEL, HelperKind.DESKTOP_SHORT_LABEL, HelperKind.DESKTOP_STYLE_CLASS);
 
     /** Nome completo do tipo. */
     private final String label;
@@ -43,6 +46,18 @@ public enum HelperKind {
     /** Classe CSS do tipo limpeza. */
     private static final String CLEANER_STYLE_CLASS = "kind-clean";
 
+    /** Espelha HelperType.MAX_DESKTOP_ARRANGERS: a área de trabalho é única. */
+    public static final int LIMIT_DESKTOP = 1;
+
+    /** Nome completo do tipo área de trabalho. */
+    private static final String DESKTOP_LABEL = "Organizador da área de trabalho";
+
+    /** Nome curto do tipo área de trabalho. */
+    private static final String DESKTOP_SHORT_LABEL = "Área de trabalho";
+
+    /** Classe CSS do tipo área de trabalho. */
+    private static final String DESKTOP_STYLE_CLASS = "kind-desktop";
+
     /**
      * Cria um tipo de ajudante.
      *
@@ -54,6 +69,15 @@ public enum HelperKind {
         this.label = label;
         this.shortLabel = shortLabel;
         this.styleClass = styleClass;
+    }
+
+    /**
+     * Devolve quantos ajudantes do tipo podem existir.
+     *
+     * @return {@link #LIMIT_DESKTOP} para a área de trabalho e {@link #LIMIT_PER_TYPE} para os demais
+     */
+    public int limit() {
+        return this == DESKTOP ? LIMIT_DESKTOP : LIMIT_PER_TYPE;
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.tidyfy.presentation;
 
+import com.tidyfy.domain.DesktopLayout;
 import com.tidyfy.presentation.model.HelperItem;
 import com.tidyfy.presentation.model.HelperKind;
 import java.nio.file.Path;
@@ -28,6 +29,11 @@ public final class SampleHelpers {
     public static HelperItem recycleBinCleaner(String id, String name) {
         return new HelperItem(id, name, HelperKind.CLEANER, null, 7,
                 List.of(LocalTime.of(20, 0)), true, "Domingo, 20:00", 0.3);
+    }
+
+    public static HelperItem desktopArranger(String id, String name) {
+        return new HelperItem(id, name, HelperKind.DESKTOP, null, 1, List.of(LocalTime.of(9, 0)), true,
+                "Hoje, 18:00", 0.2, null, null, null, DesktopLayout.BORDERS);
     }
 
     /** {@code count} ajudantes alternando entre os três exemplos acima. */

@@ -74,6 +74,12 @@ public class HelperListController {
     /** Medidor de uso do limite de ajudantes de limpeza. */
     @FXML private UsageMeter cleanerUsage;
 
+    /** Quantidade de ajudantes da área de trabalho. */
+    @FXML private Label desktopCount;
+
+    /** Medidor de uso do limite do ajudante da área de trabalho. */
+    @FXML private UsageMeter desktopUsage;
+
     /** Quantidade de ajudantes ligados. */
     @FXML private Label enabledCount;
 
@@ -92,6 +98,9 @@ public class HelperListController {
     /** Filtro que mostra só a limpeza. */
     @FXML private ToggleButton filterCleaner;
 
+    /** Filtro que mostra só o ajudante da área de trabalho. */
+    @FXML private ToggleButton filterDesktop;
+
     /** Quantidade exibida no filtro de todos. */
     @FXML private Label filterAllCount;
 
@@ -100,6 +109,9 @@ public class HelperListController {
 
     /** Quantidade exibida no filtro de limpeza. */
     @FXML private Label filterCleanerCount;
+
+    /** Quantidade exibida no filtro da área de trabalho. */
+    @FXML private Label filterDesktopCount;
 
     /** Caixa que seleciona todos os cartões visíveis. */
     @FXML private CheckBox selectAll;
@@ -364,7 +376,8 @@ public class HelperListController {
         filterAll.setUserData(TypeFilter.ALL);
         filterOrganizer.setUserData(TypeFilter.ORGANIZER);
         filterCleaner.setUserData(TypeFilter.CLEANER);
-        for (ToggleButton button : List.of(filterAll, filterOrganizer, filterCleaner)) {
+        filterDesktop.setUserData(TypeFilter.DESKTOP);
+        for (ToggleButton button : List.of(filterAll, filterOrganizer, filterCleaner, filterDesktop)) {
             button.setToggleGroup(filters);
         }
         filters.selectToggle(filterAll);
@@ -429,15 +442,19 @@ public class HelperListController {
     private void showCounts() {
         int organizers = countOf(HelperKind.ORGANIZER);
         int cleaners = countOf(HelperKind.CLEANER);
+        int desktops = countOf(HelperKind.DESKTOP);
         long enabled = helpers.stream().filter(HelperItem::enabled).count();
         organizerCount.setText(String.valueOf(organizers));
         organizerUsage.setUsed(organizers);
         cleanerCount.setText(String.valueOf(cleaners));
         cleanerUsage.setUsed(cleaners);
+        desktopCount.setText(String.valueOf(desktops));
+        desktopUsage.setUsed(desktops);
         enabledCount.setText(helpers.isEmpty() ? NO_ENABLED : String.format(ENABLED_COUNT, enabled, helpers.size()));
         filterAllCount.setText(String.valueOf(helpers.size()));
         filterOrganizerCount.setText(String.valueOf(organizers));
         filterCleanerCount.setText(String.valueOf(cleaners));
+        filterDesktopCount.setText(String.valueOf(desktops));
     }
 
     /**
@@ -594,7 +611,8 @@ public class HelperListController {
     @FXML
     private void onNewHelper() {
         HelperTypeChooserController chooser =
-                new HelperTypeChooserController(countOf(HelperKind.ORGANIZER), countOf(HelperKind.CLEANER));
+                new HelperTypeChooserController(countOf(HelperKind.ORGANIZER), countOf(HelperKind.CLEANER),
+                        countOf(HelperKind.DESKTOP));
         showDialog(chooser.createView(), NEW_HELPER_TITLE);
         chooser.chosenKind().ifPresent(kind -> openForm(kind, null));
     }
@@ -730,13 +748,17 @@ public class HelperListController {
      */
     HelperFormController createForm(HelperKind kind, HelperItem editing) {
         if (saveHelper == null) {
-            return kind == HelperKind.ORGANIZER
-                    ? new FolderOrganizerFormController(editing)
-                    : new CleanerFormController(editing);
+            return switch (kind) {
+                case ORGANIZER -> new FolderOrganizerFormController(editing);
+                case CLEANER -> new CleanerFormController(editing);
+                case DESKTOP -> new DesktopArrangerFormController(editing);
+            };
         }
-        return kind == HelperKind.ORGANIZER
-                ? new FolderOrganizerFormController(editing, saveHelper, clock)
-                : new CleanerFormController(editing, saveHelper, clock);
+        return switch (kind) {
+            case ORGANIZER -> new FolderOrganizerFormController(editing, saveHelper, clock);
+            case CLEANER -> new CleanerFormController(editing, saveHelper, clock);
+            case DESKTOP -> new DesktopArrangerFormController(editing, saveHelper, clock);
+        };
     }
 
     /**

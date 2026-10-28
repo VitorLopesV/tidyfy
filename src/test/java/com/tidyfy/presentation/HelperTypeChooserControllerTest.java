@@ -42,6 +42,30 @@ class HelperTypeChooserControllerTest {
     }
 
     @Test
+    void desktopCardIsBlockedAfterTheFirstHelper() {
+        JavaFx.run(() -> {
+            Parent view = JavaFx.mount(new HelperTypeChooserController(0, 0, 1).createView());
+
+            assertTrue(view.lookup("#desktopCard").isDisabled());
+            assertTrue(view.lookup("#desktopLimitBadge").isVisible());
+            assertFalse(view.lookup("#organizerCard").isDisabled());
+        });
+    }
+
+    @Test
+    void choosesTheDesktopType() {
+        JavaFx.run(() -> {
+            HelperTypeChooserController chooser = new HelperTypeChooserController(0, 0, 0);
+            Parent view = JavaFx.mount(chooser.createView());
+
+            assertFalse(view.lookup("#desktopCard").isDisabled());
+            ((Button) view.lookup("#desktopCard")).fire();
+
+            assertEquals(Optional.of(HelperKind.DESKTOP), chooser.chosenKind());
+        });
+    }
+
+    @Test
     void remembersTheChosenType() {
         JavaFx.run(() -> {
             HelperTypeChooserController chooser = new HelperTypeChooserController(0, 0);

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.tidyfy.domain.DesktopArrangerAlreadyExistsException;
 import com.tidyfy.domain.FolderAlreadyInUseException;
 import com.tidyfy.domain.HelperLimitReachedException;
 import com.tidyfy.domain.HelperName;
@@ -53,6 +54,7 @@ class ErrorMessageMapperTest {
         assertDomain("Nome já usado", name);
         assertDomain("Pasta protegida", protectedFolder);
         assertDomain("Pasta já usada", inUse);
+        assertDomain("Organizador da área de trabalho já existe", new DesktopArrangerAlreadyExistsException());
     }
 
     @Test

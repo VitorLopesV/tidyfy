@@ -1,5 +1,6 @@
 package com.tidyfy.presentation.model;
 
+import com.tidyfy.domain.DesktopLayout;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -23,6 +24,7 @@ import java.util.Objects;
  * @param ageReference    data do arquivo usada para medir a idade; {@code null} quando não se aplica
  *                        (organização e lixeira)
  * @param startDate       dia de onde se conta o intervalo da frequência; {@code null} quando desconhecido
+ * @param desktopLayout   layout dos ícones do Organizador da área de trabalho; {@code null} nos demais tipos
  */
 public record HelperItem(
         String id,
@@ -36,7 +38,8 @@ public record HelperItem(
         double nextRunProgress,
         Integer ageLimitDays,
         HelperAgeReference ageReference,
-        LocalDate startDate) {
+        LocalDate startDate,
+        DesktopLayout desktopLayout) {
 
     // Constantes
 
@@ -65,6 +68,29 @@ public record HelperItem(
     public HelperItem(String id, String name, HelperKind kind, Path folder, int intervalDays,
                       List<LocalTime> times, boolean enabled, String nextRun, double nextRunProgress) {
         this(id, name, kind, folder, intervalDays, times, enabled, nextRun, nextRunProgress, null, null);
+    }
+
+    /**
+     * Cria um ajudante que não é do tipo área de trabalho, sem layout.
+     *
+     * @param id              identificador do ajudante
+     * @param name            nome definido pelo usuário
+     * @param kind            tipo do ajudante
+     * @param folder          pasta-alvo; {@code null} quando o alvo é a lixeira
+     * @param intervalDays    intervalo, em dias, entre as execuções
+     * @param times           horários do dia
+     * @param enabled         se o ajudante está ligado
+     * @param nextRun         texto da próxima execução; {@code null} quando desconhecida
+     * @param nextRunProgress progresso até a próxima execução, de 0 a 1
+     * @param ageLimitDays    idade máxima em dias; {@code null} quando limpa tudo ou não se aplica
+     * @param ageReference    data de referência da idade; {@code null} quando não se aplica
+     * @param startDate       dia de onde se conta o intervalo; {@code null} quando desconhecido
+     */
+    public HelperItem(String id, String name, HelperKind kind, Path folder, int intervalDays,
+                      List<LocalTime> times, boolean enabled, String nextRun, double nextRunProgress,
+                      Integer ageLimitDays, HelperAgeReference ageReference, LocalDate startDate) {
+        this(id, name, kind, folder, intervalDays, times, enabled, nextRun, nextRunProgress, ageLimitDays,
+                ageReference, startDate, null);
     }
 
     /**
@@ -102,10 +128,19 @@ public record HelperItem(
     /**
      * Informa se o alvo do ajudante é a lixeira do Windows.
      *
-     * @return {@code true} quando não há pasta-alvo
+     * @return {@code true} quando não há pasta-alvo e o ajudante não é o da área de trabalho
      */
     public boolean targetsRecycleBin() {
-        return folder == null;
+        return folder == null && kind != HelperKind.DESKTOP;
+    }
+
+    /**
+     * Informa se o alvo do ajudante é a área de trabalho.
+     *
+     * @return {@code true} para o Organizador da área de trabalho
+     */
+    public boolean targetsDesktop() {
+        return kind == HelperKind.DESKTOP;
     }
 
     /**
@@ -116,6 +151,6 @@ public record HelperItem(
      */
     public HelperItem withEnabled(boolean value) {
         return new HelperItem(id, name, kind, folder, intervalDays, times, value, nextRun, nextRunProgress,
-                ageLimitDays, ageReference, startDate);
+                ageLimitDays, ageReference, startDate, desktopLayout);
     }
 }

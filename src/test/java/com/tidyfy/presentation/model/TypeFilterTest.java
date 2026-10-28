@@ -34,6 +34,16 @@ class TypeFilterTest {
         assertFalse(TypeFilter.CLEANER.matches(organizer));
     }
 
+    @Test
+    void desktopMatchesOnlyTheDesktopArranger() {
+        HelperItem desktop = item(HelperKind.DESKTOP);
+
+        assertTrue(TypeFilter.DESKTOP.matches(desktop));
+        assertFalse(TypeFilter.DESKTOP.matches(organizer));
+        assertFalse(TypeFilter.DESKTOP.matches(cleaner));
+        assertTrue(TypeFilter.ALL.matches(desktop));
+    }
+
     private static HelperItem item(HelperKind kind) {
         return new HelperItem(kind.name(), "Ajudante", kind, Path.of("C:\\Pasta"), 1,
                 List.of(LocalTime.NOON), true, null, 0);

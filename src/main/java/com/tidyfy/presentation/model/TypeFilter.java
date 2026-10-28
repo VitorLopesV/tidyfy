@@ -12,7 +12,10 @@ public enum TypeFilter {
     ORGANIZER(HelperKind.ORGANIZER),
 
     /** Mostra só os ajudantes de limpeza. */
-    CLEANER(HelperKind.CLEANER);
+    CLEANER(HelperKind.CLEANER),
+
+    /** Mostra só o ajudante da área de trabalho. */
+    DESKTOP(HelperKind.DESKTOP);
 
     /** Tipo aceito pelo filtro; {@code null} aceita todos. */
     private final HelperKind kind;

@@ -1,6 +1,7 @@
 package com.tidyfy.presentation.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,6 +9,8 @@ import com.tidyfy.domain.AgeLimit;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.CleanupTarget;
+import com.tidyfy.domain.DesktopArrangerHelper;
+import com.tidyfy.domain.DesktopLayout;
 import com.tidyfy.domain.FolderOrganizerHelper;
 import com.tidyfy.domain.FolderTarget;
 import com.tidyfy.domain.Helper;
@@ -55,6 +58,23 @@ class HelperItemMapperTest {
         assertNull(item.ageLimitDays());
         assertNull(item.ageReference());
         assertEquals(START, item.startDate());
+    }
+
+    @Test
+    void convertsADesktopArranger() {
+        DesktopArrangerHelper helper = new DesktopArrangerHelper(HelperId.newId(), new HelperName("Arrumar"),
+                schedule(1, LocalTime.of(9, 0)), true, DesktopLayout.BY_TYPE_LEFT);
+
+        HelperItem item = mapper.toItem(helper);
+
+        assertEquals(HelperKind.DESKTOP, item.kind());
+        assertEquals(DesktopLayout.BY_TYPE_LEFT, item.desktopLayout());
+        assertNull(item.folder());
+        assertTrue(item.targetsDesktop());
+        assertFalse(item.targetsRecycleBin());
+        assertEquals(START, item.startDate());
+        assertTrue(item.withEnabled(false).targetsDesktop());
+        assertEquals(DesktopLayout.BY_TYPE_LEFT, item.withEnabled(false).desktopLayout());
     }
 
     @Test

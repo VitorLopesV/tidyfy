@@ -54,6 +54,12 @@ public final class ExecutionItemMapper {
     /** Texto da lixeira esvaziada. */
     private static final String RECYCLE_BIN_EMPTIED_TEXT = "Lixeira esvaziada";
 
+    /** Texto da ação de reposicionar os ícones, sem a quantidade. */
+    private static final String ARRANGED_TEXT = "Ícones da área de trabalho reposicionados";
+
+    /** Modelo do texto da ação de reposicionar os ícones; recebe a quantidade. */
+    private static final String ARRANGED_WITH_COUNT = "Ícones da área de trabalho reposicionados: %s";
+
     /** Modelo da lixeira esvaziada com a quantidade informada; recebe a mensagem da ação. */
     private static final String RECYCLE_BIN_EMPTIED_WITH_COUNT = "Lixeira esvaziada: %s";
 
@@ -151,6 +157,8 @@ public final class ExecutionItemMapper {
             case TRASHED -> new ExecutionAction(String.format(TRASHED_TEXT, source), detail, false);
             case RECYCLE_BIN_EMPTIED -> new ExecutionAction(action.message() == null ? RECYCLE_BIN_EMPTIED_TEXT
                     : String.format(RECYCLE_BIN_EMPTIED_WITH_COUNT, action.message()), null, false);
+            case ARRANGED -> new ExecutionAction(action.message() == null ? ARRANGED_TEXT
+                    : String.format(ARRANGED_WITH_COUNT, action.message()), null, false);
             case FAILED -> new ExecutionAction(failureText(action, source), detail, true);
         };
     }

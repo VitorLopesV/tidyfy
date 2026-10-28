@@ -1,5 +1,6 @@
 package com.tidyfy.presentation.component;
 
+import com.tidyfy.presentation.model.DesktopLayoutText;
 import com.tidyfy.presentation.model.HelperItem;
 import com.tidyfy.presentation.model.HelperKind;
 import com.tidyfy.presentation.model.SchedulePreview;
@@ -146,6 +147,12 @@ public final class HelperCard extends VBox {
     /** Detalhe do alvo quando é a lixeira. */
     private static final String RECYCLE_BIN_DETAIL = "esvazia a lixeira";
 
+    /** Nome do alvo quando é a área de trabalho. */
+    private static final String DESKTOP_NAME = "Área de trabalho";
+
+    /** Modelo do detalhe do alvo quando é a área de trabalho; recebe o nome do layout. */
+    private static final String DESKTOP_DETAIL = "ícones: %s";
+
     /** Separador dos horários na dica. */
     private static final String TIMES_SEPARATOR = ", ";
 
@@ -168,7 +175,7 @@ public final class HelperCard extends VBox {
         Fxml.loadRoot(HelperCard.class.getResource(FXML_FILE), this);
         getStyleClass().add(item.kind().styleClass());
 
-        kindIcon.setGlyph(item.kind() == HelperKind.ORGANIZER ? Glyph.FOLDER_SORTED : Glyph.SPARKLES);
+        kindIcon.setGlyph(glyphOf(item.kind()));
         kindLabel.setText(item.kind().shortLabel().toUpperCase(PT_BR));
         nameLabel.setText(item.name());
         nameLabel.setTooltip(new Tooltip(item.name()));
@@ -206,7 +213,13 @@ public final class HelperCard extends VBox {
      * Mostra o alvo do ajudante: a lixeira ou a pasta.
      */
     private void showTarget() {
-        if (item.targetsRecycleBin()) {
+        if (item.targetsDesktop()) {
+            targetIcon.setGlyph(Glyph.DESKTOP);
+            targetName.setText(DESKTOP_NAME);
+            if (item.desktopLayout() != null) {
+                targetDetail.setText(String.format(DESKTOP_DETAIL, DesktopLayoutText.label(item.desktopLayout())));
+            }
+        } else if (item.targetsRecycleBin()) {
             targetIcon.setGlyph(Glyph.TRASH);
             targetName.setText(RECYCLE_BIN_NAME);
             targetDetail.setText(RECYCLE_BIN_DETAIL);
@@ -216,6 +229,20 @@ public final class HelperCard extends VBox {
             targetDetail.setText(item.folder().toString());
             targetDetail.setTooltip(new Tooltip(item.folder().toString()));
         }
+    }
+
+    /**
+     * Escolhe o ícone do tipo de ajudante.
+     *
+     * @param kind tipo do ajudante
+     * @return o desenho do tipo
+     */
+    private static Glyph glyphOf(HelperKind kind) {
+        return switch (kind) {
+            case ORGANIZER -> Glyph.FOLDER_SORTED;
+            case CLEANER -> Glyph.SPARKLES;
+            case DESKTOP -> Glyph.DESKTOP;
+        };
     }
 
     /**

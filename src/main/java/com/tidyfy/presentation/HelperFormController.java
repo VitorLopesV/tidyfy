@@ -215,9 +215,11 @@ public abstract class HelperFormController {
     /**
      * Devolve o campo de pasta do formulário, onde aparecem os erros de regra da pasta.
      *
-     * @return o campo de pasta
+     * @return o campo de pasta, ou {@code null} quando o formulário não tem pasta (área de trabalho)
      */
-    protected abstract FolderField folderField();
+    protected FolderField folderField() {
+        return null;
+    }
 
     /**
      * Informa se ainda falta escolher onde o ajudante vai atuar.
@@ -243,7 +245,9 @@ public abstract class HelperFormController {
         saveButton.setText(creating ? CREATE_BUTTON : EDIT_BUTTON);
         nameTitle.setLabelFor(nameField);
         Nodes.setShown(saveError, false);
-        Nodes.setShown(folderError, false);
+        if (folderError != null) {
+            Nodes.setShown(folderError, false);
+        }
 
         if (creating) {
             scheduleEditor.setTimes(List.of(LocalTime.of(9, 0)));
@@ -260,7 +264,9 @@ public abstract class HelperFormController {
             nameTouched.set(true);
             clearNameRuleError();
         });
-        folderField().folderProperty().addListener((obs, old, now) -> clearFolderError());
+        if (folderField() != null) {
+            folderField().folderProperty().addListener((obs, old, now) -> clearFolderError());
+        }
         BooleanBinding nameMissing = Bindings.createBooleanBinding(
                 () -> nameField.getText() == null || nameField.getText().isBlank(), nameField.textProperty());
         nameError = nameTouched.and(nameMissing);
@@ -333,6 +339,9 @@ public abstract class HelperFormController {
      * quando o usuário troca o alvo.
      */
     protected void clearFolderError() {
+        if (folderError == null || folderField() == null) {
+            return;
+        }
         Nodes.setShown(folderError, false);
         folderField().getStyleClass().remove(INVALID_STYLE_CLASS);
     }

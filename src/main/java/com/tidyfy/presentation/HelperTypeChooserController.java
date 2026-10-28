@@ -56,11 +56,32 @@ public class HelperTypeChooserController {
     /** Medidor de uso do limite de limpeza. */
     @FXML private UsageMeter cleanerUsage;
 
+    /** Cartão que escolhe o tipo área de trabalho. */
+    @FXML private Button desktopCard;
+
+    /** Descrição do tipo área de trabalho. */
+    @FXML private Label desktopDescription;
+
+    /** Aviso de limite atingido do tipo área de trabalho. */
+    @FXML private Label desktopLimitBadge;
+
+    /** Seta do cartão da área de trabalho. */
+    @FXML private Icon desktopArrow;
+
+    /** Quantidade de ajudantes da área de trabalho. */
+    @FXML private Label desktopCount;
+
+    /** Medidor de uso do limite do ajudante da área de trabalho. */
+    @FXML private UsageMeter desktopUsage;
+
     /** Quantidade de ajudantes de organização já criados. */
     private final int organizers;
 
     /** Quantidade de ajudantes de limpeza já criados. */
     private final int cleaners;
+
+    /** Quantidade de ajudantes da área de trabalho já criados. */
+    private final int desktops;
 
     /** Tipo escolhido; {@code null} enquanto nenhum foi escolhido. */
     private HelperKind chosen;
@@ -76,6 +97,10 @@ public class HelperTypeChooserController {
     /** Nome do tipo limpeza, usado na mensagem de limite. */
     private static final String CLEANER_NAME = "limpeza";
 
+    /** Mensagem de limite atingido do ajudante da área de trabalho, que só pode existir um. */
+    private static final String DESKTOP_LIMIT_REACHED =
+            "Você já tem o Organizador da área de trabalho. Só pode haver um; remova-o para criar outro.";
+
     /** Modelo da mensagem de limite atingido; recebe o limite e o nome do tipo. */
     private static final String LIMIT_REACHED = "Você já tem %d ajudantes de %s. Remova um deles para criar outro.";
 
@@ -86,8 +111,20 @@ public class HelperTypeChooserController {
      * @param cleaners   quantidade de ajudantes de limpeza já criados
      */
     public HelperTypeChooserController(int organizers, int cleaners) {
+        this(organizers, cleaners, 0);
+    }
+
+    /**
+     * Cria o diálogo.
+     *
+     * @param organizers quantidade de ajudantes de organização já criados
+     * @param cleaners   quantidade de ajudantes de limpeza já criados
+     * @param desktops   quantidade de ajudantes da área de trabalho já criados
+     */
+    public HelperTypeChooserController(int organizers, int cleaners, int desktops) {
         this.organizers = organizers;
         this.cleaners = cleaners;
+        this.desktops = desktops;
     }
 
     /**
@@ -106,10 +143,14 @@ public class HelperTypeChooserController {
     private void initialize() {
         Nodes.stretchGraphic(organizerCard, true);
         Nodes.stretchGraphic(cleanerCard, true);
+        Nodes.stretchGraphic(desktopCard, true);
         show(organizerCard, organizerDescription, organizerLimitBadge, organizerArrow, organizerCount, organizerUsage,
-                organizers, ORGANIZER_NAME);
+                organizers, HelperKind.ORGANIZER.limit(), String.format(LIMIT_REACHED, HelperKind.LIMIT_PER_TYPE, ORGANIZER_NAME));
         show(cleanerCard, cleanerDescription, cleanerLimitBadge, cleanerArrow, cleanerCount, cleanerUsage,
-                cleaners, CLEANER_NAME);
+                cleaners, HelperKind.CLEANER.limit(), String.format(LIMIT_REACHED, HelperKind.LIMIT_PER_TYPE, CLEANER_NAME));
+        desktopUsage.setMax(HelperKind.DESKTOP.limit());
+        show(desktopCard, desktopDescription, desktopLimitBadge, desktopArrow, desktopCount, desktopUsage,
+                desktops, HelperKind.DESKTOP.limit(), DESKTOP_LIMIT_REACHED);
     }
 
     /**
@@ -122,18 +163,19 @@ public class HelperTypeChooserController {
      * @param count      contador de ajudantes
      * @param usage      medidor de uso
      * @param created    quantidade de ajudantes já criados do tipo
-     * @param kindName   nome do tipo, usado na mensagem de limite
+     * @param limit      quantos ajudantes o tipo permite
+     * @param limitMessage mensagem exibida quando o limite foi atingido
      */
     private static void show(Button card, Label description, Label limitBadge, Icon arrow, Label count,
-                             UsageMeter usage, int created, String kindName) {
+                             UsageMeter usage, int created, int limit, String limitMessage) {
         count.setText(String.valueOf(created));
         usage.setUsed(created);
-        boolean full = created >= HelperKind.LIMIT_PER_TYPE;
+        boolean full = created >= limit;
         card.setDisable(full);
         Nodes.setShown(limitBadge, full);
         Nodes.setShown(arrow, !full);
         if (full) {
-            description.setText(String.format(LIMIT_REACHED, HelperKind.LIMIT_PER_TYPE, kindName));
+            description.setText(limitMessage);
         }
     }
 
@@ -151,6 +193,14 @@ public class HelperTypeChooserController {
     @FXML
     private void onCleaner() {
         choose(HelperKind.CLEANER);
+    }
+
+    /**
+     * Escolhe o tipo área de trabalho e fecha o diálogo.
+     */
+    @FXML
+    private void onDesktop() {
+        choose(HelperKind.DESKTOP);
     }
 
     /**

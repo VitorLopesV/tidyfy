@@ -84,6 +84,22 @@
                 <UsageMeter fx:id="cleanerUsage"/>
             </VBox>
 
+            <VBox styleClass="stat-card, kind-desktop" prefWidth="0" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <StackPane styleClass="kind-badge, badge-34"><Icon glyph="DESKTOP" size="18"/></StackPane>
+                    <VBox spacing="2">
+                        <Label text="Área de trabalho" styleClass="stat-title"/>
+                        <Label text="Só um ajudante" styleClass="stat-sub"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <HBox alignment="BASELINE_RIGHT">
+                        <Label fx:id="desktopCount" text="0" styleClass="stat-count"/>
+                        <Label text="/1" styleClass="stat-max"/>
+                    </HBox>
+                </HBox>
+                <UsageMeter fx:id="desktopUsage" max="1"/>
+            </VBox>
+
             <VBox styleClass="stat-card, live" prefWidth="0" maxWidth="Infinity" HBox.hgrow="ALWAYS">
                 <HBox alignment="CENTER_LEFT" spacing="10" minHeight="34">
                     <Pulse/>
@@ -125,6 +141,15 @@
                                     <Region styleClass="seg-dot"/>
                                     <Label text="Limpeza" styleClass="seg-text"/>
                                     <Label fx:id="filterCleanerCount" text="0" styleClass="seg-count"/>
+                                </HBox>
+                            </graphic>
+                        </ToggleButton>
+                        <ToggleButton fx:id="filterDesktop" styleClass="seg, kind-desktop">
+                            <graphic>
+                                <HBox alignment="CENTER_LEFT" spacing="8">
+                                    <Region styleClass="seg-dot"/>
+                                    <Label text="Área de trabalho" styleClass="seg-text"/>
+                                    <Label fx:id="filterDesktopCount" text="0" styleClass="seg-count"/>
                                 </HBox>
                             </graphic>
                         </ToggleButton>

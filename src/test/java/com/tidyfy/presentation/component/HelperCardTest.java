@@ -44,6 +44,17 @@ class HelperCardTest {
     }
 
     @Test
+    void desktopHelperShowsTheDesktopAndItsLayoutAsTarget() {
+        JavaFx.run(() -> {
+            HelperCard card = new HelperCard(SampleHelpers.desktopArranger("h9", "Arrumar"));
+
+            assertEquals("Área de trabalho", text(card, "#targetName"));
+            assertEquals("ícones: Bordas", text(card, "#targetDetail"));
+            assertTrue(card.getStyleClass().contains("kind-desktop"));
+        });
+    }
+
+    @Test
     void showsScheduleWithOneChipPerTime() {
         JavaFx.run(() -> {
             HelperCard card = new HelperCard(SampleHelpers.organizer("h1", "Organizar Downloads"));

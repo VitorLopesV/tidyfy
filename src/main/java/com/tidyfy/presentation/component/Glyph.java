@@ -29,6 +29,9 @@ public enum Glyph {
     /** Lixeira. */
     TRASH(Glyph.TRASH_PATH),
 
+    /** Monitor com ícones, para a área de trabalho. */
+    DESKTOP(Glyph.DESKTOP_PATH),
+
     /** Relógio. */
     CLOCK(Glyph.CLOCK_PATH),
 
@@ -86,6 +89,10 @@ public enum Glyph {
     /** Traço da lixeira. */
     private static final String TRASH_PATH =
             "M4 7h16M9 7V4.5h6V7M6 7l1 12.2A2 2 0 0 0 9 21h6a2 2 0 0 0 2-1.8L18 7M10 11v6M14 11v6";
+
+    /** Traço do monitor com ícones. */
+    private static final String DESKTOP_PATH =
+            "M4.5 5h15A1.5 1.5 0 0 1 21 6.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 15.5v-9A1.5 1.5 0 0 1 4.5 5zM9 20h6M12 17v3M6.5 8h1.5M6.5 11h1.5M10 8h1.5";
 
     /** Traço do relógio. */
     private static final String CLOCK_PATH = "M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0-17 0M12 7.5V12l3 2";

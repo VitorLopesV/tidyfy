@@ -1,5 +1,6 @@
 package com.tidyfy.presentation.model;
 
+import com.tidyfy.domain.DesktopArrangerAlreadyExistsException;
 import com.tidyfy.domain.FolderAlreadyInUseException;
 import com.tidyfy.domain.HelperLimitReachedException;
 import com.tidyfy.domain.HelperNameAlreadyUsedException;
@@ -38,6 +39,9 @@ public final class ErrorMessageMapper {
 
     /** Título do erro de limite de ajudantes. */
     private static final String LIMIT_TITLE = "Limite de ajudantes atingido";
+
+    /** Título do erro de segundo Organizador da área de trabalho. */
+    private static final String DESKTOP_EXISTS_TITLE = "Organizador da área de trabalho já existe";
 
     /** Título do erro de nome já usado. */
     private static final String NAME_TITLE = "Nome já usado";
@@ -83,6 +87,9 @@ public final class ErrorMessageMapper {
         }
         if (error instanceof HelperLimitReachedException) {
             return domain(LIMIT_TITLE, error, details);
+        }
+        if (error instanceof DesktopArrangerAlreadyExistsException) {
+            return domain(DESKTOP_EXISTS_TITLE, error, details);
         }
         if (error instanceof HelperNameAlreadyUsedException) {
             return domain(NAME_TITLE, error, details);

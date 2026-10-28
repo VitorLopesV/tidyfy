@@ -17,6 +17,9 @@ public enum ActionType {
     /** Lixeira do Windows esvaziada (limpeza da lixeira). */
     RECYCLE_BIN_EMPTIED,
 
+    /** Ícones da área de trabalho reposicionados; a quantidade fica na mensagem da ação. */
+    ARRANGED,
+
     /** Falha ao executar; a causa fica na mensagem da ação. */
     FAILED
 }

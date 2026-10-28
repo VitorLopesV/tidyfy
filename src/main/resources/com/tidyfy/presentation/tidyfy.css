@@ -23,6 +23,9 @@
     -tf-clean: #F0A35E;
     -tf-clean-tint: #33200F;
     -tf-clean-soft: #F6B57A;
+    -tf-desktop: #7AA2F7;
+    -tf-desktop-tint: #14213B;
+    -tf-desktop-soft: #A5BFF9;
     -tf-danger: #F2877B;
     -tf-danger-tint: #3A1714;
     -tf-danger-strong: #C9342B;
@@ -1522,4 +1525,96 @@
 .age-choice:hover,
 .age-choice:selected {
     -fx-text-fill: -tf-ink;
+}
+
+/* ---------- Organizador da área de trabalho ---------- */
+
+.kind-desktop .kind-text {
+    -fx-text-fill: -tf-desktop;
+}
+
+.kind-desktop .kind-badge {
+    -fx-background-color: -tf-desktop-tint;
+}
+
+.kind-desktop .kind-badge .icon-shape {
+    -fx-stroke: -tf-desktop;
+}
+
+.kind-desktop .tick.on {
+    -fx-background-color: -tf-desktop;
+    -fx-effect: dropshadow(gaussian, rgba(122, 162, 247, 0.3), 8, 0, 0, 0);
+}
+
+.kind-desktop .pulse-core,
+.kind-desktop .pulse-ring {
+    -fx-fill: -tf-desktop;
+}
+
+.kind-desktop .seg-dot {
+    -fx-background-color: -tf-desktop;
+}
+
+.kind-desktop .progress-fill {
+    -fx-background-color: -tf-desktop;
+}
+
+.kind-desktop .folder-field:chosen .folder-icon .icon-shape {
+    -fx-stroke: -tf-desktop;
+}
+
+.kind-desktop .chip-clock .icon-shape {
+    -fx-stroke: -tf-desktop;
+    -fx-stroke-width: 2;
+}
+
+.kind-desktop .day.run {
+    -fx-background-color: -tf-desktop;
+    -fx-text-fill: -tf-on-ink;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(122, 162, 247, 0.45), 12, 0, 0, 4);
+}
+
+.kind-desktop .runs-badge {
+    -fx-background-color: -tf-desktop-tint;
+    -fx-text-fill: -tf-desktop-soft;
+}
+
+.layout-option {
+    -fx-background-color: -tf-line-strong, -tf-surface-2;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 14, 13;
+    -fx-padding: 10;
+    -fx-alignment: top-left;
+    -fx-cursor: hand;
+}
+
+.layout-option:hover {
+    -fx-background-color: -tf-field, -tf-surface-2;
+}
+
+.layout-option:selected,
+.layout-option:selected:hover {
+    -fx-background-color: -tf-desktop, -tf-surface-2;
+    -fx-background-insets: 0, 2;
+}
+
+.layout-option-label {
+    -fx-font-weight: bold;
+}
+
+.layout-option-desc {
+    -fx-font-size: 12px;
+    -fx-text-fill: -tf-muted;
+}
+
+.layout-thumb-screen {
+    -fx-background-color: -tf-line-strong, -tf-sunken;
+    -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 8, 7;
+}
+
+.layout-thumb-icon {
+    -fx-background-color: -tf-desktop;
+    -fx-background-radius: 3;
 }

@@ -106,9 +106,9 @@ class ExecutionRecordTest {
     }
 
     @Test
-    void actionTypesAreTheFiveKnownOnes() {
+    void actionTypesAreTheSixKnownOnes() {
         assertEquals(
-                List.of("MOVED", "DUPLICATE_TRASHED", "TRASHED", "RECYCLE_BIN_EMPTIED", "FAILED"),
+                List.of("MOVED", "DUPLICATE_TRASHED", "TRASHED", "RECYCLE_BIN_EMPTIED", "ARRANGED", "FAILED"),
                 Arrays.stream(ActionType.values()).map(Enum::name).toList());
     }
 }

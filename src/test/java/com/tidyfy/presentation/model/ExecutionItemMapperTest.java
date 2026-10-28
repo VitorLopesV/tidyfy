@@ -47,6 +47,18 @@ class ExecutionItemMapperTest {
     }
 
     @Test
+    void arrangedActionShowsTheIconCountFromTheMessage() {
+        HelperAction withCount = new HelperAction(ActionType.ARRANGED, null, null, "12 ícones");
+        HelperAction withoutCount = new HelperAction(ActionType.ARRANGED, null, null, null);
+
+        List<ExecutionAction> actions = mapper.map(record(NOON_UTC, withCount, withoutCount)).actions();
+
+        assertEquals("Ícones da área de trabalho reposicionados: 12 ícones", actions.get(0).text());
+        assertEquals("Ícones da área de trabalho reposicionados", actions.get(1).text());
+        assertFalse(actions.get(0).failure());
+    }
+
+    @Test
     void trashedAndDuplicateActionsShowTheFileName() {
         HelperAction trashed = new HelperAction(ActionType.TRASHED, Path.of("C:\\Temp\\velho.log"), null, null);
         HelperAction duplicate = new HelperAction(ActionType.DUPLICATE_TRASHED, Path.of("C:\\Downloads\\a.pdf"), null,

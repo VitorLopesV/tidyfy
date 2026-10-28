@@ -209,6 +209,7 @@ package "com.tidyfy.domain" {
     DUPLICATE_TRASHED
     TRASHED
     RECYCLE_BIN_EMPTIED
+    ARRANGED
     FAILED
   }
 

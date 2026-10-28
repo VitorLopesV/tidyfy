@@ -31,9 +31,6 @@ public final class HelperItemMapper {
 
     // Constantes
 
-    /** Mensagem de erro: o tipo ainda não é tratado nesta camada (será ligado nas próximas etapas). */
-    private static final String UNSUPPORTED_TYPE = "O Organizador da área de trabalho ainda não é suportado aqui.";
-
     /** Nome do parâmetro do relógio, usado na mensagem de valor nulo. */
     private static final String CLOCK_NAME = "clock";
 
@@ -93,7 +90,9 @@ public final class HelperItemMapper {
                     organizer.folder(), schedule.intervalDays(), schedule.times(), organizer.enabled(),
                     nextRun, progress, null, null, schedule.startDate());
             case CleanerHelper cleaner -> toCleanerItem(cleaner, id, name, nextRun, progress);
-            case DesktopArrangerHelper desktop -> throw new UnsupportedOperationException(UNSUPPORTED_TYPE);
+            case DesktopArrangerHelper desktop -> new HelperItem(id, name, HelperKind.DESKTOP, null,
+                    schedule.intervalDays(), schedule.times(), desktop.enabled(), nextRun, progress, null, null,
+                    schedule.startDate(), desktop.layout());
         };
     }
 

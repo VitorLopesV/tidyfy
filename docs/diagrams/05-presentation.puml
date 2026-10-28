@@ -102,6 +102,7 @@ package "com.tidyfy.presentation" {
 
   class HelperTypeChooserController {
     + HelperTypeChooserController(organizers : int, cleaners : int)
+    + HelperTypeChooserController(organizers : int, cleaners : int, desktops : int)
     + createView() : Parent
     + chosenKind() : Optional<HelperKind>
   }
@@ -129,6 +130,12 @@ package "com.tidyfy.presentation" {
   class CleanerFormController {
     + CleanerFormController(editing : HelperItem)
     + CleanerFormController(editing : HelperItem, saveHelper : SaveHelperUseCase, clock : Clock)
+  }
+
+  class DesktopArrangerFormController {
+    + DesktopArrangerFormController(editing : HelperItem)
+    + DesktopArrangerFormController(editing : HelperItem, saveHelper : SaveHelperUseCase, clock : Clock)
+    + selectedLayout() : DesktopLayout
   }
 
   class RemoveConfirmationController {
@@ -177,21 +184,27 @@ package "com.tidyfy.presentation.model" {
     + ageLimitDays : Integer
     + ageReference : HelperAgeReference
     + startDate : LocalDate
+    + desktopLayout : DesktopLayout
     + targetsRecycleBin() : boolean
+    + targetsDesktop() : boolean
     + withEnabled(value : boolean) : HelperItem
   }
 
   enum HelperKind {
     ORGANIZER
     CLEANER
+    DESKTOP
     --
     + {static} LIMIT_PER_TYPE : int = 20
+    + {static} LIMIT_DESKTOP : int = 1
+    + limit() : int
   }
 
   enum TypeFilter {
     ALL
     ORGANIZER
     CLEANER
+    DESKTOP
     --
     + matches(item : HelperItem) : boolean
   }
@@ -250,6 +263,7 @@ package "com.tidyfy.presentation.component" {
   class HelperCard
   class CardGrid
   class UsageMeter
+  class LayoutThumbnail
   class ToggleSwitch
   class FolderField
   class ScheduleEditor
@@ -321,6 +335,7 @@ HelperItemMapper ..> HelperItem : cria
 HelperListController ..> HelperTypeChooserController : "Novo ajudante"
 HelperListController ..> FolderOrganizerFormController : abre
 HelperListController ..> CleanerFormController : abre
+HelperListController ..> DesktopArrangerFormController : abre
 HelperListController ..> RemoveConfirmationController : "Remover"
 HelperListController ..> ExecutionHistoryController : "Histórico"
 HelperListController ..> ErrorDialogController : showError
@@ -337,6 +352,8 @@ HistoryLoader --> ListExecutionHistoryUseCase
 HelperListController --> HistoryLoader : historyLoader (Function)
 HelperFormController <|-- FolderOrganizerFormController
 HelperFormController <|-- CleanerFormController
+HelperFormController <|-- DesktopArrangerFormController
+DesktopArrangerFormController ..> LayoutThumbnail
 
 HelperListController --> HelperSelection
 HelperListController --> TypeFilter
@@ -354,6 +371,7 @@ HelperListController --> RemoveHelperUseCase : confirmar remoção
 HelperListController --> SaveHelperUseCase
 FolderOrganizerFormController --> SaveHelperUseCase
 CleanerFormController --> SaveHelperUseCase
+DesktopArrangerFormController --> SaveHelperUseCase
 
 note right of Main
   Dois modos de execução:
