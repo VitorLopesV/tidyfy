@@ -167,6 +167,16 @@ package "com.tidyfy.domain" {
     + target : Path
   }
 
+  class DesktopLayoutPlanner {
+    - categories : List<FileCategory>
+    + plan(icons : List<DesktopIcon>, grid : DesktopGrid, layout : DesktopLayout) : DesktopLayoutPlan
+  }
+
+  class DesktopLayoutPlan <<record>> {
+    + placements : List<DesktopIcon>
+    + leftOut : List<DesktopIcon>
+  }
+
   class FolderOrganizationPlanner {
     + {static} OTHERS_FOLDER : String = "Outros"
     + {static} FOLDERS_FOLDER : String = "Pastas"
@@ -246,6 +256,12 @@ ProtectedFolders ..> ProtectedFolderException : lança
 
 FileCategory "1" *-- "1..*" FileExtension
 DefaultFileCategories ..> FileCategory : cria
+DesktopLayoutPlanner --> "*" FileCategory
+DesktopLayoutPlanner ..> DesktopLayout : usa
+DesktopLayoutPlanner ..> DesktopGrid : usa
+DesktopLayoutPlanner ..> DesktopIcon : lê
+DesktopLayoutPlanner ..> DesktopLayoutPlan : cria
+DesktopLayoutPlan --> "*" DesktopIcon
 FolderOrganizationPlanner --> "*" FileCategory
 FolderOrganizationPlanner ..> FolderEntry : lê
 FolderOrganizationPlanner ..> FileMove : cria
@@ -338,6 +354,18 @@ note bottom of ProtectedFolders
   * só elas mesmas: raiz de qualquer disco e a
     pasta do usuário (Downloads, por exemplo, pode).
   Pura: recebe os caminhos prontos.
+end note
+
+note bottom of DesktopLayoutPlanner
+  Função pura. Grade = largura/célula colunas por
+  altura/célula linhas, sempre dentro da área visível,
+  uma célula por ícone. Ordem por nome sem diferenciar
+  maiúsculas de minúsculas. LEFT/TOP/BY_TYPE_LEFT partem
+  de esquerda e topo, RIGHT da direita, BOTTOM da base;
+  BORDERS vai pelo perímetro (sentido horário), com a
+  última coluna na direita e a última linha na base.
+  BY_TYPE_LEFT: um grupo por coluna (atalhos, categorias
+  e outros). O que não couber vai para leftOut.
 end note
 
 note bottom of FolderOrganizationPlanner
