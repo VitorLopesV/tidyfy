@@ -228,6 +228,31 @@ Cada violação aparece em um diálogo de erro (botão «Fechar») e o ajudante 
 
 - [ ] Seção 13 conferida (itens 5, 6 e 9 e a desinstalação pelas Configurações ainda pendentes)
 
+## 15. Organizador da área de trabalho
+
+> **Pendente de execução.** Os passos abaixo ainda não foram executados num Windows real; registre o resultado na tabela. Reposicionar mexe nos seus ícones: anote a disposição atual (captura de tela) antes de começar. Não use a área de trabalho de uma máquina com o monitor principal em uso por outra pessoa.
+
+1. Em «Novo ajudante», escolha «Organizador da área de trabalho». Nome `Arrumar Área`; layout **Esquerda**; horário daqui a 3 ou 4 minutos. Salve.
+   - Resultado esperado: o cartão aparece com o miniatura do layout; em «Novo ajudante» o tipo fica bloqueado (só pode existir um).
+2. Com o Tidyfy fechado, espere o horário (ou execute a tarefa no Agendador).
+   - Resultado esperado: os ícones ficam em colunas na borda esquerda, em ordem de nome; nenhum arquivo foi movido; o histórico mostra «Ícones da área de trabalho reposicionados: N ícones».
+3. **Cada layout:** edite o ajudante trocando o layout para **Direita**, **Topo**, **Base**, **Bordas** e **Por tipo**, executando a tarefa a cada troca (ou ajuste o horário).
+   - Resultado esperado: Direita e Base encostam nas bordas direita e inferior; Topo enche linhas a partir do alto; Bordas deixa o centro livre; Por tipo cria uma coluna por categoria (atalhos, documentos, imagens...). Nunca há dois ícones no mesmo lugar nem fora da tela.
+4. **Excesso de ícones:** crie ícones suficientes para não caberem no layout (ou use uma resolução baixa).
+   - Resultado esperado: os que couberam são arrumados; os demais ficam onde estavam e o histórico mostra uma falha com o nome deles.
+5. **Escala de tela:** repita o passo 2 com a escala em 100% e em 150% (Configurações → Sistema → Tela).
+   - Resultado esperado: a área considerada é a visível inteira (descontada a barra de tarefas) nas duas escalas.
+6. **Vários monitores:** com dois monitores, repita o passo 2.
+   - Resultado esperado: só o monitor principal é arrumado; o outro não muda.
+7. **«Organizar ícones automaticamente» ligado:** botão direito na área de trabalho → Exibir → marque a opção e execute a tarefa.
+   - Resultado esperado: nada muda, o histórico mostra a falha com a mensagem clara e o Tidyfy não desliga a opção. Desmarque a opção depois. Com «Alinhar ícones à grade» ligado, as posições só são ajustadas à célula mais próxima.
+8. **Ajudante agendado:** confira no Agendador que a tarefa do ajudante existe e roda com o app fechado; desligue o ajudante e confira que a tarefa some.
+   - Resultado esperado: igual aos demais tipos (seção 12).
+9. **Histórico:** abra o histórico do ajudante.
+   - Resultado esperado: cada execução lista a ação de reposicionamento (e as falhas destacadas).
+
+- [ ] Seção 15 conferida
+
 ## 14. Aparência (ainda não conferida numa janela real)
 
 Itens visuais que só foram verificados por teste automatizado. Confira no aplicativo aberto:
@@ -261,6 +286,7 @@ Preencha ao terminar (data, versão/commit testado e máquina: _________________
 | 12. Comportamento do Agendador | | | |
 | 13. Instalador e desinstalação (itens 1–4, 7 e 8 validados em 15/10/2026; 5, 6 e 9 pendentes) | | | |
 | 14. Aparência | | | |
+| 15. Organizador da área de trabalho (pendente) | | | |
 
 ## Limpeza final
 

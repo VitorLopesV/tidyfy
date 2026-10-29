@@ -22,16 +22,17 @@ Tudo é configurado por uma **interface gráfica simples**, sem precisar mexer e
 
 ## Os ajudantes
 
-O usuário cria quantos ajudantes quiser (dentro do limite abaixo), escolhendo o **tipo** de cada um. Hoje existem dois tipos:
+O usuário cria quantos ajudantes quiser (dentro do limite abaixo), escolhendo o **tipo** de cada um. Hoje existem três tipos:
 
 | Tipo | O que faz |
 |---|---|
 | **Organização de pasta** | Separa os arquivos de uma pasta em subpastas por tipo de arquivo |
 | **Limpeza** | Esvazia a lixeira do Windows **ou** limpa uma pasta escolhida |
+| **Organizador da área de trabalho** | Reposiciona os ícones da área de trabalho em um layout escolhido |
 
 ### Regras que valem para todos os ajudantes
 
-- **Uma pasta por ajudante.** Cada ajudante cuida de um único lugar. Quer organizar *Downloads* e *Área de Trabalho*? Crie dois ajudantes.
+- **Um lugar por ajudante.** Cada ajudante cuida de um único lugar (o Organizador da área de trabalho cuida da área de trabalho, que é única). Quer organizar *Downloads* e *Área de Trabalho*? Crie dois ajudantes.
 - **Nome definido pelo usuário.** Cada ajudante tem um nome que descreve o que ele faz, por exemplo *"Organizar Downloads"* ou *"Esvaziar lixeira toda semana"*. Dois ajudantes não podem ter o mesmo nome.
 - **Sem sobreposição.** Dois ajudantes do **mesmo tipo** não podem trabalhar na mesma pasta. Já um ajudante de organização e um de limpeza podem cuidar da mesma pasta. Na limpeza, a lixeira também conta como um lugar: só um ajudante de limpeza pode cuidar dela. Isso vale também para pastas uma dentro da outra: não pode haver um ajudante em `Downloads` e outro do mesmo tipo em `Downloads\Imagens`.
 - **Até 20 ajudantes de cada tipo.** São até 20 ajudantes de organização e até 20 de limpeza. Ao atingir o limite, é preciso remover um ajudante daquele tipo para criar outro.
@@ -92,12 +93,29 @@ Nos dois casos o usuário escolhe **quanto limpar**: tudo, ou só o que está l�
 - **Com que frequência a limpeza acontece.**
 - **Se o ajudante está ligado ou não.**
 
+### Ajudante Organizador da área de trabalho
+
+Arruma os **ícones** da área de trabalho: só muda a posição deles, nenhum arquivo é movido ou apagado. Só pode existir **um** ajudante deste tipo, porque a área de trabalho é uma só. O usuário escolhe o layout:
+
+| Layout | Como os ícones ficam |
+|---|---|
+| **Esquerda** | Em colunas, a partir da borda esquerda |
+| **Direita** | Em colunas, a partir da borda direita |
+| **Topo** | Em linhas, a partir da borda superior |
+| **Base** | Em linhas, a partir da borda inferior |
+| **Bordas** | Distribuídos pelo contorno da tela, com o centro livre |
+| **Por tipo** | Uma coluna para cada tipo de arquivo (atalhos, documentos, imagens...), a partir da esquerda |
+
+Os ícones ficam em ordem de nome (maiúsculas e minúsculas não diferenciam). Se não couberem todos na tela, os que sobrarem ficam onde estavam e aparecem no histórico. Vale só para o monitor principal. Se a opção «Organizar ícones automaticamente» do Windows estiver ligada, o Tidyfy não consegue reposicionar e registra a falha no histórico; ele **não** desliga essa opção por você.
+
+**O que o usuário configura:** o nome, o layout, a frequência e se o ajudante está ligado.
+
 ---
 
 ## Como funciona na prática
 
 1. O usuário abre o Tidyfy e vê a lista dos seus ajudantes.
-2. Clica para criar um novo ajudante e escolhe o tipo: **organização** ou **limpeza**.
+2. Clica para criar um novo ajudante e escolhe o tipo: **organização**, **limpeza** ou **área de trabalho**.
 3. Dá um nome ao ajudante, escolhe a pasta (ou a lixeira) e define a frequência.
 4. Salva. A partir daí, o ajudante passa a trabalhar sozinho nos horários definidos.
 

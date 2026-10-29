@@ -10,6 +10,7 @@ O usuário cria ajudantes escolhendo um **tipo** e dando um **nome**. Tipos inic
 
 1. **Organização de pasta** (`FOLDER_ORGANIZER`): move os arquivos de **uma** pasta para subpastas por tipo (imagens, documentos, executáveis...) e as pastas soltas para a subpasta "Pastas".
 2. **Limpeza** (`CLEANER`): esvazia a lixeira do Windows **ou** remove os arquivos de **uma** pasta.
+3. **Organizador da área de trabalho** (`DESKTOP_ARRANGER`): reposiciona os ícones da área de trabalho em um de seis layouts (esquerda, direita, topo, base, bordas ou por tipo). Não move nem apaga arquivos, só muda a posição dos ícones. Só pode existir **um**, porque a área de trabalho é única.
 
 Todo ajudante tem: nome, tipo, frequência (a cada N dias, em um ou mais horários do dia) e estado ligado/desligado.
 
@@ -168,6 +169,8 @@ Campos comuns a todo ajudante:
 
 Campos por tipo:
 
+- `DESKTOP_ARRANGER`: `layout`, um de `LEFT`, `RIGHT`, `TOP`, `BOTTOM`, `BORDERS` ou `BY_TYPE_LEFT` (sem `folder`). O tipo foi acrescentado sem mudar a `version` (continua `1`): arquivos antigos seguem legíveis, e só uma versão antiga do Tidyfy não entenderia o tipo novo.
+
 - `FOLDER_ORGANIZER`: `folder`, o caminho da pasta em texto (barras invertidas escapadas: `C:\\Users\\ana\\Downloads`).
 - `CLEANER`: `target` e `ageLimitDays`.
   - `target` é `{"type": "FOLDER", "folder": "...", "ageReference": "CREATED" | "MODIFIED"}` ou `{"type": "RECYCLE_BIN"}`.
@@ -188,6 +191,19 @@ Organização de pasta:
       "folder": "C:\\Users\\ana\\Downloads"
     }
   ]
+}
+```
+
+Organizador da área de trabalho (item da lista `helpers`):
+
+```json
+{
+  "type": "DESKTOP_ARRANGER",
+  "id": "5d0e9b24-7c1a-4f33-b8a6-2e4c6d8f0a13",
+  "name": "Arrumar a área de trabalho",
+  "enabled": true,
+  "schedule": {"intervalDays": 1, "times": ["08:00"], "startDate": "2026-10-14"},
+  "layout": "LEFT"
 }
 ```
 
@@ -223,7 +239,7 @@ Limpeza da lixeira sem limite, limpa tudo (item da lista `helpers`):
 
 Arquivo em `%APPDATA%\Tidyfy\history.txt`, ao lado do `helpers.txt`, extensão `.txt`, conteúdo **JSON em UTF-8**. Arquivo ausente ou vazio significa histórico vazio. A gravação é atômica e arquivo corrompido ou de versão desconhecida segue a mesma política do `helpers.txt` (original intacto, cópia `history.txt.bak-<carimbo>` e `CorruptedStorageException`).
 
-Objeto raiz: `version` (inteiro, começa em `1`) e `records` (lista, na ordem em que foram gravados). Cada registro tem `helperId` (UUID em texto), `helperName` (nome na hora da execução), `executedAt` (instante ISO-8601 em UTC, com fração de segundo se houver) e `actions` (lista). Cada ação tem `type` (`MOVED`, `DUPLICATE_TRASHED`, `TRASHED`, `RECYCLE_BIN_EMPTIED` ou `FAILED`) e os opcionais `source`, `target` e `message` (`null` ou ausentes quando não há; caminhos com barras invertidas escapadas). Os registros com mais de 30 dias são apagados por `deleteExpired`.
+Objeto raiz: `version` (inteiro, começa em `1`) e `records` (lista, na ordem em que foram gravados). Cada registro tem `helperId` (UUID em texto), `helperName` (nome na hora da execução), `executedAt` (instante ISO-8601 em UTC, com fração de segundo se houver) e `actions` (lista). Cada ação tem `type` (`MOVED`, `DUPLICATE_TRASHED`, `TRASHED`, `RECYCLE_BIN_EMPTIED`, `ARRANGED` ou `FAILED`) e os opcionais `source`, `target` e `message` (`null` ou ausentes quando não há; caminhos com barras invertidas escapadas). Os registros com mais de 30 dias são apagados por `deleteExpired`. O Organizador da área de trabalho grava `ARRANGED` com a quantidade de ícones em `message` (`"12 ícones"`, sem `source` e `target`) e, se algum ícone não couber na área visível, uma ação `FAILED` com o nome deles (a execução sai com código 1).
 
 ```json
 {
@@ -236,6 +252,14 @@ Objeto raiz: `version` (inteiro, começa em `1`) e `records` (lista, na ordem em
       "actions": [
         {"type": "MOVED", "source": "C:\\Users\\ana\\Downloads\\foto.jpg", "target": "C:\\Users\\ana\\Downloads\\Imagens\\foto.jpg", "message": null},
         {"type": "FAILED", "source": "C:\\Users\\ana\\Downloads\\a.zip", "target": null, "message": "Acesso negado"}
+      ]
+    },
+    {
+      "helperId": "5d0e9b24-7c1a-4f33-b8a6-2e4c6d8f0a13",
+      "helperName": "Arrumar a área de trabalho",
+      "executedAt": "2026-10-14T11:00:00Z",
+      "actions": [
+        {"type": "ARRANGED", "source": null, "target": null, "message": "13 ícones"}
       ]
     }
   ]
@@ -276,7 +300,7 @@ Por isso a execução dos ajudantes **não pode depender da interface gráfica**
 Todas as regras são validadas no domínio, não só na UI.
 
 **Todos os ajudantes**
-- Cada ajudante atua em **um único alvo**: uma pasta, ou a lixeira (só para Limpeza).
+- Cada ajudante atua em **um único alvo**: uma pasta, ou a lixeira (só para Limpeza), ou a área de trabalho (só para o Organizador da área de trabalho, que não tem pasta).
 - **Nome** definido pelo usuário: obrigatório e sem espaços nas pontas (`HelperName`).
 - **Máximo de 20 ajudantes por tipo** (`HelperType.MAX_PER_TYPE`). A checagem acontece só na **criação**; editar um ajudante existente não conta. A contagem vem do repositório (`countByType`) e quem decide é o domínio (`HelperType.assertCanCreate`), lançando `HelperLimitReachedException`.
 - **Nome único:** dois ajudantes não podem ter o mesmo nome; maiúsculas e minúsculas não diferenciam (`Organizar Downloads` e `organizar downloads` são o mesmo nome).
@@ -302,6 +326,12 @@ Todas as regras são validadas no domínio, não só na UI.
 - Limpar a **lixeira** remove os arquivos de forma **permanente**; limpar uma **pasta** **move** os arquivos para a lixeira.
 - Nos dois casos o usuário configura o **quanto limpar**: tudo, ou só o que é mais antigo que X dias. Para pasta, o usuário também escolhe se a idade conta da **criação** ou da **última modificação**; na lixeira, conta do dia em que o arquivo foi para lá.
 - A limpeza de pasta atua **só nos arquivos soltos**; subpastas não são tocadas.
+
+**Organizador da área de trabalho**
+- Reposiciona os ícones do monitor principal pela porta `DesktopIcons`; não move nem apaga arquivos. O cálculo é uma função pura do domínio (`DesktopLayoutPlanner`), com seis layouts (`DesktopLayout`): `LEFT` (colunas a partir da esquerda), `RIGHT` (colunas a partir da direita), `TOP` (linhas a partir do topo), `BOTTOM` (linhas a partir da base), `BORDERS` (perímetro da tela, centro livre) e `BY_TYPE_LEFT` (uma coluna por categoria de arquivo, mais atalhos, a partir da esquerda).
+- Ordem estável: por nome, sem diferenciar maiúsculas de minúsculas (no layout por tipo, tipo e depois nome). As posições seguem a grade e ficam dentro da área visível; dois ícones nunca ocupam a mesma célula.
+- Ícones que não couberam ficam onde estavam e entram no histórico como ação `FAILED` (execução com código 1). Falha da porta (sem sessão gráfica, "Organizar ícones automaticamente" ligado) também vira `FAILED`.
+- **Só um** por usuário (`DesktopArrangerAlreadyExistsException`); editar o existente é permitido. A execução passa por `RunHelperUseCase` → `ArrangeDesktopUseCase`.
 
 **Fora desta rodada:** arquivos em uso (abertos em outro programa ou ainda sendo baixados).
 
