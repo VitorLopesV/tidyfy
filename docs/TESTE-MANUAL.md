@@ -230,7 +230,7 @@ Cada violação aparece em um diálogo de erro (botão «Fechar») e o ajudante 
 
 ## 15. Organizador da área de trabalho
 
-> **Pendente de execução.** Os passos abaixo ainda não foram executados num Windows real; registre o resultado na tabela. Reposicionar mexe nos seus ícones: anote a disposição atual (captura de tela) antes de começar. Não use a área de trabalho de uma máquina com o monitor principal em uso por outra pessoa.
+> **Validado em parte (28/10/2026, issue #81):** a camada de leitura/gravação e o planejador foram executados de verdade na área de trabalho real (Windows 11, um monitor 1920×1080, 13 ícones, escala 150%): para cada um dos seis layouts os ícones foram reposicionados e lidos de volta (13/13 iguais ao plano, 13 posições distintas, nenhum fora da tela) e, no fim, as posições originais foram restauradas (13/13). Nesse teste a grade lida foi 1920×1008 (barra de tarefas descontada) e as opções «Organizar ícones automaticamente» e «Alinhar à grade» estavam desligadas. **Continuam pendentes** (exigem a interface, o Agendador ou outro hardware): passos 1, 2, 4, 8 e 9 (criar pelo app e executar pela tarefa agendada), 6 (vários monitores), 7 («Organizar automaticamente» ligado) e 5 em 100%. Reposicionar mexe nos seus ícones: anote a disposição atual antes de repetir.
 
 1. Em «Novo ajudante», escolha «Organizador da área de trabalho». Nome `Arrumar Área`; layout **Esquerda**; horário daqui a 3 ou 4 minutos. Salve.
    - Resultado esperado: o cartão aparece com o miniatura do layout; em «Novo ajudante» o tipo fica bloqueado (só pode existir um).
@@ -286,7 +286,7 @@ Preencha ao terminar (data, versão/commit testado e máquina: _________________
 | 12. Comportamento do Agendador | | | |
 | 13. Instalador e desinstalação (itens 1–4, 7 e 8 validados em 15/10/2026; 5, 6 e 9 pendentes) | | | |
 | 14. Aparência | | | |
-| 15. Organizador da área de trabalho (pendente) | | | |
+| 15. Organizador da área de trabalho (passo 3 e 5 em 150% validados em 28/10/2026; demais pendentes) | | | |
 
 ## Limpeza final
 
