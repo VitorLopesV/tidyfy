@@ -1,6 +1,7 @@
 package com.tidyfy.infrastructure.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tidyfy.domain.AgeLimit;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
+import com.tidyfy.domain.DesktopArrangerHelper;
+import com.tidyfy.domain.DesktopLayout;
 import com.tidyfy.domain.FolderOrganizerHelper;
 import com.tidyfy.domain.FolderTarget;
 import com.tidyfy.domain.Helper;
@@ -226,6 +229,42 @@ class HelperJsonMapperTest {
     void rejectsUnknownTargetType() {
         String json = document(1, cleaner("{\"type\": \"DISK\"}", ""));
         assertThrows(HelperJsonException.class, () -> mapper.fromJson(json));
+    }
+
+    /**
+     * O Organizador da área de trabalho é gravado com o campo layout, sem pasta, e lido de volta igual.
+     */
+    @Test
+    void roundTripsTheDesktopArranger() {
+        DesktopArrangerHelper helper = new DesktopArrangerHelper(new HelperId(UUID.fromString(VALID_ID)),
+                new HelperName("Área de trabalho"), schedule, false, DesktopLayout.BY_TYPE_LEFT);
+
+        String json = mapper.toJson(List.of(helper));
+
+        assertTrue(json.contains("\"type\" : \"DESKTOP_ARRANGER\""));
+        assertTrue(json.contains("\"layout\" : \"BY_TYPE_LEFT\""));
+        assertFalse(json.contains("folder"));
+        assertEquals(List.of(helper), mapper.fromJson(json));
+    }
+
+    /**
+     * Layout desconhecido ou ausente no Organizador da área de trabalho é recusado.
+     */
+    @Test
+    void rejectsDesktopArrangerWithBadLayout() {
+        String base = "{\"type\": \"DESKTOP_ARRANGER\", \"id\": \"" + VALID_ID + "\","
+                + " \"name\": \"A\", \"enabled\": true, \"schedule\": " + VALID_SCHEDULE;
+        assertThrows(HelperJsonException.class, () -> mapper.fromJson(document(1, base + "}")));
+        assertThrows(HelperJsonException.class,
+                () -> mapper.fromJson(document(1, base + ", \"layout\": \"DIAGONAL\"}")));
+    }
+
+    /**
+     * Arquivo sem o novo tipo (formato anterior) continua legível.
+     */
+    @Test
+    void stillReadsFilesWrittenBeforeTheDesktopArranger() {
+        assertEquals(1, mapper.fromJson(document(1, organizer("FOLDER_ORGANIZER", VALID_SCHEDULE))).size());
     }
 
     /**

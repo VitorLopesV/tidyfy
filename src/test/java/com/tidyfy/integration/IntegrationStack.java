@@ -1,6 +1,8 @@
 package com.tidyfy.integration;
 
+import com.tidyfy.application.fake.FakeDesktopIcons;
 import com.tidyfy.application.fake.FakeRecycleBin;
+import com.tidyfy.application.usecase.ArrangeDesktopUseCase;
 import com.tidyfy.application.usecase.CleanupUseCase;
 import com.tidyfy.application.usecase.ListExecutionHistoryUseCase;
 import com.tidyfy.application.usecase.OrganizeFolderUseCase;
@@ -9,6 +11,9 @@ import com.tidyfy.domain.AgeLimit;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.CleanupTarget;
+import com.tidyfy.domain.DesktopArrangerHelper;
+import com.tidyfy.domain.DesktopLayout;
+import com.tidyfy.domain.DesktopLayoutPlanner;
 import com.tidyfy.domain.ExecutionRecord;
 import com.tidyfy.domain.FolderOrganizationPlanner;
 import com.tidyfy.domain.FolderOrganizerHelper;
@@ -78,6 +83,9 @@ final class IntegrationStack {
     /** Lixeira do Windows em memória. */
     private final FakeRecycleBin recycleBin = new FakeRecycleBin();
 
+    /** Área de trabalho em memória. */
+    private final FakeDesktopIcons desktopIcons = new FakeDesktopIcons();
+
     /** Repositório de ajudantes em JSON. */
     private final JsonHelperRepository helpers;
 
@@ -100,7 +108,8 @@ final class IntegrationStack {
         NioFileSystem fileSystem = new NioFileSystem((CommandRunner) this::simulateTrash);
         runHelper = new RunHelperUseCase(helpers,
                 new OrganizeFolderUseCase(fileSystem, new FolderOrganizationPlanner()),
-                new CleanupUseCase(fileSystem, recycleBin, CLOCK), history, CLOCK);
+                new CleanupUseCase(fileSystem, recycleBin, CLOCK),
+                new ArrangeDesktopUseCase(desktopIcons, new DesktopLayoutPlanner()), history, CLOCK);
         listHistory = new ListExecutionHistoryUseCase(history);
     }
 
@@ -233,6 +242,28 @@ final class IntegrationStack {
      */
     CleanerHelper saveRecycleBinCleaner(AgeLimit ageLimit) {
         return saveCleaner(new RecycleBinTarget(), ageLimit, true);
+    }
+
+    /**
+     * Salva um ajudante ligado que organiza a área de trabalho.
+     *
+     * @param layout layout dos ícones
+     * @return o ajudante salvo
+     */
+    DesktopArrangerHelper saveDesktopArranger(DesktopLayout layout) {
+        DesktopArrangerHelper helper = new DesktopArrangerHelper(HelperId.newId(), new HelperName("Área de trabalho"),
+                SCHEDULE, true, layout);
+        helpers.save(helper);
+        return helper;
+    }
+
+    /**
+     * Área de trabalho em memória.
+     *
+     * @return o dublê
+     */
+    FakeDesktopIcons desktopIcons() {
+        return desktopIcons;
     }
 
     /**

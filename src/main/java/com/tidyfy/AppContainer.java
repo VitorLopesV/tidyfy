@@ -1,5 +1,6 @@
 package com.tidyfy;
 
+import com.tidyfy.application.usecase.ArrangeDesktopUseCase;
 import com.tidyfy.application.usecase.CleanupUseCase;
 import com.tidyfy.application.usecase.ListExecutionHistoryUseCase;
 import com.tidyfy.application.usecase.ListHelpersUseCase;
@@ -9,6 +10,7 @@ import com.tidyfy.application.usecase.RemoveHelperUseCase;
 import com.tidyfy.application.usecase.RunHelperUseCase;
 import com.tidyfy.application.usecase.SaveHelperUseCase;
 import com.tidyfy.application.usecase.SyncSchedulerUseCase;
+import com.tidyfy.domain.DesktopLayoutPlanner;
 import com.tidyfy.domain.FolderOrganizationPlanner;
 import com.tidyfy.domain.HelperRules;
 import com.tidyfy.domain.ProtectedFolders;
@@ -20,6 +22,7 @@ import com.tidyfy.infrastructure.persistence.JsonHelperRepository;
 import com.tidyfy.infrastructure.persistence.StorageLocation;
 import com.tidyfy.infrastructure.windows.CommandRunner;
 import com.tidyfy.infrastructure.windows.LauncherLocator;
+import com.tidyfy.infrastructure.windows.PowerShellDesktopIcons;
 import com.tidyfy.infrastructure.windows.PowerShellRecycleBin;
 import com.tidyfy.infrastructure.windows.ProcessCommandRunner;
 import com.tidyfy.infrastructure.windows.SchtasksTaskScheduler;
@@ -93,12 +96,15 @@ public final class AppContainer {
 
         OrganizeFolderUseCase organizeFolder = new OrganizeFolderUseCase(fileSystem, new FolderOrganizationPlanner());
         CleanupUseCase cleanup = new CleanupUseCase(fileSystem, recycleBin, clock);
+        ArrangeDesktopUseCase arrangeDesktop = new ArrangeDesktopUseCase(
+                new PowerShellDesktopIcons(commandRunner, storage.directory().resolve(TASKS_FOLDER_NAME)),
+                new DesktopLayoutPlanner());
 
         this.saveHelper = new SaveHelperUseCase(helpers, scheduler, new HelperRules(protectedFolders));
         this.removeHelper = new RemoveHelperUseCase(helpers, scheduler);
         this.listHelpers = new ListHelpersUseCase(helpers);
         this.listExecutionHistory = new ListExecutionHistoryUseCase(history);
-        this.runHelper = new RunHelperUseCase(helpers, organizeFolder, cleanup, history, clock);
+        this.runHelper = new RunHelperUseCase(helpers, organizeFolder, cleanup, arrangeDesktop, history, clock);
         this.syncScheduler = new SyncSchedulerUseCase(helpers, scheduler);
         this.removeAllTasks = new RemoveAllTasksUseCase(scheduler);
     }

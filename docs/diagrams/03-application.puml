@@ -31,10 +31,17 @@ package "com.tidyfy.application.usecase" {
     + execute(id : HelperId) : List<ExecutionRecord>
   }
 
+  class ArrangeDesktopUseCase {
+    - desktopIcons : DesktopIcons
+    - planner : DesktopLayoutPlanner
+    + execute(helper : DesktopArrangerHelper) : List<HelperAction>
+  }
+
   class RunHelperUseCase {
     - repository : HelperRepository
     - organizeFolder : OrganizeFolderUseCase
     - cleanup : CleanupUseCase
+    - arrangeDesktop : ArrangeDesktopUseCase
     - history : ExecutionHistoryRepository
     - clock : Clock
     + execute(id : HelperId) : Optional<ExecutionRecord>
@@ -133,6 +140,8 @@ package "com.tidyfy.domain" {
   class HelperRules
   class DesktopIcon
   class DesktopGrid
+  class DesktopLayoutPlanner
+  class DesktopArrangerHelper
   class FolderOrganizationPlanner
   class NumberedName
   class FolderEntry
@@ -155,6 +164,11 @@ RemoveAllTasksUseCase ..> RemoveTasksResult
 RunHelperUseCase --> HelperRepository
 RunHelperUseCase --> OrganizeFolderUseCase
 RunHelperUseCase --> CleanupUseCase
+RunHelperUseCase --> ArrangeDesktopUseCase
+ArrangeDesktopUseCase --> DesktopIcons
+ArrangeDesktopUseCase --> DesktopLayoutPlanner
+ArrangeDesktopUseCase ..> DesktopArrangerHelper
+ArrangeDesktopUseCase ..> HelperAction : devolve ARRANGED / FAILED
 RunHelperUseCase --> ExecutionHistoryRepository
 OrganizeFolderUseCase --> FileSystem
 OrganizeFolderUseCase --> FolderOrganizationPlanner

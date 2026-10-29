@@ -4,13 +4,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.tidyfy.application.fake.FakeDesktopIcons;
 import com.tidyfy.application.fake.FakeExecutionHistoryRepository;
 import com.tidyfy.application.fake.FakeFileSystem;
 import com.tidyfy.application.fake.FakeHelperRepository;
 import com.tidyfy.application.fake.FakeRecycleBin;
+import com.tidyfy.application.usecase.ArrangeDesktopUseCase;
 import com.tidyfy.application.usecase.CleanupUseCase;
 import com.tidyfy.application.usecase.OrganizeFolderUseCase;
 import com.tidyfy.application.usecase.RunHelperUseCase;
+import com.tidyfy.domain.DesktopArrangerHelper;
+import com.tidyfy.domain.DesktopLayout;
+import com.tidyfy.domain.DesktopLayoutPlanner;
 import com.tidyfy.domain.FolderOrganizationPlanner;
 import com.tidyfy.domain.FolderOrganizerHelper;
 import com.tidyfy.domain.HelperId;
@@ -54,6 +59,7 @@ class HeadlessRunnerTest {
 
     private FakeFileSystem fileSystem;
     private FakeHelperRepository repository;
+    private FakeDesktopIcons desktop;
     private FakeExecutionHistoryRepository history;
     private ByteArrayOutputStream errBytes;
     private HeadlessRunner runner;
@@ -64,10 +70,12 @@ class HeadlessRunnerTest {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
         fileSystem = new FakeFileSystem();
         repository = new FakeHelperRepository();
+        desktop = new FakeDesktopIcons();
         history = new FakeExecutionHistoryRepository();
         RunHelperUseCase useCase = new RunHelperUseCase(repository,
                 new OrganizeFolderUseCase(fileSystem, new FolderOrganizationPlanner()),
-                new CleanupUseCase(fileSystem, new FakeRecycleBin(), clock), history, clock);
+                new CleanupUseCase(fileSystem, new FakeRecycleBin(), clock),
+                new ArrangeDesktopUseCase(desktop, new DesktopLayoutPlanner()), history, clock);
         errBytes = new ByteArrayOutputStream();
         runner = new HeadlessRunner(() -> useCase, new ExecutionLog(logs, clock),
                 new PrintStream(errBytes, true, StandardCharsets.UTF_8));
@@ -212,5 +220,16 @@ class HeadlessRunnerTest {
         try (var in = type.getResourceAsStream(resource)) {
             return new String(in.readAllBytes(), StandardCharsets.ISO_8859_1);
         }
+    }
+
+    @Test
+    void exitsWithOneWhenTheDesktopPortFails() {
+        DesktopArrangerHelper helper = new DesktopArrangerHelper(HelperId.newId(), new HelperName("Área"),
+                new Schedule(1, List.of(LocalTime.of(9, 0)), LocalDate.of(2026, 1, 1)), true, DesktopLayout.LEFT);
+        repository.with(helper);
+        desktop.failNextWith(new UncheckedIOException("sem sessão gráfica", new IOException("x")));
+
+        assertEquals(1, runner.run(run(helper.id())));
+        assertEquals(1, history.all().size());
     }
 }

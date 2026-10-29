@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.tidyfy.application.fake.FakeDesktopIcons;
 import com.tidyfy.application.fake.FakeExecutionHistoryRepository;
 import com.tidyfy.application.fake.FakeFileSystem;
 import com.tidyfy.application.fake.FakeHelperRepository;
@@ -13,6 +14,11 @@ import com.tidyfy.application.port.RecycleBin;
 import com.tidyfy.domain.ActionType;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
+import com.tidyfy.domain.DesktopArrangerHelper;
+import com.tidyfy.domain.DesktopIcon;
+import com.tidyfy.domain.DesktopLayout;
+import com.tidyfy.domain.DesktopLayoutPlanner;
+import com.tidyfy.domain.IconPosition;
 import com.tidyfy.domain.ExecutionRecord;
 import com.tidyfy.domain.FolderOrganizationPlanner;
 import com.tidyfy.domain.FolderOrganizerHelper;
@@ -65,6 +71,9 @@ class RunHelperUseCaseTest {
     /** Histórico falso. */
     private FakeExecutionHistoryRepository history;
 
+    /** Área de trabalho falsa. */
+    private FakeDesktopIcons desktop;
+
     /** Caso de uso sob teste. */
     private RunHelperUseCase useCase;
 
@@ -74,11 +83,12 @@ class RunHelperUseCaseTest {
         clock = Clock.fixed(NOW, ZoneOffset.UTC);
         fileSystem = new FakeFileSystem();
         bin = new FakeRecycleBin();
+        desktop = new FakeDesktopIcons();
         repository = new FakeHelperRepository();
         history = new FakeExecutionHistoryRepository();
         useCase = new RunHelperUseCase(repository,
                 new OrganizeFolderUseCase(fileSystem, new FolderOrganizationPlanner()),
-                new CleanupUseCase(fileSystem, bin, clock), history, clock);
+                new CleanupUseCase(fileSystem, bin, clock), new ArrangeDesktopUseCase(desktop, new DesktopLayoutPlanner()), history, clock);
     }
 
     /** Cria um organizador de pasta. */
@@ -191,7 +201,8 @@ class RunHelperUseCaseTest {
         };
         RunHelperUseCase failing = new RunHelperUseCase(repository,
                 new OrganizeFolderUseCase(fileSystem, new FolderOrganizationPlanner()),
-                new CleanupUseCase(fileSystem, broken, clock), history, clock);
+                new CleanupUseCase(fileSystem, broken, clock),
+                new ArrangeDesktopUseCase(desktop, new DesktopLayoutPlanner()), history, clock);
 
         failing.execute(helper.id());
 
@@ -255,6 +266,32 @@ class RunHelperUseCaseTest {
 
         assertTrue(useCase.execute(helper.id()).isEmpty());
         assertTrue(useCase.execute(HelperId.newId()).isEmpty());
+    }
+
+    @Test
+    void executesTheDesktopArrangerAndRecordsArranged() {
+        DesktopArrangerHelper helper = new DesktopArrangerHelper(HelperId.newId(), new HelperName("Área"),
+                SCHEDULE, true, DesktopLayout.LEFT);
+        repository.with(helper);
+        desktop.with(new DesktopIcon("a.txt", new IconPosition(400, 300)));
+
+        ExecutionRecord record = useCase.execute(helper.id()).orElseThrow();
+
+        assertEquals(List.of(new HelperAction(ActionType.ARRANGED, null, null, "1 ícone")), record.actions());
+        assertEquals(new IconPosition(0, 0), desktop.moved().get(0).position());
+    }
+
+    @Test
+    void desktopPortFailureBecomesAFailedAction() {
+        DesktopArrangerHelper helper = new DesktopArrangerHelper(HelperId.newId(), new HelperName("Área"),
+                SCHEDULE, true, DesktopLayout.LEFT);
+        repository.with(helper);
+        desktop.failNextWith(new UncheckedIOException("A área de trabalho não está disponível", new IOException("x")));
+
+        ExecutionRecord record = useCase.execute(helper.id()).orElseThrow();
+
+        assertEquals(List.of(new HelperAction(ActionType.FAILED, null, null,
+                "A área de trabalho não está disponível")), record.actions());
     }
 
     @Test

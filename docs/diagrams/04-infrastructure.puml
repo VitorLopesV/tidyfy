@@ -208,6 +208,9 @@ note bottom of JsonHelperRepository
   Jackson (+ jsr310). Gravação atômica.
   Escritas sob trava (FileLocks): ReentrantLock + FileLock
   em helpers.txt.lock.
+  O HelperJsonMapper grava o tipo DESKTOP_ARRANGER com o
+  campo layout (sem folder); a version continua 1, pois
+  arquivos antigos seguem legiveis.
 end note
 
 note bottom of JsonExecutionHistoryRepository

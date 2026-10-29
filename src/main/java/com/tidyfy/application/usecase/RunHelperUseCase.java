@@ -35,6 +35,9 @@ public final class RunHelperUseCase {
     /** Caso de uso da limpeza. */
     private final CleanupUseCase cleanup;
 
+    /** Caso de uso do Organizador da área de trabalho. */
+    private final ArrangeDesktopUseCase arrangeDesktop;
+
     /** Histórico onde a execução é registrada. */
     private final ExecutionHistoryRepository history;
 
@@ -43,8 +46,8 @@ public final class RunHelperUseCase {
 
     // Constantes
 
-    /** Mensagem de erro: o tipo ainda não é tratado nesta camada (será ligado nas próximas etapas). */
-    private static final String UNSUPPORTED_TYPE = "O Organizador da área de trabalho ainda não é suportado aqui.";
+    /** Nome do parâmetro do Organizador da área de trabalho, usado na mensagem de valor nulo. */
+    private static final String ARRANGE_DESKTOP_NAME = "arrangeDesktop";
 
     /** Nome do parâmetro do repositório, usado na mensagem de valor nulo. */
     private static final String REPOSITORY_NAME = "repository";
@@ -70,15 +73,18 @@ public final class RunHelperUseCase {
      * @param repository     repositório de ajudantes
      * @param organizeFolder caso de uso da organização de pasta
      * @param cleanup        caso de uso da limpeza
+     * @param arrangeDesktop caso de uso do Organizador da área de trabalho
      * @param history        histórico de execuções
      * @param clock          relógio que informa o instante atual
      * @throws NullPointerException se algum parâmetro for nulo
      */
     public RunHelperUseCase(HelperRepository repository, OrganizeFolderUseCase organizeFolder,
-            CleanupUseCase cleanup, ExecutionHistoryRepository history, Clock clock) {
+            CleanupUseCase cleanup, ArrangeDesktopUseCase arrangeDesktop, ExecutionHistoryRepository history,
+            Clock clock) {
         this.repository = Objects.requireNonNull(repository, REPOSITORY_NAME);
         this.organizeFolder = Objects.requireNonNull(organizeFolder, ORGANIZE_FOLDER_NAME);
         this.cleanup = Objects.requireNonNull(cleanup, CLEANUP_NAME);
+        this.arrangeDesktop = Objects.requireNonNull(arrangeDesktop, ARRANGE_DESKTOP_NAME);
         this.history = Objects.requireNonNull(history, HISTORY_NAME);
         this.clock = Objects.requireNonNull(clock, CLOCK_NAME);
     }
@@ -118,7 +124,7 @@ public final class RunHelperUseCase {
             return switch (helper) {
                 case FolderOrganizerHelper organizer -> organizeFolder.execute(organizer);
                 case CleanerHelper cleaner -> cleanup.execute(cleaner);
-                case DesktopArrangerHelper desktop -> throw new UnsupportedOperationException(UNSUPPORTED_TYPE);
+                case DesktopArrangerHelper desktop -> arrangeDesktop.execute(desktop);
             };
         } catch (RuntimeException failure) {
             String message = failure.getMessage() != null ? failure.getMessage()

@@ -10,6 +10,7 @@ import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.CleanupTarget;
 import com.tidyfy.domain.DesktopArrangerHelper;
+import com.tidyfy.domain.DesktopLayout;
 import com.tidyfy.domain.FolderOrganizerHelper;
 import com.tidyfy.domain.FolderTarget;
 import com.tidyfy.domain.Helper;
@@ -42,9 +43,6 @@ public final class HelperJsonMapper {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Constantes
-
-    /** Mensagem de erro: o tipo ainda não é tratado nesta camada (será ligado nas próximas etapas). */
-    private static final String UNSUPPORTED_TYPE = "O Organizador da área de trabalho ainda não é suportado aqui.";
 
     /** Campo da versão do formato. */
     private static final String VERSION_FIELD = "version";
@@ -79,6 +77,9 @@ public final class HelperJsonMapper {
     /** Campo da pasta. */
     private static final String FOLDER_FIELD = "folder";
 
+    /** Campo do layout do Organizador da área de trabalho. */
+    private static final String LAYOUT_FIELD = "layout";
+
     /** Campo do alvo da limpeza. */
     private static final String TARGET_FIELD = "target";
 
@@ -90,6 +91,9 @@ public final class HelperJsonMapper {
 
     /** Tipo de ajudante que organiza uma pasta. */
     private static final String FOLDER_ORGANIZER_TYPE = "FOLDER_ORGANIZER";
+
+    /** Tipo de ajudante que organiza a área de trabalho. */
+    private static final String DESKTOP_ARRANGER_TYPE = "DESKTOP_ARRANGER";
 
     /** Tipo de ajudante que faz limpeza. */
     private static final String CLEANER_TYPE = "CLEANER";
@@ -218,7 +222,11 @@ public final class HelperJsonMapper {
                     node.put(AGE_LIMIT_DAYS_FIELD, cleaner.ageLimit().days());
                 }
             }
-            case DesktopArrangerHelper desktop -> throw new UnsupportedOperationException(UNSUPPORTED_TYPE);
+            case DesktopArrangerHelper desktop -> {
+                node.put(TYPE_FIELD, DESKTOP_ARRANGER_TYPE);
+                writeCommon(node, helper);
+                node.put(LAYOUT_FIELD, desktop.layout().name());
+            }
         }
         return node;
     }
@@ -279,6 +287,8 @@ public final class HelperJsonMapper {
                     new FolderOrganizerHelper(id, name, schedule, enabled, Path.of(text(node, FOLDER_FIELD)));
             case CLEANER_TYPE -> new CleanerHelper(id, name, schedule, enabled,
                     toTarget(object(node, TARGET_FIELD)), toAgeLimit(node.get(AGE_LIMIT_DAYS_FIELD)));
+            case DESKTOP_ARRANGER_TYPE ->
+                    new DesktopArrangerHelper(id, name, schedule, enabled, DesktopLayout.valueOf(text(node, LAYOUT_FIELD)));
             default -> throw new HelperJsonException(String.format(UNKNOWN_TYPE, TYPE_FIELD, type));
         };
     }
