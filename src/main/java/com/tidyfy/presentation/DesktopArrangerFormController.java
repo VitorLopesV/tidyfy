@@ -12,6 +12,8 @@ import com.tidyfy.presentation.model.DesktopLayoutText;
 import com.tidyfy.presentation.model.HelperItem;
 import java.time.Clock;
 import javafx.beans.binding.BooleanBinding;
+import javafx.geometry.Pos;
+import javafx.geometry.VPos;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -62,6 +64,9 @@ public class DesktopArrangerFormController extends HelperFormController {
 
     /** Largura da miniatura de cada opção, em pixels. */
     private static final double OPTION_THUMBNAIL_WIDTH = 150;
+
+    /** Altura reservada à descrição de cada opção (até quatro linhas), para todas terem o mesmo tamanho. */
+    private static final double OPTION_DESCRIPTION_HEIGHT = 68;
 
     /** Largura da miniatura da prévia, em pixels. */
     private static final double PREVIEW_THUMBNAIL_WIDTH = 330;
@@ -150,6 +155,7 @@ public class DesktopArrangerFormController extends HelperFormController {
     @Override
     @FXML
     protected void initialize() {
+        layoutOptions.setRowValignment(VPos.TOP);
         for (DesktopLayout layout : DesktopLayout.values()) {
             layoutOptions.getChildren().add(option(layout));
         }
@@ -179,7 +185,10 @@ public class DesktopArrangerFormController extends HelperFormController {
         Label detail = new Label(description);
         detail.getStyleClass().add(OPTION_DESCRIPTION_STYLE_CLASS);
         detail.setWrapText(true);
-        detail.setMaxWidth(OPTION_THUMBNAIL_WIDTH);
+        detail.setMinSize(OPTION_THUMBNAIL_WIDTH, OPTION_DESCRIPTION_HEIGHT);
+        detail.setPrefSize(OPTION_THUMBNAIL_WIDTH, OPTION_DESCRIPTION_HEIGHT);
+        detail.setMaxSize(OPTION_THUMBNAIL_WIDTH, OPTION_DESCRIPTION_HEIGHT);
+        detail.setAlignment(Pos.TOP_LEFT);
         VBox content = new VBox(OPTION_SPACING, new LayoutThumbnail(layout, OPTION_THUMBNAIL_WIDTH), name, detail);
         ToggleButton button = new ToggleButton();
         button.setGraphic(content);

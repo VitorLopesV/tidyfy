@@ -222,7 +222,7 @@
             <id>installer</id>
             <properties>
                 <!-- Versão do MSI: só números (1 a 3 componentes), por isso não usa ${project.version} (1.0-SNAPSHOT). -->
-                <installer.version>1.0.0</installer.version>
+                <installer.version>1.0.2</installer.version>
                 <installer.vendor>Tidyfy</installer.vendor>
                 <installer.resources>${project.basedir}/src/installer/resources</installer.resources>
                 <installer.dest>${project.build.directory}/installer</installer.dest>

@@ -360,7 +360,7 @@ mvn clean test       # compila, roda os testes e gera a cobertura (JaCoCo): targ
 mvn javafx:run       # abre a interface
 mvn clean package    # gera target/tidyfy-1.0-SNAPSHOT.jar
 mvn clean package -Ppackage -DskipTests  # gera o executável: target/dist/Tidyfy/Tidyfy.exe
-mvn clean verify -Ppackage,installer -DskipTests  # gera o instalador: target/installer/Tidyfy-1.0.0.msi (exige o WiX Toolset 3.x no PATH)
+mvn clean verify -Ppackage,installer -DskipTests  # gera o instalador: target/installer/Tidyfy-1.0.2.msi (exige o WiX Toolset 3.x no PATH)
 ```
 
 O perfil `package` (fora dele o build não muda) gera um JAR único em `target/jpackage-input/tidyfy.jar` (`maven-shade-plugin`, com os jars do JavaFX para Windows) e chama o `jpackage` do JDK em uso (`exec-maven-plugin`) para montar a **imagem de aplicação** `target/dist/Tidyfy` (~87 MB), com runtime embutido (os módulos ficam em `jpackage.modules` no `pom.xml`; confira com `jdeps --print-module-deps` ao adicionar dependências). Não exige JDK nem JavaFX na máquina. `Tidyfy.exe` é aplicativo GUI (sem console): sem argumentos abre a interface; `Tidyfy.exe --run <id>` executa o ajudante sem carregar o JavaFX; `Tidyfy.exe --remove-tasks` remove todas as tarefas do Tidyfy do Agendador e sai (veja «Instalador e desinstalação»). O perfil `package` não gera instalador.
