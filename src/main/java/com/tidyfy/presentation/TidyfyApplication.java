@@ -60,6 +60,7 @@ public class TidyfyApplication extends Application {
         helperList.setErrorHandler(helperList::showError);
         helperList.setSaveServices(ui.saveHelper(), ui.clock());
         helperList.setRemoveService(ui.removeHelper());
+        helperList.setRunService(ui.runHelper());
         helperList.setHistoryLoader(new HistoryLoader(ui.listExecutionHistory(),
                 new ExecutionItemMapper(ZoneId.systemDefault())));
         Rectangle2D screen = Screen.getPrimary().getVisualBounds();

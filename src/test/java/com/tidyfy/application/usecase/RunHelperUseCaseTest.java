@@ -163,6 +163,62 @@ class RunHelperUseCaseTest {
     }
 
     @Test
+    void executeNowRunsDisabledHelperAndRecordsItLikeAScheduledRun() {
+        FolderOrganizerHelper helper = organizer(false);
+        repository.with(helper);
+        Path photo = FOLDER.resolve("foto.png");
+        fileSystem.addFolder(FOLDER).addFile(photo, "x", NOW, NOW);
+
+        ExecutionRecord record = useCase.executeNow(helper.id()).orElseThrow();
+
+        assertEquals(List.of(new HelperAction(ActionType.MOVED, photo,
+                FOLDER.resolve("Imagens").resolve("foto.png"), null)), record.actions());
+        assertEquals(List.of(record), history.all());
+        assertEquals(NOW, record.executedAt());
+    }
+
+    @Test
+    void executeNowDoesNotChangeTheHelperNorItsEnabledState() {
+        FolderOrganizerHelper helper = organizer(false);
+        repository.with(helper);
+        fileSystem.addFolder(FOLDER);
+
+        useCase.executeNow(helper.id());
+
+        assertEquals(List.of(helper), repository.findAll());
+        assertEquals(0, repository.saveCount());
+    }
+
+    @Test
+    void executeNowOfMissingHelperIsEmptyAndRecordsNothing() {
+        assertTrue(useCase.executeNow(HelperId.newId()).isEmpty());
+        assertEquals(List.of(), history.all());
+    }
+
+    @Test
+    void executeNowConvertsFailureIntoFailedAction() {
+        FolderOrganizerHelper helper = organizer(true);
+        repository.with(helper);
+
+        ExecutionRecord record = useCase.executeNow(helper.id()).orElseThrow();
+
+        assertEquals(ActionType.FAILED, record.actions().get(0).type());
+    }
+
+    @Test
+    void executeNowRejectsNullId() {
+        assertThrows(NullPointerException.class, () -> useCase.executeNow(null));
+    }
+
+    @Test
+    void scheduledExecuteStillIgnoresDisabledHelper() {
+        FolderOrganizerHelper helper = organizer(false);
+        repository.with(helper);
+
+        assertTrue(useCase.execute(helper.id()).isEmpty());
+    }
+
+    @Test
     void missingHelperDoesNothingAndRecordsNothing() {
         useCase.execute(HelperId.newId());
 

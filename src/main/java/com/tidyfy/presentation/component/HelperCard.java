@@ -20,6 +20,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -48,6 +49,9 @@ public final class HelperCard extends VBox {
 
     /** Nome curto do tipo. */
     @FXML private Label kindLabel;
+
+    /** Botão que executa o ajudante agora. */
+    @FXML private Button runButton;
 
     /** Botão que abre o histórico do ajudante. */
     @FXML private Button historyButton;
@@ -94,6 +98,9 @@ public final class HelperCard extends VBox {
     /** Ação executada ao pedir o histórico; {@code null} enquanto ninguém a definir. */
     private Consumer<HelperItem> onHistory;
 
+    /** Ação executada ao pedir "Executar agora"; {@code null} enquanto ninguém a definir. */
+    private Consumer<HelperItem> onRun;
+
     // Constantes
 
     /** Horários exibidos no cartão; os demais viram "+N" (a lista completa fica na dica). */
@@ -101,6 +108,12 @@ public final class HelperCard extends VBox {
 
     /** Nome do estado visual de cartão selecionado. */
     private static final String SELECTED_STATE = "selected";
+
+    /** Nome do estado visual de cartão executando. */
+    private static final String RUNNING_STATE = "running";
+
+    /** Estado visual de cartão executando. */
+    private static final PseudoClass RUNNING = PseudoClass.getPseudoClass(RUNNING_STATE);
 
     /** Nome do estado visual de cartão desligado. */
     private static final String PAUSED_STATE = "paused";
@@ -125,6 +138,24 @@ public final class HelperCard extends VBox {
 
     /** Modelo do texto de acessibilidade do interruptor; recebe o nome do ajudante. */
     private static final String SWITCH_ACCESSIBLE_TEXT = "Ligar ou desligar %s";
+
+    /** Tamanho do ícone do botão de executar. */
+    private static final double RUN_ICON_SIZE = 17;
+
+    /** Modelo do texto de acessibilidade do botão de executar; recebe o nome do ajudante. */
+    private static final String RUN_ACCESSIBLE_TEXT = "Executar %s agora";
+
+    /** Modelo do texto de acessibilidade do botão enquanto executa; recebe o nome do ajudante. */
+    private static final String RUNNING_ACCESSIBLE_TEXT = "Executando %s";
+
+    /** Dica do botão de executar. */
+    private static final String RUN_TOOLTIP = "Executar agora";
+
+    /** Dica do botão enquanto o ajudante executa. */
+    private static final String RUNNING_TOOLTIP = "Executando...";
+
+    /** Classe CSS do indicador de progresso do botão de executar. */
+    private static final String SPINNER_STYLE_CLASS = "run-spinner";
 
     /** Modelo do texto de acessibilidade do botão de histórico; recebe o nome do ajudante. */
     private static final String HISTORY_ACCESSIBLE_TEXT = "Ver histórico de %s";
@@ -185,6 +216,12 @@ public final class HelperCard extends VBox {
         selectBox.setAccessibleText(String.format(SELECT_ACCESSIBLE_TEXT, item.name()));
         enabledSwitch.setAccessibleText(String.format(SWITCH_ACCESSIBLE_TEXT, item.name()));
         enabledSwitch.setTooltip(new Tooltip(SWITCH_TOOLTIP));
+        showRunning(false);
+        runButton.setOnAction(event -> {
+            if (onRun != null) {
+                onRun.accept(item);
+            }
+        });
         historyButton.setAccessibleText(String.format(HISTORY_ACCESSIBLE_TEXT, item.name()));
         historyButton.setTooltip(new Tooltip(HISTORY_TOOLTIP));
         historyButton.setOnAction(event -> {
@@ -300,6 +337,7 @@ public final class HelperCard extends VBox {
         if (event.getButton() != MouseButton.PRIMARY
                 || Nodes.isInside(event.getTarget(), selectBox)
                 || Nodes.isInside(event.getTarget(), enabledSwitch)
+                || Nodes.isInside(event.getTarget(), runButton)
                 || Nodes.isInside(event.getTarget(), historyButton)) {
             return;
         }
@@ -322,6 +360,54 @@ public final class HelperCard extends VBox {
      */
     public void setOnHistory(Consumer<HelperItem> onHistory) {
         this.onHistory = onHistory;
+    }
+
+    /**
+     * Define o que acontece quando o usuário aciona "Executar agora". O clique no botão não altera a seleção.
+     *
+     * @param onRun ação que recebe o ajudante do cartão; {@code null} para não fazer nada
+     */
+    public void setOnRun(Consumer<HelperItem> onRun) {
+        this.onRun = onRun;
+    }
+
+    /**
+     * Mostra ou esconde a indicação de que o ajudante está executando. Enquanto executa, o botão fica
+     * desabilitado e mostra um indicador de progresso, o que impede um segundo clique.
+     *
+     * @param running {@code true} enquanto o ajudante executa
+     */
+    public void setRunning(boolean running) {
+        showRunning(running);
+    }
+
+    /**
+     * Indica se o cartão está mostrando o ajudante como executando.
+     *
+     * @return {@code true} enquanto o ajudante executa
+     */
+    public boolean isRunning() {
+        return runButton.isDisable();
+    }
+
+    /**
+     * Ajusta o botão, a dica e o estado visual do cartão à execução em andamento ou ao repouso.
+     *
+     * @param running {@code true} enquanto o ajudante executa
+     */
+    private void showRunning(boolean running) {
+        pseudoClassStateChanged(RUNNING, running);
+        runButton.setDisable(running);
+        if (running) {
+            ProgressIndicator spinner = new ProgressIndicator();
+            spinner.getStyleClass().add(SPINNER_STYLE_CLASS);
+            runButton.setGraphic(spinner);
+        } else {
+            runButton.setGraphic(new Icon(Glyph.PLAY, RUN_ICON_SIZE));
+        }
+        runButton.setAccessibleText(String.format(running ? RUNNING_ACCESSIBLE_TEXT : RUN_ACCESSIBLE_TEXT,
+                item.name()));
+        runButton.setTooltip(new Tooltip(running ? RUNNING_TOOLTIP : RUN_TOOLTIP));
     }
 
     /**

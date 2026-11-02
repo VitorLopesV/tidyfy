@@ -140,6 +140,19 @@ Cada violação aparece em um diálogo de erro (botão «Fechar») e o ajudante 
 
 - [ ] Seção 7 conferida
 
+### 7.1 Executar agora
+
+1. No cartão de um ajudante **ligado** com arquivos a organizar na pasta, clique no botão de executar (dica «Executar agora»).
+   - Resultado esperado: o botão vira um indicador de progresso e fica desabilitado, o cartão ganha borda verde enquanto executa, e um segundo clique não dispara outra execução; ao terminar aparece o diálogo «Execução concluída» com a quantidade de ações. A janela continua responsiva durante a execução.
+2. Abra o histórico do ajudante.
+   - Resultado esperado: a execução manual aparece como as agendadas.
+3. **Desligue** o ajudante, coloque novos arquivos na pasta e clique em executar.
+   - Resultado esperado: executa mesmo assim, entra no histórico, o ajudante continua desligado e continua fora do Agendador; a frequência e a próxima execução não mudam.
+4. Provoque uma falha (como na seção 9, item 3) e execute agora.
+   - Resultado esperado: o diálogo «A execução falhou» com os detalhes recolhíveis; a falha também está no histórico.
+
+- [ ] Seção 7.1 conferida
+
 ## 8. Editar
 
 1. Selecione **um** ajudante (caixa do cartão) e clique em «Editar».
@@ -283,6 +296,7 @@ Itens visuais que só foram verificados por teste automatizado. Confira no aplic
 - [ ] **Diálogo de histórico:** título, subtítulo, lista de ações, falha destacada, rolagem quando há muitas ações.
 - [ ] **Formulário de limpeza:** seção «Quanto limpar» («Tudo» / «Só o que tem mais de»), o campo da quantidade (setinhas ou digitação) e a unidade («Dias», «Semanas», «Meses», «Anos»), «Contar a idade a partir da» («Data de criação» / «Última modificação»), a prévia e os botões «Cancelar» e «Criar ajudante».
 - [ ] **Diálogo de erro:** título, mensagem, «Mostrar detalhes» e «Fechar».
+- [ ] **Executar agora:** botão de executar no cartão (ao lado do histórico), indicador de progresso e borda verde enquanto executa, e diálogo de sucesso («Execução concluída») no tema escuro.
 - [ ] **Janela mínima** (960 × 700): redimensione até o mínimo e confira que nada sobrepõe nem some; na janela padrão (1280 × 900) cabem 9 cartões sem barra de rolagem; com mais ajudantes só a área dos cartões rola.
 - [ ] **Seleção:** ao selecionar, as ações («Editar», «Remover», «Selecionar todos») aparecem no lugar do filtro, sem empurrar os cartões.
 - [ ] **Diálogos:** arrastar pela área de título, fechar com Esc, lista escurecida por trás.

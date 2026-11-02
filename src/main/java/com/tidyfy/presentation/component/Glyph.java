@@ -54,7 +54,10 @@ public enum Glyph {
     CALENDAR(Glyph.CALENDAR_BODY_PATH + Glyph.CALENDAR_DETAILS_PATH),
 
     /** Triângulo de alerta. */
-    ALERT(Glyph.ALERT_PATH);
+    ALERT(Glyph.ALERT_PATH),
+
+    /** Triângulo de executar. */
+    PLAY(Glyph.PLAY_PATH);
 
     /** Traço do ícone, em notação SVG. */
     private final String path;
@@ -119,6 +122,9 @@ public enum Glyph {
 
     /** Traço da faixa e das argolas do calendário. */
     private static final String CALENDAR_DETAILS_PATH = "M3.5 10h17M8 3v4M16 3v4";
+
+    /** Traço do triângulo de executar. */
+    private static final String PLAY_PATH = "M8 5.5v13l11-6.5z";
 
     /** Traço do triângulo de alerta. */
     private static final String ALERT_PATH = "M12 4l9 16H3zM12 10v4M12 17v.1";

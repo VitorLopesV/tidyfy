@@ -254,7 +254,7 @@ class HelperListLoadingTest {
 
     @Test
     void uiServicesRejectNullComponents() {
-        assertThrows(NullPointerException.class, () -> new UiServices(null, null, null, null, CLOCK));
+        assertThrows(NullPointerException.class, () -> new UiServices(null, null, null, null, null, CLOCK));
         assertNotNull(CLOCK);
     }
 

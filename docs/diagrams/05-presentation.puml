@@ -76,6 +76,7 @@ package "com.tidyfy.presentation" {
     + saveHelper : SaveHelperUseCase
     + removeHelper : RemoveHelperUseCase
     + listExecutionHistory : ListExecutionHistoryUseCase
+    + runHelper : RunHelperUseCase
     + clock : Clock
   }
 
@@ -94,6 +95,9 @@ package "com.tidyfy.presentation" {
     + showHelpers(items : List<HelperItem>) : void
     + setSaveServices(saveHelper : SaveHelperUseCase, clock : Clock) : void
     + setRemoveService(removeHelper : RemoveHelperUseCase) : void
+    + setRunService(runHelper : RunHelperUseCase) : void
+    ~ setExecutors(background : Executor, ui : Executor) : void
+    ~ presentRunResult(dialog : RunResultDialogController) : void
     + setHistoryLoader(historyLoader : Function<String, List<ExecutionItem>>) : void
     ~ afterRemoveConfirmation(confirmation : RemoveConfirmationController, chosen : List<HelperItem>) : void
     ~ createForm(kind : HelperKind, editing : HelperItem) : HelperFormController
@@ -154,6 +158,11 @@ package "com.tidyfy.presentation" {
     + createView() : Parent
   }
 
+  class RunResultDialogController {
+    + RunResultDialogController(result : RunResult)
+    + createView() : Parent
+  }
+
   class ErrorMessage <<record>> {
     + title : String
     + message : String
@@ -170,6 +179,18 @@ package "com.tidyfy.presentation" {
 }
 
 package "com.tidyfy.presentation.model" {
+
+  class RunResult <<record>> {
+    + success : boolean
+    + title : String
+    + message : String
+    + details : String
+  }
+
+  class RunResultMapper <<utility>> {
+    + {static} toResult(helperName : String, record : ExecutionRecord) : RunResult
+    + {static} missing(helperName : String) : RunResult
+  }
 
   class HelperItem <<record>> {
     + id : String
@@ -327,6 +348,7 @@ UiServices o-- ListHelpersUseCase
 UiServices o-- SaveHelperUseCase
 UiServices o-- RemoveHelperUseCase
 UiServices o-- ListExecutionHistoryUseCase
+UiServices o-- RunHelperUseCase
 TidyfyApplication --> HelperListController : cria e liga os serviços
 TidyfyApplication ..> HelperItemMapper : cria
 TidyfyApplication ..> HistoryLoader : cria
@@ -345,6 +367,11 @@ HelperListController ..> ErrorDialogController : showError
 HelperListController ..> ErrorMessageMapper
 ErrorMessageMapper ..> ErrorMessage : converte Throwable
 ErrorDialogController --> ErrorMessage
+HelperListController ..> RunHelperUseCase : "Executar agora" (executeNow, fora da thread da interface)
+HelperListController ..> RunResultMapper
+HelperListController ..> RunResultDialogController : sucesso
+RunResultMapper ..> RunResult : converte ExecutionRecord
+RunResultDialogController --> RunResult
 HelperListController ..> Dialogs
 ExecutionHistoryController ..> ExecutionItem
 ExecutionItem *-- ExecutionAction

@@ -117,7 +117,7 @@ Os ícones ficam em ordem de nome (maiúsculas e minúsculas não diferenciam). 
 3. Dá um nome ao ajudante, escolhe a pasta (ou a lixeira) e define a frequência.
 4. Salva. A partir daí, o ajudante passa a trabalhar sozinho nos horários definidos.
 
-Na lista, o usuário pode ligar, desligar, editar ou remover qualquer ajudante.
+Na lista, o usuário pode ligar, desligar, editar ou remover qualquer ajudante, e também **executar agora**: o botão de executar do cartão faz o ajudante trabalhar na hora, sem esperar o próximo horário, mesmo que ele esteja desligado. O cartão mostra que está executando e, ao terminar, um aviso informa se deu certo ou se houve falha. A execução manual entra no histórico como as agendadas e não muda a frequência nem o estado ligado/desligado do ajudante.
 
 O trabalho dos ajudantes é agendado através do **Agendador de Tarefas do Windows**. Por isso o Tidyfy **funciona somente no Windows**, e os ajudantes continuam trabalhando mesmo com o aplicativo fechado.
 

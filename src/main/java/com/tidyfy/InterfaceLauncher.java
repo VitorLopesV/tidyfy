@@ -27,7 +27,7 @@ final class InterfaceLauncher {
      */
     static void launch(AppContainer container, Clock clock, String[] args) {
         TidyfyApplication.configure(new UiServices(container.listHelpers(), container.saveHelper(),
-                container.removeHelper(), container.listExecutionHistory(), clock));
+                container.removeHelper(), container.listExecutionHistory(), container.runHelper(), clock));
         Application.launch(TidyfyApplication.class, args);
     }
 }

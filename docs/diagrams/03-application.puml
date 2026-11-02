@@ -45,6 +45,7 @@ package "com.tidyfy.application.usecase" {
     - history : ExecutionHistoryRepository
     - clock : Clock
     + execute(id : HelperId) : Optional<ExecutionRecord>
+    + executeNow(id : HelperId) : Optional<ExecutionRecord>
   }
 
   class SyncSchedulerUseCase {
@@ -208,6 +209,10 @@ note right of RunHelperUseCase
   Escolhe o caso de uso com pattern matching
   no Helper selado. Ajudante desligado
   ou inexistente → não faz nada.
+  executeNow (execução manual, pedida na
+  interface): ignora ligado/desligado, não
+  toca no agendador nem no ajudante;
+  ajudante inexistente → vazio.
   Depois de executar: grava o ExecutionRecord
   (o que foi feito) e apaga os registros com
   mais de 30 dias. Falha na execução vira ação

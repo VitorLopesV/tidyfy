@@ -23,6 +23,9 @@
             <Label fx:id="nameLabel" styleClass="card-name" maxWidth="Infinity"/>
             <Label fx:id="kindLabel" styleClass="kind-label, kind-text"/>
         </VBox>
+        <Button fx:id="runButton" styleClass="card-action">
+            <graphic><Icon glyph="PLAY" size="17"/></graphic>
+        </Button>
         <Button fx:id="historyButton" styleClass="card-action">
             <graphic><Icon glyph="CLOCK" size="17"/></graphic>
         </Button>

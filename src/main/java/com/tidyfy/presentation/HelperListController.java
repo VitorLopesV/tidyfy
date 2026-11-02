@@ -2,7 +2,9 @@ package com.tidyfy.presentation;
 
 import com.tidyfy.application.usecase.ListHelpersUseCase;
 import com.tidyfy.application.usecase.RemoveHelperUseCase;
+import com.tidyfy.application.usecase.RunHelperUseCase;
 import com.tidyfy.application.usecase.SaveHelperUseCase;
+import com.tidyfy.domain.ExecutionRecord;
 import com.tidyfy.domain.HelperId;
 import com.tidyfy.presentation.component.Animations;
 import com.tidyfy.presentation.component.CardGrid;
@@ -12,19 +14,26 @@ import com.tidyfy.presentation.component.HelperCard;
 import com.tidyfy.presentation.component.Icon;
 import com.tidyfy.presentation.component.Nodes;
 import com.tidyfy.presentation.component.UsageMeter;
+import com.tidyfy.presentation.model.ErrorMessage;
 import com.tidyfy.presentation.model.ErrorMessageMapper;
 import com.tidyfy.presentation.model.ExecutionItem;
 import com.tidyfy.presentation.model.HelperItem;
 import com.tidyfy.presentation.model.HelperItemMapper;
 import com.tidyfy.presentation.model.HelperKind;
 import com.tidyfy.presentation.model.HelperSelection;
+import com.tidyfy.presentation.model.RunResult;
+import com.tidyfy.presentation.model.RunResultMapper;
 import com.tidyfy.presentation.model.TypeFilter;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -194,10 +203,31 @@ public class HelperListController {
     /** Indica que o interruptor de um cartão está sendo devolvido ao estado anterior: não regrava. */
     private boolean revertingSwitch;
 
+    /** Caso de uso de execução manual; {@code null} até alguém ligar {@link #setRunService}. */
+    private RunHelperUseCase runHelper;
+
+    /** Identificadores dos ajudantes que estão executando agora; só a thread da interface mexe nele. */
+    private final Set<String> running = new HashSet<>();
+
+    /** Onde a execução roda, fora da thread da interface. */
+    private Executor background = daemonExecutor();
+
+    /** Onde o resultado volta para a thread da interface. */
+    private Executor ui = Platform::runLater;
+
     // Constantes
 
     /** Título da janela do diálogo de erro. */
     private static final String ERROR_TITLE = "Erro";
+
+    /** Título da janela de resultado de sucesso da execução manual. */
+    private static final String RUN_RESULT_TITLE = "Execução";
+
+    /** Nome da thread que executa o ajudante. */
+    private static final String RUN_THREAD_NAME = "tidyfy-manual-run";
+
+    /** Nome do parâmetro do caso de uso de executar, usado na mensagem de valor nulo. */
+    private static final String RUN_HELPER_NAME = "runHelper";
 
     /** Nome do parâmetro do erro, usado na mensagem de valor nulo. */
     private static final String ERROR_NAME = "error";
@@ -482,6 +512,8 @@ public class HelperListController {
             });
             card.enabledProperty().addListener((obs, was, on) -> onEnabledChanged(card, item, was, on));
             card.setOnHistory(this::onHistory);
+            card.setOnRun(this::onRun);
+            card.setRunning(running.contains(item.id()));
             if (animate) {
                 Animations.riseIn(card, Duration.millis(i * 50L));
             }
@@ -697,6 +729,129 @@ public class HelperListController {
     public void setSaveServices(SaveHelperUseCase saveHelper, Clock clock) {
         this.saveHelper = Objects.requireNonNull(saveHelper, SAVE_HELPER_NAME);
         this.clock = Objects.requireNonNull(clock, CLOCK_NAME);
+    }
+
+    /**
+     * Liga a ação "Executar agora" ao caso de uso de execução. Sem isso, a ação não faz nada (útil só em
+     * testes de tela).
+     *
+     * @param runHelper caso de uso que executa um ajudante
+     * @throws NullPointerException se {@code runHelper} for nulo
+     */
+    public void setRunService(RunHelperUseCase runHelper) {
+        this.runHelper = Objects.requireNonNull(runHelper, RUN_HELPER_NAME);
+    }
+
+    /**
+     * Troca onde a execução roda e onde o resultado volta; existe para os testes tornarem a execução
+     * síncrona.
+     *
+     * @param background onde o caso de uso é executado
+     * @param ui         onde o resultado é tratado
+     */
+    void setExecutors(Executor background, Executor ui) {
+        this.background = background;
+        this.ui = ui;
+    }
+
+    /**
+     * Cria o executor padrão da execução manual, com threads daemon para não impedir o Tidyfy de fechar.
+     *
+     * @return executor que cria uma thread por execução
+     */
+    private static Executor daemonExecutor() {
+        return Executors.newCachedThreadPool(task -> {
+            Thread thread = new Thread(task, RUN_THREAD_NAME);
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+
+    /**
+     * Executa o ajudante do cartão agora, fora da thread da interface. Enquanto roda, o cartão mostra a
+     * execução em andamento e um segundo pedido para o mesmo ajudante é ignorado. Ao terminar, avisa o
+     * resultado. Não altera o ajudante nem o agendador.
+     *
+     * @param item ajudante escolhido
+     */
+    private void onRun(HelperItem item) {
+        if (runHelper == null || !running.add(item.id())) {
+            return;
+        }
+        showRunning(item.id(), true);
+        HelperId id = new HelperId(UUID.fromString(item.id()));
+        background.execute(() -> {
+            Optional<ExecutionRecord> record = Optional.empty();
+            Throwable failure = null;
+            try {
+                record = runHelper.executeNow(id);
+            } catch (RuntimeException error) {
+                failure = error;
+            }
+            Optional<ExecutionRecord> finished = record;
+            Throwable error = failure;
+            ui.execute(() -> afterRun(item, finished, error));
+        });
+    }
+
+    /**
+     * Trata o fim da execução, na thread da interface: tira a indicação de execução e mostra o sucesso, a
+     * falha ou o erro inesperado. Se o ajudante não existe mais, a lista é recarregada.
+     *
+     * @param item    ajudante que executou
+     * @param record  registro gravado no histórico, ou vazio se o ajudante não existe
+     * @param failure erro inesperado, ou {@code null}
+     */
+    private void afterRun(HelperItem item, Optional<ExecutionRecord> record, Throwable failure) {
+        running.remove(item.id());
+        showRunning(item.id(), false);
+        if (failure != null) {
+            showError(failure);
+            return;
+        }
+        if (record.isEmpty()) {
+            reload();
+            showRunResult(RunResultMapper.missing(item.name()));
+            return;
+        }
+        showRunResult(RunResultMapper.toResult(item.name(), record.get()));
+    }
+
+    /**
+     * Mostra o resultado: o diálogo de sucesso, ou o de erro com os detalhes das falhas. Se a tela ainda não
+     * está numa janela, o diálogo é adiado até ela existir.
+     *
+     * @param result resultado da execução
+     */
+    private void showRunResult(RunResult result) {
+        Runnable show = result.success()
+                ? () -> presentRunResult(new RunResultDialogController(result))
+                : () -> presentError(new ErrorDialogController(
+                        new ErrorMessage(result.title(), result.message(), result.details())));
+        if (isInWindow()) {
+            show.run();
+        } else {
+            Platform.runLater(show);
+        }
+    }
+
+    /**
+     * Mostra o diálogo de sucesso da execução. Separado para que os testes não abram uma janela de verdade.
+     *
+     * @param dialog controller do diálogo de sucesso
+     */
+    void presentRunResult(RunResultDialogController dialog) {
+        showDialog(dialog.createView(), RUN_RESULT_TITLE);
+    }
+
+    /**
+     * Marca ou desmarca a execução em andamento nos cartões do ajudante.
+     *
+     * @param id      identificador do ajudante
+     * @param running {@code true} enquanto executa
+     */
+    private void showRunning(String id, boolean running) {
+        cards().stream().filter(card -> card.item().id().equals(id)).forEach(card -> card.setRunning(running));
     }
 
     /**

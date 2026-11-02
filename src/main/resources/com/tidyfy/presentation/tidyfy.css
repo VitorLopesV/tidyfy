@@ -630,6 +630,18 @@
     -fx-opacity: 0.55;
 }
 
+.helper-card:running {
+    -fx-border-color: -tf-org;
+}
+
+.run-spinner {
+    -fx-progress-color: -tf-org;
+    -fx-pref-width: 18;
+    -fx-pref-height: 18;
+    -fx-max-width: 18;
+    -fx-max-height: 18;
+}
+
 .helper-card:selected {
     -fx-border-color: -tf-ink;
     -fx-border-style: solid;
@@ -1400,6 +1412,19 @@
 
 .danger-badge .icon-shape {
     -fx-stroke: -tf-danger;
+}
+
+.success-badge {
+    -fx-background-color: -tf-org-tint;
+    -fx-background-radius: 16;
+    -fx-min-width: 52;
+    -fx-min-height: 52;
+    -fx-max-width: 52;
+    -fx-max-height: 52;
+}
+
+.success-badge .icon-shape {
+    -fx-stroke: -tf-org;
 }
 
 .error-details {

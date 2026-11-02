@@ -17,9 +17,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Ponto de entrada da execução agendada de um ajudante. Carrega o ajudante, escolhe o caso de uso
+ * Ponto de entrada da execução de um ajudante, agendada ({@link #execute}) ou manual ({@link #executeNow}). Carrega o ajudante, escolhe o caso de uso
  * conforme o tipo, grava o {@link ExecutionRecord} no histórico e apaga os registros expirados.
- * Ajudante inexistente ou desligado não faz nada e não grava histórico. Se o caso de uso lançar uma
+ * Na execução agendada, ajudante inexistente ou desligado não faz nada e não grava histórico; a manual
+ * ignora o estado ligado/desligado e nunca toca no agendador nem na configuração do ajudante. Se o caso de uso lançar uma
  * {@link RuntimeException}, ela não é propagada: vira uma única ação {@link ActionType#FAILED} no
  * registro. O modo sem interface (HeadlessRunner) lê as ações FAILED do registro devolvido e grava o log em arquivo.
  * Falha ao gravar o histórico é propagada.
@@ -104,13 +105,36 @@ public final class RunHelperUseCase {
         if (found.isEmpty() || !found.get().enabled()) {
             return Optional.empty();
         }
-        Helper helper = found.get();
+        return Optional.of(runAndRecord(found.get()));
+    }
+
+    /**
+     * Executa o ajudante a pedido do usuário, mesmo desligado, e registra a execução no histórico como as
+     * agendadas. Não altera o ajudante nem o agendador.
+     *
+     * @param id identificador do ajudante
+     * @return o registro gravado no histórico, ou vazio se o ajudante não existe
+     * @throws NullPointerException se {@code id} for nulo
+     * @throws java.io.UncheckedIOException se o histórico não puder ser gravado
+     */
+    public Optional<ExecutionRecord> executeNow(HelperId id) {
+        Objects.requireNonNull(id, ID_NAME);
+        return repository.findById(id).map(this::runAndRecord);
+    }
+
+    /**
+     * Executa o ajudante, grava o registro e apaga os registros expirados.
+     *
+     * @param helper ajudante a executar
+     * @return o registro gravado
+     */
+    private ExecutionRecord runAndRecord(Helper helper) {
         List<HelperAction> actions = run(helper);
         Instant now = clock.instant();
         ExecutionRecord record = new ExecutionRecord(helper.id(), helper.name().value(), now, actions);
         history.add(record);
         history.deleteExpired(now);
-        return Optional.of(record);
+        return record;
     }
 
     /**

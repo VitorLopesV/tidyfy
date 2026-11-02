@@ -171,6 +171,81 @@ class HelperCardTest {
         });
     }
 
+    @Test
+    void runButtonHasAccessibleTextAndTooltip() {
+        JavaFx.run(() -> {
+            HelperCard card = new HelperCard(SampleHelpers.organizer("h1", "Organizar Downloads"));
+            Button button = (Button) card.lookup("#runButton");
+
+            assertEquals("Executar Organizar Downloads agora", button.getAccessibleText());
+            assertEquals("Executar agora", button.getTooltip().getText());
+            assertFalse(card.isRunning());
+        });
+    }
+
+    @Test
+    void runButtonReportsTheCardHelper() {
+        JavaFx.run(() -> {
+            HelperItem helper = SampleHelpers.organizer("h1", "Organizar Downloads");
+            HelperCard card = new HelperCard(helper);
+            List<HelperItem> received = new ArrayList<>();
+            card.setOnRun(received::add);
+
+            ((Button) card.lookup("#runButton")).fire();
+
+            assertEquals(List.of(helper), received);
+        });
+    }
+
+    @Test
+    void runButtonWithoutCallbackDoesNothing() {
+        JavaFx.run(() -> {
+            HelperCard card = new HelperCard(SampleHelpers.organizer("h1", "Organizar Downloads"));
+
+            ((Button) card.lookup("#runButton")).fire();
+
+            assertFalse(card.selectedProperty().get());
+        });
+    }
+
+    @Test
+    void runningDisablesTheButtonAndMarksTheCardUntilItStops() {
+        JavaFx.run(() -> {
+            HelperCard card = new HelperCard(SampleHelpers.organizer("h1", "Organizar Downloads"));
+            Button button = (Button) card.lookup("#runButton");
+            List<HelperItem> received = new ArrayList<>();
+            card.setOnRun(received::add);
+
+            card.setRunning(true);
+            button.fire();
+
+            assertTrue(card.isRunning());
+            assertTrue(button.isDisable());
+            assertTrue(received.isEmpty());
+            assertEquals("Executando Organizar Downloads", button.getAccessibleText());
+            assertEquals("Executando...", button.getTooltip().getText());
+            assertTrue(card.getPseudoClassStates().stream()
+                    .anyMatch(state -> state.getPseudoClassName().equals("running")));
+
+            card.setRunning(false);
+
+            assertFalse(card.isRunning());
+            assertFalse(button.isDisable());
+            assertEquals("Executar agora", button.getTooltip().getText());
+        });
+    }
+
+    @Test
+    void clickingTheRunButtonDoesNotToggleSelection() {
+        JavaFx.run(() -> {
+            HelperCard card = new HelperCard(SampleHelpers.organizer("h1", "Organizar Downloads"));
+
+            card.lookup("#runButton").fireEvent(click());
+
+            assertFalse(card.selectedProperty().get());
+        });
+    }
+
     private static String text(HelperCard card, String selector) {
         return ((Label) card.lookup(selector)).getText();
     }

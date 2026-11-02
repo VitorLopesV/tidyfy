@@ -3,6 +3,7 @@ package com.tidyfy.presentation;
 import com.tidyfy.application.usecase.ListExecutionHistoryUseCase;
 import com.tidyfy.application.usecase.ListHelpersUseCase;
 import com.tidyfy.application.usecase.RemoveHelperUseCase;
+import com.tidyfy.application.usecase.RunHelperUseCase;
 import com.tidyfy.application.usecase.SaveHelperUseCase;
 import java.time.Clock;
 import java.util.Objects;
@@ -16,11 +17,12 @@ import java.util.Objects;
  * @param saveHelper           caso de uso de salvar (criar ou editar) um ajudante
  * @param removeHelper         caso de uso de remover ajudantes
  * @param listExecutionHistory caso de uso de consultar o histórico de execuções
+ * @param runHelper            caso de uso de executar um ajudante (execução manual)
  * @param clock                relógio que define "agora" para os textos da tela
  */
 public record UiServices(ListHelpersUseCase listHelpers, SaveHelperUseCase saveHelper,
                          RemoveHelperUseCase removeHelper, ListExecutionHistoryUseCase listExecutionHistory,
-                         Clock clock) {
+                         RunHelperUseCase runHelper, Clock clock) {
 
     // Constantes
 
@@ -36,6 +38,9 @@ public record UiServices(ListHelpersUseCase listHelpers, SaveHelperUseCase saveH
     /** Nome do componente de histórico, usado na mensagem de valor nulo. */
     private static final String LIST_EXECUTION_HISTORY_NAME = "listExecutionHistory";
 
+    /** Nome do componente de executar, usado na mensagem de valor nulo. */
+    private static final String RUN_HELPER_NAME = "runHelper";
+
     /** Nome do componente do relógio, usado na mensagem de valor nulo. */
     private static final String CLOCK_NAME = "clock";
 
@@ -49,6 +54,7 @@ public record UiServices(ListHelpersUseCase listHelpers, SaveHelperUseCase saveH
         Objects.requireNonNull(saveHelper, SAVE_HELPER_NAME);
         Objects.requireNonNull(removeHelper, REMOVE_HELPER_NAME);
         Objects.requireNonNull(listExecutionHistory, LIST_EXECUTION_HISTORY_NAME);
+        Objects.requireNonNull(runHelper, RUN_HELPER_NAME);
         Objects.requireNonNull(clock, CLOCK_NAME);
     }
 }
