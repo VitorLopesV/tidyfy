@@ -87,11 +87,11 @@ public final class HelperItemMapper {
         String name = helper.name().value();
         return switch (helper) {
             case FolderOrganizerHelper organizer -> new HelperItem(id, name, HelperKind.ORGANIZER,
-                    organizer.folder(), schedule.intervalDays(), schedule.times(), organizer.enabled(),
-                    nextRun, progress, null, null, schedule.startDate());
+                    organizer.folder(), schedule.interval(), schedule.unit(), schedule.times(), organizer.enabled(),
+                    nextRun, progress, null, null, schedule.startDate(), null);
             case CleanerHelper cleaner -> toCleanerItem(cleaner, id, name, nextRun, progress);
             case DesktopArrangerHelper desktop -> new HelperItem(id, name, HelperKind.DESKTOP, null,
-                    schedule.intervalDays(), schedule.times(), desktop.enabled(), nextRun, progress, null, null,
+                    schedule.interval(), schedule.unit(), schedule.times(), desktop.enabled(), nextRun, progress, null, null,
                     schedule.startDate(), desktop.layout());
         };
     }
@@ -112,11 +112,11 @@ public final class HelperItemMapper {
         AgeLimit ageLimit = cleaner.findAgeLimit().orElse(null);
         return switch (cleaner.target()) {
             case FolderTarget folder -> new HelperItem(id, name, HelperKind.CLEANER, folder.folder(),
-                    schedule.intervalDays(), schedule.times(), cleaner.enabled(), nextRun, progress,
-                    ageLimit, toReference(folder.ageReference()), schedule.startDate());
+                    schedule.interval(), schedule.unit(), schedule.times(), cleaner.enabled(), nextRun, progress,
+                    ageLimit, toReference(folder.ageReference()), schedule.startDate(), null);
             case RecycleBinTarget recycleBin -> new HelperItem(id, name, HelperKind.CLEANER, null,
-                    schedule.intervalDays(), schedule.times(), cleaner.enabled(), nextRun, progress,
-                    ageLimit, null, schedule.startDate());
+                    schedule.interval(), schedule.unit(), schedule.times(), cleaner.enabled(), nextRun, progress,
+                    ageLimit, null, schedule.startDate(), null);
         };
     }
 

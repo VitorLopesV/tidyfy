@@ -87,18 +87,22 @@ Crie `C:\TesteTidyfy\Limpar` com: `novo.txt` (criado hoje), `antigo.txt` e uma s
 3. Execute a tarefa (com o app fechado).
    - Resultado esperado: a Lixeira fica vazia; o histórico mostra «Lixeira esvaziada».
 
-### 5.2 Só o mais antigo que N dias (valida `emptyOlderThan`)
+### 5.2 Só o mais antigo que N dias, semanas, meses ou anos (valida `emptyOlderThan`)
 
 Este é o passo que valida de verdade a limpeza da lixeira por idade (a idade conta do dia em que o arquivo foi para lá).
 
 1. Com a Lixeira vazia, envie 3 arquivos de teste em momentos diferentes, anotando a hora de cada um: `um.txt` (agora), `dois.txt` e `tres.txt`. Para ter idades diferentes sem esperar dias, use o relógio do computador: ajuste a data do Windows (Configurações, «Hora e idioma») para 10 dias atrás, envie `um.txt` à Lixeira; avance para 4 dias atrás, envie `dois.txt`; volte a data para hoje e envie `tres.txt`. (Desligue «Definir a hora automaticamente» antes e religue ao terminar.)
 2. Na Lixeira, em «Detalhes», confira a coluna «Data de exclusão»: `um.txt` ≈ 10 dias, `dois.txt` ≈ 4 dias, `tres.txt` hoje.
-3. Edite `Esvaziar Lixeira`: «Quanto limpar» → «Só o que tem mais de» **7** dias (a ajuda mostra «Na lixeira, a idade conta do dia em que o arquivo foi para lá.»). Salve e execute a tarefa.
+3. Edite `Esvaziar Lixeira`: «Quanto limpar» → «Só o que tem mais de» **7** com a unidade **Dias** (a ajuda mostra «Na lixeira, a idade conta do dia em que o arquivo foi para lá.»). Salve e execute a tarefa.
    - Resultado esperado: somem apenas `um.txt`; `dois.txt` e `tres.txt` continuam na Lixeira.
 4. Mude para **2** dias e execute.
    - Resultado esperado: some também `dois.txt`; `tres.txt` (hoje) permanece.
 5. Mude para **1** dia: `tres.txt` permanece (ainda não tem mais de 1 dia).
-6. Confira o histórico.
+6. **Unidades:** envie à Lixeira um arquivo `quatro.txt` com data de exclusão de 10 dias atrás (como no passo 1). Edite o ajudante e escolha **1** com a unidade «Semanas» (7 dias); salve e execute.
+   - Resultado esperado: `quatro.txt` some. Repita com um novo arquivo de 10 dias atrás e **1** «Meses» (30 dias): ele permanece, pois 10 dias não passam de 30. Teste também «Anos» (365 dias).
+   - Ao reabrir o ajudante para editar, a quantidade e a unidade aparecem como foram salvas. O valor pode ser digitado no campo; texto que não seja um inteiro maior ou igual a 1 volta ao último valor válido ao sair do campo.
+   - Em `helpers.txt`, o limite fica em `ageLimitAmount` e `ageLimitUnit` (`DAY`, `WEEK`, `MONTH` ou `YEAR`).
+7. Confira o histórico.
    - Resultado esperado: «Lixeira esvaziada: ...» com a contagem de itens removidos em cada execução (ou «Nada a fazer» quando nada atingiu o limite).
 
 - [ ] Seção 5 conferida
@@ -142,7 +146,7 @@ Cada violação aparece em um diálogo de erro (botão «Fechar») e o ajudante 
    - Resultado esperado: formulário «Editar ajudante» com nome, pasta, frequência e (limpeza) alvo, idade e referência **preenchidos** como foram salvos. O botão é «Salvar alterações».
 2. Selecione **dois** ajudantes.
    - Resultado esperado: «Editar» fica indisponível («Edite um ajudante por vez.»).
-3. Edite `Organizar Teste`: mude o intervalo para 2 dias e o horário. Salve.
+3. Edite `Organizar Teste`: mude o intervalo para 2 dias (ou troque a unidade, ex.: 1 semana) e o horário. Salve.
    - Resultado esperado: a tarefa no Agendador é atualizada; em `helpers.txt` o `startDate` passa a ser **hoje** (a data de início muda quando a frequência muda).
 4. Edite só o nome (sem mexer na frequência).
    - Resultado esperado: o `startDate` não muda.
@@ -203,7 +207,23 @@ Cada violação aparece em um diálogo de erro (botão «Fechar») e o ajudante 
 4. **Sem login:** (opcional) deixe a sessão bloqueada ou encerrada no horário.
    - Resultado esperado: não executa sem o usuário logado; executa após o login (item 2).
 
-- [ ] Seção 12 conferida
+### 12.1 Frequência em dias, semanas, meses e anos
+
+Em «Frequência» o formulário tem o contador (setinhas) e a unidade «Dias», «Semanas», «Meses» e «Anos». Em meses só valem 1, 2, 3, 4, 6 e 12 (as setinhas pulam entre eles; ao trocar para «Meses», um valor como 5 vira 4) e em anos só vale 1 (as setinhas ficam desativadas). Cada passo abaixo cria ou edita um ajudante e confere o cartão, a tarefa no Agendador (aba «Disparadores») e o `helpers.txt`.
+
+1. **Semana:** crie um ajudante com **2** «Semanas» e um horário. A prévia (calendário) destaca só o dia de hoje e o resumo diz «A cada 2 semanas às HH:mm.».
+   - Resultado esperado: o cartão mostra «A cada 2 semanas»; no Agendador há um disparador «Semanalmente» a cada 2 semanas, no dia da semana de hoje; `helpers.txt` tem `"interval": 2` e `"unit": "WEEK"` em `schedule`.
+2. **Mês:** edite para **3** «Meses».
+   - Resultado esperado: «A cada 3 meses»; o disparador é «Mensalmente», no dia do mês de hoje, nos meses de 3 em 3 a partir do mês de hoje (ex.: criado em novembro: nov, fev, mai, ago); `"unit": "MONTH"`; o `startDate` passa a ser hoje.
+3. **Ano:** edite para «Anos» (o valor fica em 1).
+   - Resultado esperado: «Todo ano»; o disparador é «Mensalmente» só no mês de hoje e no dia de hoje (o Agendador não tem disparador anual); `"unit": "YEAR"`.
+4. **Fim de mês:** (opcional) com o relógio do Windows em um dia 29, 30 ou 31, crie um ajudante mensal.
+   - Resultado esperado: o disparador roda no **último dia** de cada mês (no Agendador aparece «Último» dia); a «Próxima execução» do cartão segue o mesmo dia.
+5. **Próxima execução:** confira que o texto «Próxima execução» do cartão bate com a «Próxima execução» do Agendador nos itens 1 a 3.
+6. **Compatibilidade:** em `helpers.txt`, troque o `schedule` de um ajudante por `"intervalDays": 3` (formato antigo, sem `interval`/`unit`), salve o arquivo e abra o Tidyfy.
+   - Resultado esperado: o ajudante abre como «A cada 3 dias» e a unidade «Dias», sem perder horários nem data de início; ao salvar, o arquivo passa a usar `interval` e `unit`.
+
+- [ ] Seção 12 conferida (incluindo 12.1)
 
 ## 13. Instalador e desinstalação (validado em parte)
 
@@ -260,7 +280,7 @@ Itens visuais que só foram verificados por teste automatizado. Confira no aplic
 - [ ] **Tema escuro** em todas as telas e diálogos (sem áreas brancas, textos legíveis).
 - [ ] **Cartão** do ajudante com o botão de histórico, o interruptor, o nome, a pasta, os horários e a próxima execução, sem cortes de texto.
 - [ ] **Diálogo de histórico:** título, subtítulo, lista de ações, falha destacada, rolagem quando há muitas ações.
-- [ ] **Formulário de limpeza:** seção «Quanto limpar» («Tudo» / «Só o que tem mais de»), o contador de dias, «Contar a idade a partir da» («Data de criação» / «Última modificação»), a prévia e os botões «Cancelar» e «Criar ajudante».
+- [ ] **Formulário de limpeza:** seção «Quanto limpar» («Tudo» / «Só o que tem mais de»), o campo da quantidade (setinhas ou digitação) e a unidade («Dias», «Semanas», «Meses», «Anos»), «Contar a idade a partir da» («Data de criação» / «Última modificação»), a prévia e os botões «Cancelar» e «Criar ajudante».
 - [ ] **Diálogo de erro:** título, mensagem, «Mostrar detalhes» e «Fechar».
 - [ ] **Janela mínima** (960 × 700): redimensione até o mínimo e confira que nada sobrepõe nem some; na janela padrão (1280 × 900) cabem 9 cartões sem barra de rolagem; com mais ajudantes só a área dos cartões rola.
 - [ ] **Seleção:** ao selecionar, as ações («Editar», «Remover», «Selecionar todos») aparecem no lugar do filtro, sem empurrar os cartões.

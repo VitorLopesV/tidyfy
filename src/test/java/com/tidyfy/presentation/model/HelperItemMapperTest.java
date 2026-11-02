@@ -19,6 +19,7 @@ import com.tidyfy.domain.HelperId;
 import com.tidyfy.domain.HelperName;
 import com.tidyfy.domain.RecycleBinTarget;
 import com.tidyfy.domain.Schedule;
+import com.tidyfy.domain.ScheduleUnit;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
@@ -53,7 +54,7 @@ class HelperItemMapperTest {
         assertEquals("Organizar", item.name());
         assertEquals(HelperKind.ORGANIZER, item.kind());
         assertEquals(Path.of("C:\\Downloads"), item.folder());
-        assertEquals(1, item.intervalDays());
+        assertEquals(1, item.interval());
         assertEquals(List.of(LocalTime.of(9, 0), LocalTime.of(18, 0)), item.times());
         assertTrue(item.enabled());
         assertNull(item.ageLimit());
@@ -138,7 +139,7 @@ class HelperItemMapperTest {
 
         HelperItem item = mapper.toItem(helper);
 
-        assertEquals(4, item.intervalDays());
+        assertEquals(4, item.interval());
         assertEquals(List.of(LocalTime.of(8, 0), LocalTime.of(20, 0)), item.times());
     }
 
@@ -228,5 +229,24 @@ class HelperItemMapperTest {
     private static CleanerHelper cleaner(CleanupTarget target, AgeLimit limit, boolean enabled) {
         return new CleanerHelper(HelperId.newId(), new HelperName("Limpar"),
                 schedule(1, LocalTime.of(20, 0)), enabled, target, limit);
+    }
+
+    @Test
+    void conveysTheIntervalAndTheUnitOfTheSchedule() {
+        Schedule weekly = new Schedule(2, ScheduleUnit.WEEK, List.of(LocalTime.of(9, 0)), START);
+
+        HelperItem item = mapper.toItem(organizer(weekly, true));
+
+        assertEquals(2, item.interval());
+        assertEquals(ScheduleUnit.WEEK, item.unit());
+    }
+
+    @Test
+    void legacyItemConstructorsDefaultToDays() {
+        HelperItem item = new HelperItem("id", "Nome", HelperKind.ORGANIZER, null, 3,
+                List.of(LocalTime.NOON), true, null, 0);
+
+        assertEquals(3, item.interval());
+        assertEquals(ScheduleUnit.DAY, item.unit());
     }
 }

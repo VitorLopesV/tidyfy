@@ -1,7 +1,10 @@
 package com.tidyfy.presentation.model;
 
 import com.tidyfy.domain.AgeUnit;
+import com.tidyfy.domain.Schedule;
+import com.tidyfy.domain.ScheduleUnit;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -28,8 +31,17 @@ public final class SchedulePreview {
     /** Texto da frequência diária. */
     private static final String EVERY_DAY = "Todo dia";
 
-    /** Modelo da frequência a cada N dias; recebe o intervalo. */
-    private static final String EVERY_N_DAYS = "A cada %d dias";
+    /** Texto da frequência semanal. */
+    private static final String EVERY_WEEK = "Toda semana";
+
+    /** Texto da frequência mensal. */
+    private static final String EVERY_MONTH = "Todo mês";
+
+    /** Texto da frequência anual. */
+    private static final String EVERY_YEAR = "Todo ano";
+
+    /** Modelo da frequência a cada N unidades; recebe o intervalo e a unidade no plural. */
+    private static final String EVERY_N = "A cada %d %s";
 
     /** Unidade no singular. */
     private static final String UNIT_ONE = "dia";
@@ -80,23 +92,39 @@ public final class SchedulePreview {
     }
 
     /**
-     * Descreve a frequência em dias.
+     * Descreve a frequência.
      *
-     * @param intervalDays intervalo, em dias, entre as execuções
-     * @return "Todo dia" ou "A cada N dias"
+     * @param interval intervalo entre as execuções
+     * @param unit     unidade do intervalo
+     * @return "Todo dia", "Toda semana", "Todo mês", "Todo ano" ou "A cada N" seguido da unidade no plural
      */
-    public static String every(int intervalDays) {
-        return intervalDays == 1 ? EVERY_DAY : String.format(EVERY_N_DAYS, intervalDays);
+    public static String every(int interval, ScheduleUnit unit) {
+        if (interval == 1) {
+            return switch (unit) {
+                case DAY -> EVERY_DAY;
+                case WEEK -> EVERY_WEEK;
+                case MONTH -> EVERY_MONTH;
+                case YEAR -> EVERY_YEAR;
+            };
+        }
+        return String.format(EVERY_N, interval, unit(interval, unit));
     }
 
     /**
-     * Devolve a unidade do intervalo, no singular ou no plural.
+     * Devolve o nome da unidade da frequência, no singular ou no plural.
      *
-     * @param intervalDays intervalo, em dias
-     * @return "dia" ou "dias"
+     * @param interval intervalo entre as execuções
+     * @param unit     unidade do intervalo
+     * @return ex.: "semana" para 1 e "semanas" para 2
      */
-    public static String unit(int intervalDays) {
-        return intervalDays == 1 ? UNIT_ONE : UNIT_MANY;
+    public static String unit(int interval, ScheduleUnit unit) {
+        AgeUnit equivalent = switch (unit) {
+            case DAY -> AgeUnit.DAY;
+            case WEEK -> AgeUnit.WEEK;
+            case MONTH -> AgeUnit.MONTH;
+            case YEAR -> AgeUnit.YEAR;
+        };
+        return ageUnit(equivalent, interval);
     }
 
     /**
@@ -129,15 +157,16 @@ public final class SchedulePreview {
     /**
      * Resume a frequência e os horários em uma frase.
      *
-     * @param intervalDays intervalo, em dias, entre as execuções
-     * @param times        horários do dia
+     * @param interval intervalo entre as execuções
+     * @param unit     unidade do intervalo
+     * @param times    horários do dia
      * @return a frase, ex.: "Todo dia às 08:00 e 18:00."
      */
-    public static String summary(int intervalDays, List<LocalTime> times) {
+    public static String summary(int interval, ScheduleUnit unit, List<LocalTime> times) {
         if (times.isEmpty()) {
-            return String.format(SUMMARY_WITHOUT_TIMES, every(intervalDays));
+            return String.format(SUMMARY_WITHOUT_TIMES, every(interval, unit));
         }
-        return String.format(SUMMARY_WITH_TIMES, every(intervalDays), joinTimes(times));
+        return String.format(SUMMARY_WITH_TIMES, every(interval, unit), joinTimes(times));
     }
 
     /**
@@ -156,27 +185,47 @@ public final class SchedulePreview {
     }
 
     /**
-     * Informa se o ajudante executa no dia indicado. O dia 0 é hoje; o ajudante roda hoje e depois a cada
-     * {@code intervalDays} dias.
+     * Informa se o ajudante executa no dia indicado. O dia 0 é hoje, o dia de início da frequência.
      *
-     * @param dayOffset    dias a partir de hoje
-     * @param intervalDays intervalo, em dias, entre as execuções
+     * @param today     dia de hoje
+     * @param dayOffset dias a partir de hoje
+     * @param interval  intervalo entre as execuções
+     * @param unit      unidade do intervalo
      * @return {@code true} quando há execução nesse dia
      */
-    public static boolean runsOn(int dayOffset, int intervalDays) {
-        return dayOffset % intervalDays == 0;
+    public static boolean runsOn(LocalDate today, int dayOffset, int interval, ScheduleUnit unit) {
+        return previewSchedule(today, interval, unit).occursOn(today.plusDays(dayOffset));
     }
 
     /**
      * Conta as execuções dentro da prévia.
      *
-     * @param intervalDays intervalo, em dias, entre as execuções
-     * @param timesPerDay  horários por dia de execução
+     * @param today       dia de hoje
+     * @param interval    intervalo entre as execuções
+     * @param unit        unidade do intervalo
+     * @param timesPerDay horários por dia de execução
      * @return total de execuções em {@link #DAYS} dias
      */
-    public static int runCount(int intervalDays, int timesPerDay) {
-        int days = (DAYS - 1) / intervalDays + 1;
+    public static int runCount(LocalDate today, int interval, ScheduleUnit unit, int timesPerDay) {
+        int days = 0;
+        for (int offset = 0; offset < DAYS; offset++) {
+            if (runsOn(today, offset, interval, unit)) {
+                days++;
+            }
+        }
         return days * timesPerDay;
+    }
+
+    /**
+     * Monta a frequência da prévia, que começa hoje.
+     *
+     * @param today    dia de hoje
+     * @param interval intervalo entre as execuções
+     * @param unit     unidade do intervalo
+     * @return a frequência, com um único horário (só os dias importam)
+     */
+    private static Schedule previewSchedule(LocalDate today, int interval, ScheduleUnit unit) {
+        return new Schedule(interval, unit, List.of(LocalTime.MIDNIGHT), today);
     }
 
     /**

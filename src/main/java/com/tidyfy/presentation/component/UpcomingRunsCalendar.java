@@ -1,5 +1,6 @@
 package com.tidyfy.presentation.component;
 
+import com.tidyfy.domain.ScheduleUnit;
 import com.tidyfy.presentation.model.SchedulePreview;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -7,7 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
@@ -41,11 +44,17 @@ public final class UpcomingRunsCalendar extends VBox {
     /** Atualiza o calendário quando o intervalo ou os horários mudam. */
     private final InvalidationListener refresh = observable -> refresh(true);
 
-    /** Intervalo, em dias, entre as execuções. */
-    private IntegerProperty intervalDays = new SimpleIntegerProperty(1);
+    /** Intervalo entre as execuções, na unidade escolhida. */
+    private IntegerProperty interval = new SimpleIntegerProperty(1);
+
+    /** Unidade do intervalo. */
+    private ObjectProperty<ScheduleUnit> unit = new SimpleObjectProperty<>(ScheduleUnit.DAY);
 
     /** Horários do dia em que o ajudante executa. */
     private ObservableList<LocalTime> times = FXCollections.observableArrayList();
+
+    /** Primeiro dia exibido (hoje), também o dia de início da frequência. */
+    private final LocalDate firstDay;
 
     // Constantes
 
@@ -101,6 +110,7 @@ public final class UpcomingRunsCalendar extends VBox {
      * @param today primeiro dia exibido
      */
     UpcomingRunsCalendar(LocalDate today) {
+        this.firstDay = today;
         getStyleClass().add(STYLE_CLASS);
         setSpacing(12);
 
@@ -147,15 +157,19 @@ public final class UpcomingRunsCalendar extends VBox {
     /**
      * Liga o calendário ao intervalo e aos horários do formulário; ele se atualiza quando eles mudam.
      *
-     * @param intervalDays intervalo, em dias, entre as execuções
-     * @param times        horários do dia
+     * @param interval intervalo entre as execuções
+     * @param unit     unidade do intervalo
+     * @param times    horários do dia
      */
-    public void bind(IntegerProperty intervalDays, ObservableList<LocalTime> times) {
-        this.intervalDays.removeListener(refresh);
+    public void bind(IntegerProperty interval, ObjectProperty<ScheduleUnit> unit, ObservableList<LocalTime> times) {
+        this.interval.removeListener(refresh);
+        this.unit.removeListener(refresh);
         this.times.removeListener(refresh);
-        this.intervalDays = intervalDays;
+        this.interval = interval;
+        this.unit = unit;
         this.times = times;
-        intervalDays.addListener(refresh);
+        interval.addListener(refresh);
+        unit.addListener(refresh);
         times.addListener(refresh);
         refresh(false);
     }
@@ -166,10 +180,12 @@ public final class UpcomingRunsCalendar extends VBox {
      * @param animate {@code true} para animar os dias que passam a ser destacados
      */
     private void refresh(boolean animate) {
-        int interval = intervalDays.get();
+        int interval = this.interval.get();
+        ScheduleUnit unit = this.unit.get();
+        LocalDate today = firstDay;
         for (int i = 0; i < days.size(); i++) {
             Label day = days.get(i);
-            boolean runs = SchedulePreview.runsOn(i, interval);
+            boolean runs = SchedulePreview.runsOn(today, i, interval, unit);
             boolean marked = day.getStyleClass().contains(RUN_STYLE_CLASS);
             if (runs && !marked) {
                 day.getStyleClass().add(RUN_STYLE_CLASS);
@@ -180,9 +196,9 @@ public final class UpcomingRunsCalendar extends VBox {
                 day.getStyleClass().remove(RUN_STYLE_CLASS);
             }
         }
-        String runs = SchedulePreview.runsLabel(SchedulePreview.runCount(interval, times.size()));
+        String runs = SchedulePreview.runsLabel(SchedulePreview.runCount(today, interval, unit, times.size()));
         badge.setText(runs);
         grid.setAccessibleText(String.format(ACCESSIBLE_TEXT, runs, SchedulePreview.DAYS));
-        summary.setText(SchedulePreview.summary(interval, times));
+        summary.setText(SchedulePreview.summary(interval, unit, times));
     }
 }

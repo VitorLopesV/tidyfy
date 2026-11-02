@@ -156,4 +156,66 @@ class ScheduleCalculatorTest {
         assertThrows(NullPointerException.class, () -> at("2026-03-10T08:00").previousExecution(null));
         assertThrows(NullPointerException.class, () -> at("2026-03-10T08:00").progress(null));
     }
+
+    private static Schedule schedule(int interval, ScheduleUnit unit, LocalDate start, String... times) {
+        return new Schedule(interval, unit, Arrays.stream(times).map(LocalTime::parse).toList(), start);
+    }
+
+    @Test
+    void weeklyNextSkipsToTheNextOccurrenceWeekday() {
+        Schedule weekly = schedule(2, ScheduleUnit.WEEK, START, "08:00");
+        assertEquals(LocalDateTime.parse("2026-03-24T08:00"), at("2026-03-12T09:00").nextExecution(weekly));
+        assertEquals(LocalDateTime.parse("2026-03-24T08:00"), at("2026-03-10T09:00").nextExecution(weekly));
+        assertEquals(LocalDateTime.parse("2026-03-10T08:00"), at("2026-03-10T07:00").nextExecution(weekly));
+    }
+
+    @Test
+    void weeklyPreviousIsTheLastOccurrenceAtTheLastTime() {
+        Schedule weekly = schedule(2, ScheduleUnit.WEEK, START, "08:00", "18:00");
+        assertEquals(LocalDateTime.parse("2026-03-10T18:00"),
+                at("2026-03-20T12:00").previousExecution(weekly).orElseThrow());
+        assertEquals(LocalDateTime.parse("2026-03-24T08:00"),
+                at("2026-03-24T09:00").previousExecution(weekly).orElseThrow());
+        assertTrue(at("2026-03-10T07:00").previousExecution(weekly).isEmpty());
+    }
+
+    @Test
+    void monthlyNextAndPreviousFollowTheCalendar() {
+        Schedule monthly = schedule(3, ScheduleUnit.MONTH, LocalDate.of(2026, 1, 15), "10:00");
+        assertEquals(LocalDateTime.parse("2026-04-15T10:00"), at("2026-02-01T00:00").nextExecution(monthly));
+        assertEquals(LocalDateTime.parse("2026-07-15T10:00"), at("2026-04-15T10:00").nextExecution(monthly));
+        assertEquals(LocalDateTime.parse("2026-04-15T10:00"),
+                at("2026-06-30T00:00").previousExecution(monthly).orElseThrow());
+    }
+
+    @Test
+    void monthlyFromTheEndOfTheMonthUsesTheLastDay() {
+        Schedule monthly = schedule(1, ScheduleUnit.MONTH, LocalDate.of(2026, 1, 31), "10:00");
+        assertEquals(LocalDateTime.parse("2026-02-28T10:00"), at("2026-02-01T00:00").nextExecution(monthly));
+        assertEquals(LocalDateTime.parse("2026-02-28T10:00"),
+                at("2026-03-15T00:00").previousExecution(monthly).orElseThrow());
+    }
+
+    @Test
+    void yearlyNextAndPreviousFollowTheAnniversary() {
+        Schedule yearly = schedule(1, ScheduleUnit.YEAR, LocalDate.of(2026, 3, 10), "09:00");
+        assertEquals(LocalDateTime.parse("2027-03-10T09:00"), at("2026-03-10T09:00").nextExecution(yearly));
+        assertEquals(LocalDateTime.parse("2028-03-10T09:00"), at("2027-06-01T00:00").nextExecution(yearly));
+        assertEquals(LocalDateTime.parse("2027-03-10T09:00"),
+                at("2028-01-01T00:00").previousExecution(yearly).orElseThrow());
+    }
+
+    @Test
+    void beforeTheStartDateNextIsTheFirstTimeOfTheStartDateForEveryUnit() {
+        for (ScheduleUnit unit : ScheduleUnit.values()) {
+            assertEquals(LocalDateTime.parse("2026-03-10T08:00"),
+                    at("2026-01-01T00:00").nextExecution(schedule(1, unit, START, "08:00", "20:00")));
+        }
+    }
+
+    @Test
+    void weeklyProgressGrowsBetweenOccurrences() {
+        Schedule weekly = schedule(1, ScheduleUnit.WEEK, START, "08:00");
+        assertEquals(0.5, at("2026-03-13T20:00").progress(weekly), 0.001);
+    }
 }

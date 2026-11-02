@@ -1,5 +1,6 @@
 package com.tidyfy.presentation.component;
 
+import com.tidyfy.domain.ScheduleUnit;
 import com.tidyfy.presentation.model.SchedulePreview;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -7,7 +8,9 @@ import java.util.Collection;
 import java.util.List;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -17,18 +20,27 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 /**
- * Edita a frequência: a cada quantos dias e em quais horários (pelo menos um, sem repetir).
+ * Edita a frequência: a cada quantos dias, semanas, meses ou anos e em quais horários (pelo menos um, sem repetir).
  */
 public final class ScheduleEditor extends VBox {
 
-    /** Intervalo, em dias, entre as execuções. */
-    private final IntegerProperty intervalDays = new SimpleIntegerProperty(this, PROPERTY_INTERVAL_DAYS, 1);
+    /** Intervalo entre as execuções, na unidade escolhida. */
+    private final IntegerProperty interval = new SimpleIntegerProperty(this, PROPERTY_INTERVAL, 1);
+
+    /** Unidade do intervalo (dia, semana, mês ou ano). */
+    private final ObjectProperty<ScheduleUnit> unit = new SimpleObjectProperty<>(this, PROPERTY_UNIT, ScheduleUnit.DAY);
+
+    /** Grupo das opções de unidade: sempre há uma escolhida. */
+    private final ToggleGroup unitGroup = new ToggleGroup();
 
     /** Horários do dia, em ordem crescente e sem repetição. */
     private final ObservableList<LocalTime> times = FXCollections.observableArrayList();
@@ -60,7 +72,34 @@ public final class ScheduleEditor extends VBox {
     private static final String DUPLICATED = "Esse horário já está na lista.";
 
     /** Nome da propriedade do intervalo. */
-    private static final String PROPERTY_INTERVAL_DAYS = "intervalDays";
+    private static final String PROPERTY_INTERVAL = "interval";
+
+    /** Nome da propriedade da unidade. */
+    private static final String PROPERTY_UNIT = "unit";
+
+    /** Texto da opção de unidade em dias. */
+    private static final String DAY_UNIT_TEXT = "Dias";
+
+    /** Texto da opção de unidade em semanas. */
+    private static final String WEEK_UNIT_TEXT = "Semanas";
+
+    /** Texto da opção de unidade em meses. */
+    private static final String MONTH_UNIT_TEXT = "Meses";
+
+    /** Texto da opção de unidade em anos. */
+    private static final String YEAR_UNIT_TEXT = "Anos";
+
+    /** Classe CSS do grupo de opções de unidade. */
+    private static final String SEGMENTED_STYLE_CLASS = "segmented";
+
+    /** Classe CSS de cada opção de unidade. */
+    private static final String SEGMENT_STYLE_CLASS = "seg";
+
+    /** Identificador do grupo de opções de unidade. */
+    private static final String UNIT_GROUP_ID = "scheduleUnits";
+
+    /** Prefixo do identificador de cada opção de unidade; recebe o nome da unidade. */
+    private static final String UNIT_OPTION_ID_TEMPLATE = "unit%s";
 
     /** Texto do botão que abre o seletor de horário. */
     private static final String ADD_TIME_TEXT = "Adicionar horário";
@@ -68,7 +107,7 @@ public final class ScheduleEditor extends VBox {
     /** Texto do botão que confirma o novo horário. */
     private static final String CONFIRM_TEXT = "Adicionar";
 
-    /** Texto antes do contador de dias. */
+    /** Texto antes do contador do intervalo. */
     private static final String REPEAT_TEXT = "Repetir a cada";
 
     /** Título da lista de horários. */
@@ -180,21 +219,21 @@ public final class ScheduleEditor extends VBox {
         increase.setId(INCREASE_ID);
         addButton.setId(ADD_TIME_ID);
         help.setId(HELP_ID);
-        decrease.disableProperty().bind(intervalDays.lessThanOrEqualTo(1));
-        decrease.setOnAction(event -> intervalDays.set(intervalDays.get() - 1));
-        increase.setOnAction(event -> intervalDays.set(intervalDays.get() + 1));
+        decrease.disableProperty().bind(Bindings.createBooleanBinding(
+                () -> unit.get().decrease(interval.get()) == interval.get(), interval, unit));
+        increase.disableProperty().bind(Bindings.createBooleanBinding(
+                () -> unit.get().increase(interval.get()) == interval.get(), interval, unit));
+        decrease.setOnAction(event -> interval.set(unit.get().decrease(interval.get())));
+        increase.setOnAction(event -> interval.set(unit.get().increase(interval.get())));
         Label value = new Label();
         value.getStyleClass().add(STEPPER_VALUE_STYLE_CLASS);
-        value.textProperty().bind(intervalDays.asString());
+        value.textProperty().bind(interval.asString());
         HBox stepper = new HBox(2, decrease, value, increase);
         stepper.getStyleClass().add(STEPPER_STYLE_CLASS);
         stepper.setAlignment(Pos.CENTER);
-        Label unit = new Label();
-        unit.getStyleClass().add(FIELD_LABEL_STYLE_CLASS);
-        unit.textProperty().bind(Bindings.createStringBinding(() -> SchedulePreview.unit(intervalDays.get()), intervalDays));
         Label repeat = new Label(REPEAT_TEXT);
         repeat.getStyleClass().add(MUTED_STYLE_CLASS);
-        HBox intervalRow = new HBox(12, repeat, stepper, unit);
+        FlowPane intervalRow = new FlowPane(12, 8, repeat, stepper, unitOptions());
         intervalRow.setAlignment(Pos.CENTER_LEFT);
 
         Label timesTitle = new Label(TIMES_TITLE);
@@ -370,30 +409,119 @@ public final class ScheduleEditor extends VBox {
     }
 
     /**
+     * Cria o grupo de opções de unidade. Ao trocar de unidade o intervalo é ajustado ao que ela aceita
+     * (ex.: 5 meses vira 4, pois só divisores de 12 são aceitos).
+     *
+     * @return o grupo de opções
+     */
+    private HBox unitOptions() {
+        HBox box = new HBox(4);
+        box.getStyleClass().add(SEGMENTED_STYLE_CLASS);
+        box.setAlignment(Pos.CENTER_LEFT);
+        box.setId(UNIT_GROUP_ID);
+        for (ScheduleUnit each : ScheduleUnit.values()) {
+            ToggleButton option = new ToggleButton(unitText(each));
+            option.getStyleClass().add(SEGMENT_STYLE_CLASS);
+            option.setId(String.format(UNIT_OPTION_ID_TEMPLATE, each.name()));
+            option.setUserData(each);
+            option.setToggleGroup(unitGroup);
+            box.getChildren().add(option);
+        }
+        selectOption(unit.get());
+        unitGroup.selectedToggleProperty().addListener((obs, old, now) -> {
+            if (now == null) {
+                old.setSelected(true);
+            } else {
+                unit.set((ScheduleUnit) now.getUserData());
+            }
+        });
+        unit.addListener((obs, old, now) -> {
+            interval.set(now.adjust(interval.get()));
+            selectOption(now);
+        });
+        return box;
+    }
+
+    /**
+     * Marca a opção da unidade informada.
+     *
+     * @param value unidade a marcar
+     */
+    private void selectOption(ScheduleUnit value) {
+        for (Toggle option : unitGroup.getToggles()) {
+            if (option.getUserData() == value) {
+                unitGroup.selectToggle(option);
+            }
+        }
+    }
+
+    /**
+     * Texto da opção de uma unidade.
+     *
+     * @param value unidade
+     * @return o texto da opção
+     */
+    private static String unitText(ScheduleUnit value) {
+        return switch (value) {
+            case DAY -> DAY_UNIT_TEXT;
+            case WEEK -> WEEK_UNIT_TEXT;
+            case MONTH -> MONTH_UNIT_TEXT;
+            case YEAR -> YEAR_UNIT_TEXT;
+        };
+    }
+
+    /**
      * Devolve o intervalo entre as execuções.
      *
-     * @return intervalo, em dias
+     * @return intervalo, na unidade escolhida
      */
-    public int getIntervalDays() {
-        return intervalDays.get();
+    public int getInterval() {
+        return interval.get();
     }
 
     /**
      * Define o intervalo entre as execuções.
      *
-     * @param value intervalo, em dias
+     * @param value intervalo, na unidade escolhida
      */
-    public void setIntervalDays(int value) {
-        intervalDays.set(value);
+    public void setInterval(int value) {
+        interval.set(value);
     }
 
     /**
      * Devolve a propriedade do intervalo.
      *
-     * @return propriedade do intervalo, em dias
+     * @return propriedade do intervalo
      */
-    public IntegerProperty intervalDaysProperty() {
-        return intervalDays;
+    public IntegerProperty intervalProperty() {
+        return interval;
+    }
+
+    /**
+     * Devolve a unidade do intervalo.
+     *
+     * @return unidade escolhida
+     */
+    public ScheduleUnit getUnit() {
+        return unit.get();
+    }
+
+    /**
+     * Define a unidade do intervalo, sem ajustar o intervalo. Defina a unidade antes do intervalo.
+     *
+     * @param value unidade
+     */
+    public void setUnit(ScheduleUnit value) {
+        unit.set(value);
+    }
+
+    /**
+     * Devolve a propriedade da unidade.
+     *
+     * @return propriedade da unidade
+     */
+    public ObjectProperty<ScheduleUnit> unitProperty() {
+        return unit;
     }
 
     /**

@@ -5,6 +5,7 @@ import com.tidyfy.domain.Helper;
 import com.tidyfy.domain.HelperId;
 import com.tidyfy.domain.HelperName;
 import com.tidyfy.domain.Schedule;
+import com.tidyfy.domain.ScheduleUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -223,5 +224,98 @@ class SchtasksTaskSchedulerRegisterTest {
         String xml = devScheduler.buildXml(helper(schedule(1, LocalTime.of(9, 0))));
 
         assertTrue(xml.contains("-cp &quot;a&amp;b &lt;c&gt;&quot; --run"));
+    }
+
+    private static Schedule schedule(int interval, ScheduleUnit unit, LocalDate start) {
+        return new Schedule(interval, unit, List.of(LocalTime.of(9, 0)), start);
+    }
+
+    private static List<String> names(Document doc, String parent) {
+        org.w3c.dom.NodeList children = doc.getElementsByTagName(parent).item(0).getChildNodes();
+        List<String> names = new ArrayList<>();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
+                names.add(children.item(i).getNodeName());
+            }
+        }
+        return names;
+    }
+
+    @Test
+    void dailyScheduleUsesScheduleByDay() throws Exception {
+        scheduler.register(helper(schedule(4, ScheduleUnit.DAY, LocalDate.of(2026, 3, 5))));
+
+        Document doc = parse(xmlsSeen.get(0));
+        assertEquals(1, doc.getElementsByTagName("ScheduleByDay").getLength());
+        assertEquals("4", doc.getElementsByTagName("DaysInterval").item(0).getTextContent());
+    }
+
+    @Test
+    void weeklyScheduleUsesScheduleByWeekOnTheWeekdayOfTheStartDate() throws Exception {
+        // 5 de março de 2026 é uma quinta-feira
+        scheduler.register(helper(schedule(2, ScheduleUnit.WEEK, LocalDate.of(2026, 3, 5))));
+
+        Document doc = parse(xmlsSeen.get(0));
+        assertEquals(0, doc.getElementsByTagName("ScheduleByDay").getLength());
+        assertEquals("2", doc.getElementsByTagName("WeeksInterval").item(0).getTextContent());
+        assertEquals(List.of("Thursday"), names(doc, "DaysOfWeek"));
+        assertEquals("2026-03-05T09:00:00", doc.getElementsByTagName("StartBoundary").item(0).getTextContent());
+    }
+
+    @Test
+    void monthlyScheduleListsTheMonthsOfTheInterval() throws Exception {
+        scheduler.register(helper(schedule(3, ScheduleUnit.MONTH, LocalDate.of(2026, 2, 10))));
+
+        Document doc = parse(xmlsSeen.get(0));
+        assertEquals(1, doc.getElementsByTagName("ScheduleByMonth").getLength());
+        assertEquals("10", doc.getElementsByTagName("Day").item(0).getTextContent());
+        assertEquals(List.of("February", "May", "August", "November"), names(doc, "Months"));
+    }
+
+    @Test
+    void everyMonthListsAllTwelveMonths() throws Exception {
+        scheduler.register(helper(schedule(1, ScheduleUnit.MONTH, LocalDate.of(2026, 3, 5))));
+
+        assertEquals(12, names(parse(xmlsSeen.get(0)), "Months").size());
+    }
+
+    @Test
+    void everyTwelveMonthsListsOnlyTheStartMonth() throws Exception {
+        scheduler.register(helper(schedule(12, ScheduleUnit.MONTH, LocalDate.of(2026, 7, 5))));
+
+        assertEquals(List.of("July"), names(parse(xmlsSeen.get(0)), "Months"));
+    }
+
+    @Test
+    void monthlyScheduleFromTheEndOfTheMonthRunsOnTheLastDay() throws Exception {
+        scheduler.register(helper(schedule(1, ScheduleUnit.MONTH, LocalDate.of(2026, 1, 30))));
+
+        assertEquals("Last", parse(xmlsSeen.get(0)).getElementsByTagName("Day").item(0).getTextContent());
+    }
+
+    @Test
+    void yearlyScheduleRunsOnTheStartDayAndMonth() throws Exception {
+        scheduler.register(helper(schedule(1, ScheduleUnit.YEAR, LocalDate.of(2026, 10, 14))));
+
+        Document doc = parse(xmlsSeen.get(0));
+        assertEquals("14", doc.getElementsByTagName("Day").item(0).getTextContent());
+        assertEquals(List.of("October"), names(doc, "Months"));
+    }
+
+    @Test
+    void yearlyScheduleFromTheThirtyFirstKeepsTheDayAndFromLeapDayUsesTheLastDay() throws Exception {
+        scheduler.register(helper(schedule(1, ScheduleUnit.YEAR, LocalDate.of(2026, 12, 31))));
+        scheduler.register(helper(schedule(1, ScheduleUnit.YEAR, LocalDate.of(2028, 2, 29))));
+
+        assertEquals("31", parse(xmlsSeen.get(0)).getElementsByTagName("Day").item(0).getTextContent());
+        assertEquals("Last", parse(xmlsSeen.get(1)).getElementsByTagName("Day").item(0).getTextContent());
+    }
+
+    @Test
+    void monthlyScheduleGeneratesOneTriggerPerTime() throws Exception {
+        scheduler.register(helper(new Schedule(1, ScheduleUnit.MONTH,
+                List.of(LocalTime.of(8, 0), LocalTime.of(20, 0)), LocalDate.of(2026, 3, 5))));
+
+        assertEquals(2, parse(xmlsSeen.get(0)).getElementsByTagName("ScheduleByMonth").getLength());
     }
 }

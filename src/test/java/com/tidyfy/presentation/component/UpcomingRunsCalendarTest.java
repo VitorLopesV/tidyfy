@@ -2,11 +2,13 @@ package com.tidyfy.presentation.component;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.tidyfy.domain.ScheduleUnit;
 import com.tidyfy.presentation.JavaFx;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Label;
@@ -36,7 +38,7 @@ class UpcomingRunsCalendarTest {
         JavaFx.run(() -> {
             IntegerProperty interval = new SimpleIntegerProperty(1);
             UpcomingRunsCalendar calendar = new UpcomingRunsCalendar(MONDAY);
-            calendar.bind(interval, FXCollections.observableArrayList(LocalTime.of(20, 0)));
+            calendar.bind(interval, new SimpleObjectProperty<>(ScheduleUnit.DAY), FXCollections.observableArrayList(LocalTime.of(20, 0)));
 
             interval.set(7);
 
@@ -69,11 +71,37 @@ class UpcomingRunsCalendarTest {
     private static UpcomingRunsCalendar calendar(int intervalDays, LocalTime... times) {
         UpcomingRunsCalendar calendar = new UpcomingRunsCalendar(MONDAY);
         ObservableList<LocalTime> list = FXCollections.observableArrayList(times);
-        calendar.bind(new SimpleIntegerProperty(intervalDays), list);
+        calendar.bind(new SimpleIntegerProperty(intervalDays), new SimpleObjectProperty<>(ScheduleUnit.DAY), list);
         return calendar;
     }
 
     private static long runDays(UpcomingRunsCalendar calendar) {
         return calendar.lookupAll(".day").stream().filter(day -> day.getStyleClass().contains("run")).count();
+    }
+
+    @Test
+    void weeklyScheduleHighlightsTheSameWeekdayEachWeek() {
+        JavaFx.run(() -> {
+            UpcomingRunsCalendar calendar = new UpcomingRunsCalendar(MONDAY);
+            calendar.bind(new SimpleIntegerProperty(1), new SimpleObjectProperty<>(ScheduleUnit.WEEK),
+                    FXCollections.observableArrayList(LocalTime.of(8, 0)));
+
+            assertEquals(2, runDays(calendar));
+        });
+    }
+
+    @Test
+    void updatesWhenTheUnitChanges() {
+        JavaFx.run(() -> {
+            SimpleObjectProperty<ScheduleUnit> unit = new SimpleObjectProperty<>(ScheduleUnit.DAY);
+            UpcomingRunsCalendar calendar = new UpcomingRunsCalendar(MONDAY);
+            calendar.bind(new SimpleIntegerProperty(1), unit, FXCollections.observableArrayList(LocalTime.NOON));
+            assertEquals(14, runDays(calendar));
+
+            unit.set(ScheduleUnit.MONTH);
+
+            assertEquals(1, runDays(calendar));
+            assertEquals("Todo mês às 12:00.", ((Label) calendar.lookup(".summary")).getText());
+        });
     }
 }

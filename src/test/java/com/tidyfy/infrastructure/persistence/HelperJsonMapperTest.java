@@ -21,6 +21,7 @@ import com.tidyfy.domain.HelperId;
 import com.tidyfy.domain.HelperName;
 import com.tidyfy.domain.RecycleBinTarget;
 import com.tidyfy.domain.Schedule;
+import com.tidyfy.domain.ScheduleUnit;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -362,5 +363,65 @@ class HelperJsonMapperTest {
         String badReference = document(1, cleaner(
                 "{\"type\": \"FOLDER\", \"folder\": \"C:\\\\T\", \"ageReference\": \"NEVER\"}", ""));
         assertThrows(HelperJsonException.class, () -> mapper.fromJson(badReference));
+    }
+
+    /**
+     * A frequência é gravada em interval e unit e lida de volta igual, para cada unidade.
+     */
+    @Test
+    void roundTripsEveryScheduleUnit() {
+        for (ScheduleUnit unit : ScheduleUnit.values()) {
+            Schedule unitSchedule = new Schedule(1, unit, List.of(LocalTime.of(9, 0)), LocalDate.of(2026, 10, 14));
+            Helper helper = new FolderOrganizerHelper(HelperId.newId(), new HelperName("Organizar"), unitSchedule,
+                    true, Path.of("C:\\Users\\ana\\Downloads"));
+
+            String json = mapper.toJson(List.of(helper));
+
+            assertTrue(json.contains("\"interval\""));
+            assertTrue(json.contains("\"" + unit.name() + "\""));
+            assertEquals(helper, mapper.fromJson(json).get(0));
+        }
+    }
+
+    /**
+     * Intervalo maior que 1 em semanas e em meses volta igual.
+     */
+    @Test
+    void roundTripsIntervalsGreaterThanOne() {
+        for (Schedule each : List.of(
+                new Schedule(2, ScheduleUnit.WEEK, List.of(LocalTime.NOON), LocalDate.of(2026, 10, 14)),
+                new Schedule(6, ScheduleUnit.MONTH, List.of(LocalTime.NOON), LocalDate.of(2026, 10, 14)))) {
+            Helper helper = new FolderOrganizerHelper(HelperId.newId(), new HelperName("Organizar"), each, true,
+                    Path.of("C:\\Users"));
+            assertEquals(helper, mapper.fromJson(mapper.toJson(List.of(helper))).get(0));
+        }
+    }
+
+    /**
+     * O campo antigo intervalDays continua sendo lido, em dias.
+     */
+    @Test
+    void readsLegacyIntervalDaysAsDays() {
+        String legacy = "{\"intervalDays\": 5, \"times\": [\"09:00\"], \"startDate\": \"2026-10-14\"}";
+
+        Helper helper = mapper.fromJson(document(1, organizer("FOLDER_ORGANIZER", legacy))).get(0);
+
+        assertEquals(new Schedule(5, ScheduleUnit.DAY, List.of(LocalTime.of(9, 0)), LocalDate.of(2026, 10, 14)),
+                helper.schedule());
+    }
+
+    /**
+     * Unidade ausente ou desconhecida, ou intervalo que a unidade não aceita, é erro.
+     */
+    @Test
+    void rejectsMissingUnknownOrUnacceptedScheduleUnit() {
+        String noUnit = "{\"interval\": 1, \"times\": [\"09:00\"], \"startDate\": \"2026-10-14\"}";
+        String badUnit = "{\"interval\": 1, \"unit\": \"DECADE\", \"times\": [\"09:00\"], \"startDate\": \"2026-10-14\"}";
+        String fiveMonths = "{\"interval\": 5, \"unit\": \"MONTH\", \"times\": [\"09:00\"], \"startDate\": \"2026-10-14\"}";
+        String twoYears = "{\"interval\": 2, \"unit\": \"YEAR\", \"times\": [\"09:00\"], \"startDate\": \"2026-10-14\"}";
+        for (String invalid : List.of(noUnit, badUnit, fiveMonths, twoYears)) {
+            assertThrows(HelperJsonException.class,
+                    () -> mapper.fromJson(document(1, organizer("FOLDER_ORGANIZER", invalid))));
+        }
     }
 }

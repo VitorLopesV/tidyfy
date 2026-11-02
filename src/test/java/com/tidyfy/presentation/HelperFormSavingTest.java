@@ -104,7 +104,7 @@ class HelperFormSavingTest {
             Parent view = JavaFx.mount(form.createView());
             name(view).setText("  Organizar Downloads ");
             folder(view).setFolder(tempDir.resolve("Downloads"));
-            ((ScheduleEditor) view.lookup("#scheduleEditor")).setIntervalDays(2);
+            ((ScheduleEditor) view.lookup("#scheduleEditor")).setInterval(2);
 
             save(view).fire();
 
@@ -180,7 +180,7 @@ class HelperFormSavingTest {
         repository.with(original);
         JavaFx.run(() -> {
             Parent view = JavaFx.mount(new RecordingOrganizerForm(item(original), saveHelper).createView());
-            ((ScheduleEditor) view.lookup("#scheduleEditor")).setIntervalDays(3);
+            ((ScheduleEditor) view.lookup("#scheduleEditor")).setInterval(3);
 
             save(view).fire();
 

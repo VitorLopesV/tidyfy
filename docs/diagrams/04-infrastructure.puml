@@ -151,8 +151,9 @@ CommandRunner ..> CommandResult
 
 note right of SchtasksTaskScheduler
   Uma tarefa por ajudante, definida em XML, com um
-  gatilho por horário do Schedule (a cada intervalDays
-  dias, a partir de startDate):
+  gatilho por horário do Schedule, a partir de startDate:
+  dia = ScheduleByDay, semana = ScheduleByWeek, mês e
+  ano = ScheduleByMonth (meses listados; ano = 1 mês):
   schtasks /Create /TN "Tidyfy\{id}" /XML {arquivo} /F
   unregister: schtasks /Delete /TN "Tidyfy\{id}" /F; se
   falhar, /Query decide: tarefa inexistente e ignorada.

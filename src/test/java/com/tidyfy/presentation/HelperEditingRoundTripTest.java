@@ -20,6 +20,7 @@ import com.tidyfy.domain.HelperRules;
 import com.tidyfy.domain.ProtectedFolders;
 import com.tidyfy.domain.RecycleBinTarget;
 import com.tidyfy.domain.Schedule;
+import com.tidyfy.domain.ScheduleUnit;
 import com.tidyfy.presentation.component.FolderField;
 import com.tidyfy.presentation.component.ScheduleEditor;
 import com.tidyfy.presentation.component.ToggleSwitch;
@@ -161,10 +162,56 @@ class HelperEditingRoundTripTest {
         });
     }
 
+    @Test
+    void weeklyOrganizerIsEditedWithItsUnitAndSavedUnchanged() {
+        Helper original = new FolderOrganizerHelper(HelperId.newId(), new HelperName("Organizar semanal"),
+                new Schedule(2, ScheduleUnit.WEEK, TIMES, OLD_START), true, tempDir.resolve("Downloads"));
+        JavaFx.run(() -> {
+            Parent view = openEditing(original, HelperKind.ORGANIZER);
+
+            ScheduleEditor editor = (ScheduleEditor) view.lookup("#scheduleEditor");
+            assertEquals(ScheduleUnit.WEEK, editor.getUnit());
+            assertEquals(2, editor.getInterval());
+
+            save(view).fire();
+
+            assertEquals(original, onlySaved());
+        });
+    }
+
+    @Test
+    void monthlyOrganizerKeepsItsIntervalWhenOpenedForEditing() {
+        Helper original = new FolderOrganizerHelper(HelperId.newId(), new HelperName("Organizar mensal"),
+                new Schedule(6, ScheduleUnit.MONTH, TIMES, OLD_START), true, tempDir.resolve("Downloads"));
+        JavaFx.run(() -> {
+            Parent view = openEditing(original, HelperKind.ORGANIZER);
+
+            ScheduleEditor editor = (ScheduleEditor) view.lookup("#scheduleEditor");
+            assertEquals(ScheduleUnit.MONTH, editor.getUnit());
+            assertEquals(6, editor.getInterval());
+        });
+    }
+
+    @Test
+    void changingOnlyTheUnitRestartsTheStartDate() {
+        Helper original = new FolderOrganizerHelper(HelperId.newId(), new HelperName("Organizar"),
+                new Schedule(1, TIMES, OLD_START), true, tempDir.resolve("Downloads"));
+        JavaFx.run(() -> {
+            Parent view = openEditing(original, HelperKind.ORGANIZER);
+
+            ((ScheduleEditor) view.lookup("#scheduleEditor")).setUnit(ScheduleUnit.WEEK);
+            save(view).fire();
+
+            Helper saved = onlySaved();
+            assertEquals(ScheduleUnit.WEEK, saved.schedule().unit());
+            assertEquals(LocalDate.of(2026, 3, 10), saved.schedule().startDate());
+        });
+    }
+
     private void assertCommonFields(Parent view, Helper original, boolean enabled) {
         assertEquals(original.name().value(), ((TextField) view.lookup("#nameField")).getText());
         ScheduleEditor editor = (ScheduleEditor) view.lookup("#scheduleEditor");
-        assertEquals(original.schedule().intervalDays(), editor.getIntervalDays());
+        assertEquals(original.schedule().interval(), editor.getInterval());
         assertEquals(TIMES, editor.getTimes());
         assertEquals(enabled, ((ToggleSwitch) view.lookup("#enabledSwitch")).isSelected());
     }

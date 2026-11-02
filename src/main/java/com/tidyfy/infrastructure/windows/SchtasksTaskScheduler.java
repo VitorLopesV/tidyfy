@@ -10,7 +10,9 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -122,16 +124,53 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
     /** Fechamento da lista de gatilhos. */
     private static final String TRIGGERS_CLOSE = "  </Triggers>\n";
 
-    /** Modelo de um gatilho: início e intervalo em dias. */
+    /** Modelo de um gatilho: início e a recorrência (por dia, semana ou mês). */
     private static final String TRIGGER_TEMPLATE = """
               <CalendarTrigger>
                 <StartBoundary>%s</StartBoundary>
                 <Enabled>true</Enabled>
+            %s  </CalendarTrigger>
+            """;
+
+    /** Recorrência a cada N dias. */
+    private static final String BY_DAY_TEMPLATE = """
                 <ScheduleByDay>
                   <DaysInterval>%d</DaysInterval>
                 </ScheduleByDay>
-              </CalendarTrigger>
             """;
+
+    /** Recorrência a cada N semanas, no dia da semana da data de início. */
+    private static final String BY_WEEK_TEMPLATE = """
+                <ScheduleByWeek>
+                  <DaysOfWeek>
+                    <%s />
+                  </DaysOfWeek>
+                  <WeeksInterval>%d</WeeksInterval>
+                </ScheduleByWeek>
+            """;
+
+    /** Recorrência mensal: o dia do mês e os meses do ano em que roda. */
+    private static final String BY_MONTH_TEMPLATE = """
+                <ScheduleByMonth>
+                  <DaysOfMonth>
+                    <Day>%s</Day>
+                  </DaysOfMonth>
+                  <Months>
+            %s      </Months>
+                </ScheduleByMonth>
+            """;
+
+    /** Modelo de um mês dentro de {@code Months}; recebe o nome do mês em inglês. */
+    private static final String MONTH_ENTRY_TEMPLATE = "        <%s />\n";
+
+    /** Valor de {@code Day} que significa o último dia do mês. */
+    private static final String LAST_DAY = "Last";
+
+    /** Primeiro dia do mês que a recorrência mensal trata como "último dia do mês". */
+    private static final int FIRST_LAST_DAY_OF_MONTH = 29;
+
+    /** Meses por ano. */
+    private static final int MONTHS_PER_YEAR = 12;
 
     /** Principal (só com o usuário logado) e configurações (bateria, executar assim que possível). */
     private static final String PRINCIPALS_AND_SETTINGS = """
@@ -241,7 +280,7 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
     }
 
     /**
-     * Monta o XML da tarefa: um gatilho por horário, a cada {@code intervalDays} dias desde a data de início.
+     * Monta o XML da tarefa: um gatilho por horário, a cada {@code interval} dias, semanas, meses ou anos desde a data de início.
      *
      * @param helper ajudante a agendar
      * @return o texto XML (sem a marca de ordem de bytes)
@@ -251,13 +290,61 @@ public final class SchtasksTaskScheduler implements TaskScheduler {
         StringBuilder xml = new StringBuilder(XML_HEADER).append(TASK_OPEN).append(TRIGGERS_OPEN);
         for (LocalTime time : schedule.times()) {
             String start = schedule.startDate().atTime(time).format(START_BOUNDARY_FORMAT);
-            xml.append(String.format(TRIGGER_TEMPLATE, start, schedule.intervalDays()));
+            xml.append(String.format(TRIGGER_TEMPLATE, start, recurrence(schedule)));
         }
         xml.append(TRIGGERS_CLOSE).append(PRINCIPALS_AND_SETTINGS)
                 .append(String.format(ACTIONS_TEMPLATE, escape(command.executable().toString()),
                         escape(command.argumentsFor(helper.id()))))
                 .append(TASK_CLOSE);
         return xml.toString();
+    }
+
+    /**
+     * Monta a recorrência do gatilho conforme a unidade da frequência. O agendador não tem "a cada N meses" nem
+     * "a cada N anos" diretos; por isso o mês lista os meses do ano em que roda (a unidade só aceita divisores de
+     * 12) e o ano roda no mês da data de início. Dia de início 29 a 31 vira "último dia do mês"; no ano, só o
+     * 29 de fevereiro.
+     *
+     * @param schedule frequência do ajudante
+     * @return o trecho XML da recorrência
+     */
+    private static String recurrence(Schedule schedule) {
+        LocalDate start = schedule.startDate();
+        return switch (schedule.unit()) {
+            case DAY -> String.format(BY_DAY_TEMPLATE, schedule.interval());
+            case WEEK -> String.format(BY_WEEK_TEMPLATE, englishName(start.getDayOfWeek()), schedule.interval());
+            case MONTH -> monthly(start, schedule.interval(), start.getDayOfMonth() >= FIRST_LAST_DAY_OF_MONTH);
+            case YEAR -> monthly(start, MONTHS_PER_YEAR, start.getMonth() == Month.FEBRUARY
+                    && start.getDayOfMonth() == FIRST_LAST_DAY_OF_MONTH);
+        };
+    }
+
+    /**
+     * Monta a recorrência mensal.
+     *
+     * @param start       data de início
+     * @param everyMonths intervalo, em meses (divisor de 12)
+     * @param lastDay     {@code true} para rodar no último dia do mês
+     * @return o trecho XML
+     */
+    private static String monthly(LocalDate start, int everyMonths, boolean lastDay) {
+        StringBuilder months = new StringBuilder();
+        for (int offset = 0; offset < MONTHS_PER_YEAR; offset += everyMonths) {
+            months.append(String.format(MONTH_ENTRY_TEMPLATE, englishName(start.getMonth().plus(offset))));
+        }
+        String day = lastDay ? LAST_DAY : String.valueOf(start.getDayOfMonth());
+        return String.format(BY_MONTH_TEMPLATE, day, months);
+    }
+
+    /**
+     * Nome em inglês do dia da semana ou do mês, como o XML do agendador o espera.
+     *
+     * @param value dia da semana ou mês
+     * @return o nome com a primeira letra maiúscula, ex.: "Monday"
+     */
+    private static String englishName(Enum<?> value) {
+        String name = value.name();
+        return name.charAt(0) + name.substring(1).toLowerCase(Locale.ROOT);
     }
 
     /**

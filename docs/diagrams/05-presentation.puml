@@ -176,7 +176,8 @@ package "com.tidyfy.presentation.model" {
     + name : String
     + kind : HelperKind
     + folder : Path
-    + intervalDays : int
+    + interval : int
+    + unit : ScheduleUnit
     + times : List<LocalTime>
     + enabled : boolean
     + nextRun : String
@@ -253,9 +254,11 @@ package "com.tidyfy.presentation.model" {
   }
 
   class SchedulePreview <<utility>> {
-    + {static} every(intervalDays : int) : String
-    + {static} summary(intervalDays : int, times : List<LocalTime>) : String
-    + {static} runCount(intervalDays : int, timesPerDay : int) : int
+    + {static} every(interval : int, unit : ScheduleUnit) : String
+    + {static} unit(interval : int, unit : ScheduleUnit) : String
+    + {static} summary(interval : int, unit : ScheduleUnit, times : List<LocalTime>) : String
+    + {static} runsOn(today : LocalDate, dayOffset : int, interval : int, unit : ScheduleUnit) : boolean
+    + {static} runCount(today : LocalDate, interval : int, unit : ScheduleUnit, timesPerDay : int) : int
   }
 }
 

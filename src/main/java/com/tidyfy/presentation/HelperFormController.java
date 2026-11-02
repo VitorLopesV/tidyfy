@@ -8,6 +8,7 @@ import com.tidyfy.domain.HelperName;
 import com.tidyfy.domain.HelperNameAlreadyUsedException;
 import com.tidyfy.domain.ProtectedFolderException;
 import com.tidyfy.domain.Schedule;
+import com.tidyfy.domain.ScheduleUnit;
 import com.tidyfy.presentation.component.Animations;
 import com.tidyfy.presentation.component.FolderField;
 import com.tidyfy.presentation.component.Fxml;
@@ -254,7 +255,8 @@ public abstract class HelperFormController {
             enabledSwitch.setSelected(true);
         } else {
             nameField.setText(editing.name());
-            scheduleEditor.setIntervalDays(editing.intervalDays());
+            scheduleEditor.setUnit(editing.unit());
+            scheduleEditor.setInterval(editing.interval());
             scheduleEditor.setTimes(editing.times());
             enabledSwitch.setSelected(editing.enabled());
             showTarget(editing);
@@ -274,7 +276,7 @@ public abstract class HelperFormController {
         nameError.addListener((obs, was, error) -> showNameError(error));
         saveButton.disableProperty().bind(nameMissing.or(targetMissing()));
 
-        calendar.bind(scheduleEditor.intervalDaysProperty(), scheduleEditor.getTimes());
+        calendar.bind(scheduleEditor.intervalProperty(), scheduleEditor.unitProperty(), scheduleEditor.getTimes());
         showEnabled(enabledSwitch.isSelected());
         enabledSwitch.selectedProperty().addListener((obs, was, on) -> showEnabled(on));
         enabledSwitch.accessibleTextProperty().bind(enabledTitle.textProperty());
@@ -419,18 +421,19 @@ public abstract class HelperFormController {
     }
 
     /**
-     * Frequência da tela. A data de início é hoje ao criar ou quando a frequência (intervalo ou horários)
+     * Frequência da tela. A data de início é hoje ao criar ou quando a frequência (intervalo, unidade ou horários)
      * mudou; do contrário mantém a do ajudante em edição.
      */
     private Schedule schedule() {
-        int interval = scheduleEditor.getIntervalDays();
+        int interval = scheduleEditor.getInterval();
+        ScheduleUnit unit = scheduleEditor.getUnit();
         List<LocalTime> times = scheduleEditor.getTimes().stream().sorted().toList();
         LocalDate start = LocalDate.now(clock);
         if (editing != null && editing.startDate() != null
-                && editing.intervalDays() == interval && editing.times().equals(times)) {
+                && editing.interval() == interval && editing.unit() == unit && editing.times().equals(times)) {
             start = editing.startDate();
         }
-        return new Schedule(interval, times, start);
+        return new Schedule(interval, unit, times, start);
     }
 
     /**

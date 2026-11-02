@@ -35,7 +35,7 @@ O usuário cria quantos ajudantes quiser (dentro do limite abaixo), escolhendo o
 - **Sem sobreposição.** Dois ajudantes do **mesmo tipo** não podem trabalhar na mesma pasta. Já um ajudante de organização e um de limpeza podem cuidar da mesma pasta. Na limpeza, a lixeira também conta como um lugar: só um ajudante de limpeza pode cuidar dela. Isso vale também para pastas uma dentro da outra: não pode haver um ajudante em `Downloads` e outro do mesmo tipo em `Downloads\Imagens`.
 - **Até 20 ajudantes de cada tipo.** São até 20 ajudantes de organização e até 20 de limpeza. Ao atingir o limite, é preciso remover um ajudante daquele tipo para criar outro.
 - **Liga e desliga.** Qualquer ajudante pode ser desligado sem ser apagado, e volta a trabalhar quando for ligado de novo.
-- **Frequência própria.** Cada ajudante tem sua própria rotina: a cada quantos dias ele trabalha e em quais horários do dia. Tudo isso é configurado pelo usuário.
+- **Frequência própria.** Cada ajudante tem sua própria rotina: de quanto em quanto tempo ele trabalha (a cada N dias, semanas, meses ou anos) e em quais horários do dia. Tudo isso é configurado pelo usuário.
 - **Histórico.** Cada execução é registrada: quando o ajudante rodou e o que ele fez. O usuário vê esse histórico na própria interface, e ele é guardado por **30 dias**, mesmo que o ajudante seja removido. Ao remover um ajudante, a tarefa dele também é removida do Agendador do Windows.
 - **Pastas sensíveis são recusadas.** O Tidyfy não deixa escolher estas pastas: `C:\Windows` (incluindo `System32`), `C:\Program Files`, `C:\Program Files (x86)`, `C:\ProgramData`, a raiz de qualquer disco (como `C:\`) e a pasta do usuário em si (`C:\Users\nome`; as pastas dentro dela, como Downloads, podem).
 

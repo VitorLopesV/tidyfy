@@ -126,9 +126,24 @@ package "com.tidyfy.domain" {
   }
 
   class Schedule <<record>> {
-    + intervalDays : int
+    + interval : int
+    + unit : ScheduleUnit
     + times : List<LocalTime>
     + startDate : LocalDate
+    + occurrence(index : long) : LocalDate
+    + indexOnOrAfter(date : LocalDate) : long
+    + occursOn(date : LocalDate) : boolean
+  }
+
+  enum ScheduleUnit {
+    DAY (qualquer intervalo)
+    WEEK (qualquer intervalo)
+    MONTH (1, 2, 3, 4, 6 ou 12)
+    YEAR (somente 1)
+    + accepts(interval : int) : boolean
+    + increase(interval : int) : int
+    + decrease(interval : int) : int
+    + adjust(interval : int) : int
   }
 
   class ScheduleCalculator {
@@ -248,6 +263,7 @@ Helper --> "1" HelperId
 Helper --> "1" HelperName
 Helper --> "1" Schedule
 ScheduleCalculator ..> Schedule : calcula
+Schedule --> "1" ScheduleUnit
 Helper ..> HelperType
 
 DesktopArrangerHelper --> "1" DesktopLayout
@@ -334,18 +350,22 @@ end note
 note bottom of ScheduleCalculator
   Próxima e anterior execução e o progresso (0 a 1)
   entre elas, para os cartões da lista. Os dias de
-  execução são os que distam de startDate um múltiplo
-  de intervalDays. Um horário igual a agora conta como
+  execução vêm de Schedule.occurrence: startDate mais
+  um múltiplo do intervalo, em dias, semanas, meses ou
+  anos. Um horário igual a agora conta como
   já executado. Sem execução anterior, o progresso é 0.
 end note
 
 note left of Schedule
-  A cada intervalDays dias (>= 1),
+  A cada interval (>= 1) unit (dia, semana, mês ou ano),
   em cada um dos horários de times
   (ao menos um, sem repetição).
   startDate: dia em que foi salvo ou teve a
   frequência alterada; é de onde se conta o intervalo.
-  Sem limite máximo: o usuário define.
+  Mês: mesmo dia do mês (início em 29 a 31 = último dia).
+  Mês só aceita 1, 2, 3, 4, 6 ou 12 e ano só 1, por
+  causa do Agendador do Windows. Dias e semanas: sem
+  limite máximo, o usuário define.
 end note
 
 note bottom of HelperRules

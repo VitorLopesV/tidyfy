@@ -249,7 +249,7 @@ public final class HelperCard extends VBox {
      * Mostra a frequência, os primeiros horários, a próxima execução e a barra de progresso.
      */
     private void showSchedule() {
-        everyLabel.setText(SchedulePreview.every(item.intervalDays()));
+        everyLabel.setText(SchedulePreview.every(item.interval(), item.unit()));
         List<LocalTime> times = item.times();
         times.stream().limit(TIMES_SHOWN).forEach(time -> timeChips.getChildren().add(chip(SchedulePreview.time(time))));
         if (times.size() > TIMES_SHOWN) {

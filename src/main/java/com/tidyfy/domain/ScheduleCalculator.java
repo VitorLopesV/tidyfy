@@ -5,7 +5,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -13,7 +12,7 @@ import java.util.Optional;
  * Calcula, a partir de um {@link Schedule} e do relógio, quando é a próxima execução do ajudante e
  * quanto do intervalo até ela já passou.
  * <p>
- * O ajudante roda no dia de início ({@code startDate}) e depois a cada {@code intervalDays} dias, em cada um
+ * O ajudante roda no dia de início ({@code startDate}) e depois a cada {@code interval} unidades (dias, semanas, meses ou anos), em cada um
  * dos horários do {@code Schedule}. Um horário igual ao instante atual conta como já executado: a próxima
  * execução é sempre estritamente depois do instante atual. Os cálculos usam o fuso do relógio injetado.
  */
@@ -55,21 +54,19 @@ public final class ScheduleCalculator {
         Objects.requireNonNull(schedule, SCHEDULE_NAME);
         LocalDateTime now = LocalDateTime.now(clock);
         LocalDate today = now.toLocalDate();
-        long elapsed = ChronoUnit.DAYS.between(schedule.startDate(), today);
-        if (elapsed < 0) {
+        if (today.isBefore(schedule.startDate())) {
             return schedule.startDate().atTime(firstTime(schedule));
         }
-        long sinceLastValidDay = elapsed % schedule.intervalDays();
-        if (sinceLastValidDay == 0) {
+        long index = schedule.indexOnOrAfter(today);
+        if (schedule.occurrence(index).equals(today)) {
             for (LocalTime time : schedule.times()) {
                 if (time.isAfter(now.toLocalTime())) {
                     return today.atTime(time);
                 }
             }
-            return today.plusDays(schedule.intervalDays()).atTime(firstTime(schedule));
+            index++;
         }
-        long untilNextValidDay = schedule.intervalDays() - sinceLastValidDay;
-        return today.plusDays(untilNextValidDay).atTime(firstTime(schedule));
+        return schedule.occurrence(index).atTime(firstTime(schedule));
     }
 
     /**
@@ -84,24 +81,22 @@ public final class ScheduleCalculator {
         Objects.requireNonNull(schedule, SCHEDULE_NAME);
         LocalDateTime now = LocalDateTime.now(clock);
         LocalDate today = now.toLocalDate();
-        long elapsed = ChronoUnit.DAYS.between(schedule.startDate(), today);
-        if (elapsed < 0) {
+        if (today.isBefore(schedule.startDate())) {
             return Optional.empty();
         }
-        long sinceLastValidDay = elapsed % schedule.intervalDays();
-        if (sinceLastValidDay == 0) {
+        long index = schedule.indexOnOrAfter(today);
+        if (schedule.occurrence(index).equals(today)) {
             for (int i = schedule.times().size() - 1; i >= 0; i--) {
                 LocalTime time = schedule.times().get(i);
                 if (!time.isAfter(now.toLocalTime())) {
                     return Optional.of(today.atTime(time));
                 }
             }
-            if (elapsed == 0) {
-                return Optional.empty();
-            }
-            return Optional.of(today.minusDays(schedule.intervalDays()).atTime(lastTime(schedule)));
         }
-        return Optional.of(today.minusDays(sinceLastValidDay).atTime(lastTime(schedule)));
+        if (index == 0) {
+            return Optional.empty();
+        }
+        return Optional.of(schedule.occurrence(index - 1).atTime(lastTime(schedule)));
     }
 
     /**

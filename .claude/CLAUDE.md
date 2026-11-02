@@ -12,7 +12,7 @@ O usuário cria ajudantes escolhendo um **tipo** e dando um **nome**. Tipos inic
 2. **Limpeza** (`CLEANER`): esvazia a lixeira do Windows **ou** remove os arquivos de **uma** pasta.
 3. **Organizador da área de trabalho** (`DESKTOP_ARRANGER`): reposiciona os ícones da área de trabalho em um de seis layouts (esquerda, direita, topo, base, bordas ou por tipo). Não move nem apaga arquivos, só muda a posição dos ícones. Só pode existir **um**, porque a área de trabalho é única.
 
-Todo ajudante tem: nome, tipo, frequência (a cada N dias, em um ou mais horários do dia) e estado ligado/desligado.
+Todo ajudante tem: nome, tipo, frequência (a cada N dias, semanas, meses ou anos, em um ou mais horários do dia) e estado ligado/desligado.
 
 ## Tecnologias
 
@@ -99,7 +99,17 @@ Os diagramas PlantUML em [docs/diagrams](../docs/diagrams) são a referência do
 
 - **Persistência:** configurações em `helpers.txt` e histórico em `history.txt`, ambos em `%APPDATA%\Tidyfy`, com extensão `.txt` e conteúdo em JSON. A gravação é atômica (arquivo temporário e depois mover).
 - **Acesso simultâneo:** as operações que alteram `helpers.txt`/`history.txt` (ler-alterar-gravar) rodam sob uma trava exclusiva: `ReentrantLock` por arquivo (threads) mais `FileLock` em `<arquivo>.lock` (processos), com espera máxima de 10 s e `UncheckedIOException` ao esgotar (`FileLocks`). O `.lock` fica na pasta; leituras não travam.
-- **Agendador:** uma única tarefa por ajudante, definida em **XML**, com um gatilho por horário. Roda só com o usuário logado (precisa das pastas e da lixeira dele), permite rodar na bateria e executa assim que possível quando perdeu o horário.
+- **Agendador:** uma única tarefa por ajudante, definida em **XML**, com um gatilho (`CalendarTrigger`) por horário. Roda só com o usuário logado (precisa das pastas e da lixeira dele), permite rodar na bateria e executa assim que possível quando perdeu o horário.
+- **Gatilho por unidade da frequência** (`SchtasksTaskScheduler.buildXml`; o `StartBoundary` é a data de início no horário). Os três formatos foram registrados de verdade com `schtasks /Create /XML` no Windows 11 e o Agendador os leu como «Weekly», «Monthly» e «Monthly»:
+
+  | Unidade | Recorrência no XML |
+  |---|---|
+  | Dia | `ScheduleByDay` com `DaysInterval` = intervalo |
+  | Semana | `ScheduleByWeek` com `WeeksInterval` = intervalo e `DaysOfWeek` = o dia da semana da data de início |
+  | Mês | `ScheduleByMonth` com `DaysOfMonth` = o dia da data de início (ou `Last`, o último dia do mês, quando o início foi nos dias 29 a 31) e `Months` = os meses do ano de `intervalo` em `intervalo` a partir do mês de início (por isso só valem divisores de 12: 1 = todos os meses, 3 = 4 meses por ano...) |
+  | Ano | `ScheduleByMonth` só com o mês e o dia da data de início (`Last` apenas para 29 de fevereiro); o Agendador não tem gatilho anual, então «a cada 1 ano» é «uma vez por ano no mesmo mês» |
+
+  Limitação: o Agendador não tem «a cada N meses» nem «a cada N anos» como repetição contínua; só é possível listar os meses de um ano. Por isso o domínio aceita só 1, 2, 3, 4, 6 e 12 meses e 1 ano (veja «Frequência»).
 - **Falha ao salvar:** o Tidyfy tenta registrar no agendador primeiro; se o agendador falhar, a configuração **não** é salva e o erro aparece na tela.
 - **Sincronização:** ao abrir a interface, em segundo plano (thread daemon, `SchedulerSyncStarter`), o `SyncSchedulerUseCase` torna o agendador igual à configuração: registra de novo (o `/F` substitui) a tarefa de cada ajudante ligado, remove a dos desligados e as tarefas órfãs `Tidyfy\{uuid}` (`TaskScheduler.registeredIds`). Falha em um item não impede os demais; as falhas vão para o log e nunca impedem a abertura da interface.
 - **Falha ao executar:** vai para o histórico (`FAILED`) e para o log.
@@ -165,7 +175,7 @@ Campos comuns a todo ajudante:
 | `id` | UUID em texto |
 | `name` | Nome do ajudante |
 | `enabled` | `true` ou `false` |
-| `schedule` | `intervalDays` (inteiro ≥ 1), `times` (lista de horários `HH:mm`, sem repetição, ao menos um) e `startDate` (data ISO `yyyy-MM-dd`) |
+| `schedule` | `interval` (inteiro ≥ 1), `unit` (`DAY`, `WEEK`, `MONTH` ou `YEAR`), `times` (lista de horários `HH:mm`, sem repetição, ao menos um) e `startDate` (data ISO `yyyy-MM-dd`). Em `MONTH` o `interval` é 1, 2, 3, 4, 6 ou 12 e em `YEAR` é 1. Arquivos antigos têm `intervalDays` no lugar de `interval`/`unit`: é lido como `interval` em `DAY` (a `version` continua `1`) e o arquivo passa ao formato novo na próxima gravação |
 
 Campos por tipo:
 
@@ -187,7 +197,7 @@ Organização de pasta:
       "id": "3f2b8c1e-6a4d-4e0b-9c57-1d2a7b9e4f10",
       "name": "Organizar Downloads",
       "enabled": true,
-      "schedule": {"intervalDays": 1, "times": ["09:00", "18:00"], "startDate": "2026-10-14"},
+      "schedule": {"interval": 1, "unit": "DAY", "times": ["09:00", "18:00"], "startDate": "2026-10-14"},
       "folder": "C:\\Users\\ana\\Downloads"
     }
   ]
@@ -202,7 +212,7 @@ Organizador da área de trabalho (item da lista `helpers`):
   "id": "5d0e9b24-7c1a-4f33-b8a6-2e4c6d8f0a13",
   "name": "Arrumar a área de trabalho",
   "enabled": true,
-  "schedule": {"intervalDays": 1, "times": ["08:00"], "startDate": "2026-10-14"},
+  "schedule": {"interval": 1, "unit": "DAY", "times": ["08:00"], "startDate": "2026-10-14"},
   "layout": "LEFT"
 }
 ```
@@ -215,7 +225,7 @@ Limpeza de pasta com limite de idade (item da lista `helpers`):
   "id": "a91c5d72-0b3e-4f68-8d14-6e7f2c3b5a09",
   "name": "Limpar Temporários",
   "enabled": true,
-  "schedule": {"intervalDays": 7, "times": ["20:30"], "startDate": "2026-10-14"},
+  "schedule": {"interval": 1, "unit": "WEEK", "times": ["20:30"], "startDate": "2026-10-14"},
   "target": {"type": "FOLDER", "folder": "C:\\Users\\ana\\Temp", "ageReference": "MODIFIED"},
   "ageLimitAmount": 30,
   "ageLimitUnit": "DAY"
@@ -230,7 +240,7 @@ Limpeza da lixeira sem limite, limpa tudo (item da lista `helpers`):
   "id": "c47e0f13-9d2a-4b85-a6c1-3e8d5f7a2b64",
   "name": "Esvaziar Lixeira",
   "enabled": false,
-  "schedule": {"intervalDays": 3, "times": ["12:00"], "startDate": "2026-10-14"},
+  "schedule": {"interval": 3, "unit": "MONTH", "times": ["12:00"], "startDate": "2026-10-14"},
   "target": {"type": "RECYCLE_BIN"},
   "ageLimitAmount": null,
   "ageLimitUnit": null
@@ -288,7 +298,7 @@ Por isso a execução dos ajudantes **não pode depender da interface gráfica**
 - **Ligação com os casos de uso:** o JavaFX instancia `TidyfyApplication` sem argumentos, então `InterfaceLauncher.launch(AppContainer, Clock, args)` monta um `UiServices` (record em `presentation` com `ListHelpersUseCase`, `SaveHelperUseCase`, `RemoveHelperUseCase`, `ListExecutionHistoryUseCase` e `Clock`) e o entrega por `TidyfyApplication.configure` antes de `Application.launch`; `TidyfyApplication.start` cria a `HelperListController` e liga cada serviço (`setSaveServices`, `setRemoveService`, `setHistoryLoader`). `presentation` nunca importa `AppContainer`.
 - **Estado atual:** a interface está ligada aos casos de uso e funciona de ponta a ponta.
   - **Lista:** carrega os ajudantes reais (`ListHelpersUseCase` + `HelperItemMapper`) ao abrir e em `reload()`, que roda depois de salvar, remover ou ligar/desligar e mantém filtro (e, no interruptor, a seleção). Falha na leitura deixa a lista vazia e aciona o `errorHandler`; `TidyfyApplication` liga esse handler ao diálogo de erro (`showError`). O construtor sem argumentos (testes) começa vazio.
-  - **Criar e editar:** o formulário (`FolderOrganizerFormController` ou `CleanerFormController`) monta o `Helper` e chama o `SaveHelperUseCase` (`startDate` = hoje ao criar ou quando a frequência muda). Só fecha se der certo. A Limpeza tem «Quanto limpar» (tudo ou só o que passou de N dias, com a referência criação/modificação só para pasta) e carrega esses valores ao editar.
+  - **Criar e editar:** o formulário (`FolderOrganizerFormController` ou `CleanerFormController`) monta o `Helper` e chama o `SaveHelperUseCase` (`startDate` = hoje ao criar ou quando a frequência, isto é, intervalo, unidade ou horários, muda). A frequência é editada pelo `ScheduleEditor`: setinhas para o intervalo (que pulam entre os valores que a unidade aceita) e as opções «Dias», «Semanas», «Meses» e «Anos»; trocar a unidade ajusta o intervalo ao que ela aceita (ex.: 5 meses vira 4) e o `UpcomingRunsCalendar` mostra os próximos 14 dias a partir de hoje. Só fecha se der certo. A Limpeza tem «Quanto limpar» (tudo ou só o que passou de N dias, semanas, meses ou anos, com a referência criação/modificação só para pasta) e carrega esses valores ao editar.
   - **Erros de regra** aparecem no campo certo: nome repetido em `nameHelp`; pasta em uso, aninhada, protegida ou lixeira em uso em `folderError` (campo `invalid`); limite e demais falhas no rodapé `saveError`. O erro do campo some ao editá-lo.
   - **Ligar e desligar:** o interruptor do cartão salva o ajudante com `Helper.withEnabled` pelo `SaveHelperUseCase` (registra ou remove a tarefa). Se falhar, o interruptor volta ao estado anterior e o erro aparece em diálogo; se der certo, a lista é relida sem animar os cartões.
   - **Remover:** `RemoveHelperUseCase` ao confirmar (`RemoveConfirmationController`); cancelar não remove nada. Se falhar, a lista é recarregada e o erro aparece em diálogo. O histórico do ajudante permanece.
@@ -307,7 +317,7 @@ Todas as regras são validadas no domínio, não só na UI.
 - **Máximo de 20 ajudantes por tipo** (`HelperType.MAX_PER_TYPE`). A checagem acontece só na **criação**; editar um ajudante existente não conta. A contagem vem do repositório (`countByType`) e quem decide é o domínio (`HelperType.assertCanCreate`), lançando `HelperLimitReachedException`.
 - **Nome único:** dois ajudantes não podem ter o mesmo nome; maiúsculas e minúsculas não diferenciam (`Organizar Downloads` e `organizar downloads` são o mesmo nome).
 - **Sem sobreposição:** dois ajudantes do **mesmo tipo** não podem atuar na mesma pasta (organização e limpeza podem). Para a limpeza, a lixeira conta como um lugar: só um `CLEANER` pode ter `RecycleBinTarget`. A regra vale também para pastas aninhadas: um ajudante do mesmo tipo não pode atuar numa pasta que contém ou está contida na pasta de outro (ex.: `Downloads` e `Downloads\Imagens`).
-- **Frequência** (`Schedule`): a cada `intervalDays` dias (≥ 1), em um ou mais horários do dia, sem horários repetidos. Sem limite máximo fixo: quem define é o usuário. O `Schedule` guarda também a **data de início**: o dia em que o ajudante foi salvo ou teve a frequência alterada. É a partir dela que se conta "a cada N dias" (e o `/SD` do agendador).
+- **Frequência** (`Schedule`): a cada `interval` unidades (`ScheduleUnit`: dia, semana, mês ou ano; ≥ 1), em um ou mais horários do dia, sem horários repetidos. Sem limite máximo fixo para dias e semanas: quem define é o usuário. Em **meses** só valem os divisores de 12 (1, 2, 3, 4, 6 e 12) e em **anos** só 1, porque o Agendador do Windows não tem «a cada N meses» nem «a cada N anos» e esses casos só viram gatilho exato assim (`ScheduleUnit.accepts`; o `Schedule` recusa o resto no domínio). O `Schedule` guarda também a **data de início**: o dia em que o ajudante foi salvo ou teve a frequência alterada (intervalo, unidade ou horários). É a partir dela que se conta (e o `StartBoundary` do agendador): semana cai no mesmo dia da semana; mês e ano, no mesmo dia do mês; início nos dias 29 a 31 vira «último dia do mês» na frequência mensal, e 29 de fevereiro vira 28 nos anos não bissextos (`Schedule.occurrence`, usado por `ScheduleCalculator`). Compatível com o formato antigo (`intervalDays`, sempre em dias).
 - **Histórico:** toda execução é registrada (quando rodou e o que fez: arquivos movidos, removidos ou renomeados, lixeira esvaziada) e pode ser consultada. Os registros são guardados por **30 dias**. Falhas de uma execução (arquivo sem permissão, pasta apagada) também entram no histórico (`FAILED`, com a mensagem) e em um log em `%APPDATA%\Tidyfy\logs`. O histórico é **exibido na interface** (um diálogo por ajudante). Ao remover um ajudante, a tarefa dele é **removida do Agendador do Windows**, mas o histórico **não** é apagado: fica até expirar.
 - **Pastas sensíveis** são recusadas pelo domínio. Recusadas **com tudo que há dentro**: `C:\Windows` (incluindo `System32`), `C:\Program Files`, `C:\Program Files (x86)` e `C:\ProgramData`. Recusadas **só elas mesmas**: a raiz de qualquer disco e a pasta do usuário (`C:\Users\nome`); as pastas dentro dela, como Downloads, são aceitas.
 - Ajudante **desligado** não fica registrado no Agendador do Windows e não executa.

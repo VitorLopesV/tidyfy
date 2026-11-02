@@ -19,6 +19,7 @@ import com.tidyfy.domain.HelperId;
 import com.tidyfy.domain.HelperName;
 import com.tidyfy.domain.RecycleBinTarget;
 import com.tidyfy.domain.Schedule;
+import com.tidyfy.domain.ScheduleUnit;
 import java.nio.file.Path;
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -66,8 +67,14 @@ public final class HelperJsonMapper {
     /** Campo da frequência. */
     private static final String SCHEDULE_FIELD = "schedule";
 
-    /** Campo do intervalo em dias. */
+    /** Campo do intervalo em dias (formato antigo, só lido). */
     private static final String INTERVAL_DAYS_FIELD = "intervalDays";
+
+    /** Campo do intervalo da frequência, na unidade informada. */
+    private static final String INTERVAL_FIELD = "interval";
+
+    /** Campo da unidade da frequência. */
+    private static final String UNIT_FIELD = "unit";
 
     /** Campo dos horários. */
     private static final String TIMES_FIELD = "times";
@@ -251,7 +258,8 @@ public final class HelperJsonMapper {
         node.put(NAME_FIELD, helper.name().value());
         node.put(ENABLED_FIELD, helper.enabled());
         ObjectNode schedule = node.putObject(SCHEDULE_FIELD);
-        schedule.put(INTERVAL_DAYS_FIELD, helper.schedule().intervalDays());
+        schedule.put(INTERVAL_FIELD, helper.schedule().interval());
+        schedule.put(UNIT_FIELD, helper.schedule().unit().name());
         ArrayNode times = schedule.putArray(TIMES_FIELD);
         helper.schedule().times().forEach(time -> times.add(TIME_FORMAT.format(time)));
         schedule.put(START_DATE_FIELD, helper.schedule().startDate().toString());
@@ -316,7 +324,28 @@ public final class HelperJsonMapper {
             }
             times.add(LocalTime.parse(time.textValue(), TIME_FORMAT));
         }
-        return new Schedule(integer(node, INTERVAL_DAYS_FIELD), times, LocalDate.parse(text(node, START_DATE_FIELD)));
+        LocalDate startDate = LocalDate.parse(text(node, START_DATE_FIELD));
+        if (node.hasNonNull(INTERVAL_FIELD)) {
+            return new Schedule(integer(node, INTERVAL_FIELD), toScheduleUnit(node.get(UNIT_FIELD)), times, startDate);
+        }
+        return new Schedule(integer(node, INTERVAL_DAYS_FIELD), times, startDate);
+    }
+
+    /**
+     * Converte o nó da unidade da frequência.
+     *
+     * @param node nó da unidade
+     * @return a unidade
+     */
+    private ScheduleUnit toScheduleUnit(JsonNode node) {
+        if (node == null || !node.isTextual()) {
+            throw new HelperJsonException(String.format(INVALID_FIELD, UNIT_FIELD));
+        }
+        try {
+            return ScheduleUnit.valueOf(node.textValue());
+        } catch (IllegalArgumentException e) {
+            throw new HelperJsonException(String.format(INVALID_FIELD, UNIT_FIELD));
+        }
     }
 
     /**
