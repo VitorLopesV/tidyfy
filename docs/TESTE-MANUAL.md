@@ -257,7 +257,8 @@ Em «Frequência» o formulário tem o contador (setinhas) e a unidade «Dias»,
 2. Com o Tidyfy fechado, espere o horário (ou execute a tarefa no Agendador).
    - Resultado esperado: os ícones ficam em colunas na borda esquerda, em ordem de nome; nenhum arquivo foi movido; o histórico mostra «Ícones da área de trabalho reposicionados: N ícones».
 3. **Cada layout:** edite o ajudante trocando o layout para **Direita**, **Topo**, **Base**, **Bordas** e **Por tipo**, executando a tarefa a cada troca (ou ajuste o horário).
-   - Resultado esperado: Direita e Base encostam nas bordas direita e inferior; Topo enche linhas a partir do alto; Bordas deixa o centro livre; Por tipo cria uma coluna por categoria (atalhos, documentos, imagens...). Nunca há dois ícones no mesmo lugar nem fora da tela.
+   - Resultado esperado: Direita e Base encostam nas bordas direita e inferior; Topo enche linhas a partir do alto; Bordas deixa o centro livre; Por tipo cria uma coluna por categoria (atalhos, documentos, imagens...). Nunca há dois ícones no mesmo lugar nem fora da tela, e todos mantêm uma pequena margem das bordas.
+   - Depois de cada layout, clique com o botão direito na área de trabalho → **Atualizar** (ou F5): os ícones devem continuar exatamente onde estavam (issue #84; verificado de verdade em 02/11/2026, com os seis layouts, em um monitor 2560×1440 a 100%).
 4. **Excesso de ícones:** crie ícones suficientes para não caberem no layout (ou use uma resolução baixa).
    - Resultado esperado: os que couberam são arrumados; os demais ficam onde estavam e o histórico mostra uma falha com o nome deles.
 5. **Escala de tela:** repita o passo 2 com a escala em 100% e em 150% (Configurações → Sistema → Tela).

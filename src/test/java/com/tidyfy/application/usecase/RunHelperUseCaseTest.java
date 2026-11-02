@@ -278,7 +278,7 @@ class RunHelperUseCaseTest {
         ExecutionRecord record = useCase.execute(helper.id()).orElseThrow();
 
         assertEquals(List.of(new HelperAction(ActionType.ARRANGED, null, null, "1 ícone")), record.actions());
-        assertEquals(new IconPosition(0, 0), desktop.moved().get(0).position());
+        assertEquals(new IconPosition(20, 20), desktop.moved().get(0).position());
     }
 
     @Test

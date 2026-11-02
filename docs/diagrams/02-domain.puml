@@ -390,9 +390,10 @@ note bottom of ProtectedFolders
 end note
 
 note bottom of DesktopLayoutPlanner
-  Função pura. Grade = largura/célula colunas por
-  altura/célula linhas, sempre dentro da área visível,
-  uma célula por ícone. Ordem por nome sem diferenciar
+  Função pura. Margem nas bordas = menor célula / 5.
+  Grade = (largura - 2 margens)/célula colunas por
+  (altura - 2 margens)/célula linhas, dentro da área
+  visível, uma célula por ícone. Ordem por nome sem diferenciar
   maiúsculas de minúsculas. LEFT/TOP/BY_TYPE_LEFT partem
   de esquerda e topo, RIGHT da direita, BOTTOM da base;
   BORDERS vai pelo perímetro (sentido horário), com a

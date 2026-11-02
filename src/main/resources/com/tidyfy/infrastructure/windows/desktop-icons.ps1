@@ -1,6 +1,9 @@
 # Le e grava a posicao dos icones da area de trabalho do Windows (ListView do Explorer), sem janela.
 # Uso: desktop-icons.ps1 -Mode list
 #      desktop-icons.ps1 -Mode move -MovesFile <arquivo UTF-8 com linhas "nome<TAB>x<TAB>y">
+# AREA e a area onde a POSICAO do ICONE (canto do icone) e valida: o Explorer recoloca, ao atualizar, o icone
+# cuja celula sai da area, e a posicao fica (celula - icone) / 2 a direita do canto da celula; por isso o
+# canto esquerdo da AREA e deslocado por esse valor (a largura nao muda).
 # Saida (ASCII, uma informacao por linha): AUTOARRANGE=<bool>, SNAPTOGRID=<bool>, AREA=left,top,width,height,
 # CELL=width,height e ICON<TAB>nome-em-base64-UTF8<TAB>x<TAB>y. Falha: mensagem em stderr e codigo de saida 1.
 # Em caso de erro no meio de um "move", as posicoes originais sao restauradas antes de sair.
@@ -15,6 +18,7 @@ using System;
 using System.Runtime.InteropServices;
 public static class DeskNative {
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+    [DllImport("user32.dll")] public static extern int GetSystemMetrics(int index);
     [DllImport("user32.dll")] public static extern IntPtr GetShellWindow();
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr FindWindowEx(IntPtr parent, IntPtr after, string cls, string title);
     [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr h, int msg, IntPtr w, IntPtr l);
@@ -43,6 +47,7 @@ $LVS_AUTOARRANGE = 0x100
 $LVS_EX_SNAPTOGRID = 0x40000
 $GWL_STYLE = -16
 $SPI_GETWORKAREA = 0x30
+$SM_CXICON = 11
 $REMOTE_TEXT_OFFSET = 256
 $REMOTE_SIZE = 4096
 $MAX_NAME_CHARS = 260
@@ -136,6 +141,8 @@ try {
     $spacing = [int64](Send $LVM_GETITEMSPACING ([IntPtr]::Zero) ([IntPtr]::Zero))
     $origin = New-Object DeskNative+POINT
     [void][DeskNative]::ClientToScreen($listView, [ref]$origin)
+    $cellWidth = [int]($spacing -band 0xFFFF)
+    $iconOffset = [Math]::Max(0, [int][Math]::Floor(($cellWidth - [DeskNative]::GetSystemMetrics($SM_CXICON)) / 2))
     $work = New-Object DeskNative+RECT
     [void][DeskNative]::SystemParametersInfo($SPI_GETWORKAREA, 0, [ref]$work, 0)
 
@@ -167,7 +174,7 @@ try {
     } else {
         Write-Output "AUTOARRANGE=$($autoArrange.ToString().ToLowerInvariant())"
         Write-Output "SNAPTOGRID=$($snapToGrid.ToString().ToLowerInvariant())"
-        Write-Output ("AREA={0},{1},{2},{3}" -f ($work.Left - $origin.X), ($work.Top - $origin.Y), ($work.Right - $work.Left), ($work.Bottom - $work.Top))
+        Write-Output ("AREA={0},{1},{2},{3}" -f ($work.Left - $origin.X + $iconOffset), ($work.Top - $origin.Y), ($work.Right - $work.Left), ($work.Bottom - $work.Top))
         Write-Output ("CELL={0},{1}" -f ($spacing -band 0xFFFF), (($spacing -shr 16) -band 0xFFFF))
         foreach ($icon in (Get-Icons)) {
             Write-Output ("ICON`t{0}`t{1}`t{2}" -f (ConvertTo-Base64 $icon.Name), $icon.X, $icon.Y)

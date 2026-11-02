@@ -16,8 +16,11 @@ import org.junit.jupiter.api.Test;
  */
 class DesktopLayoutPlannerTest {
 
-    /** Área de 3 colunas por 2 linhas, células de 100 x 100, a partir da origem. */
-    private static final DesktopGrid SMALL = new DesktopGrid(0, 0, 300, 200, 100, 100);
+    /** Área de 3 colunas por 2 linhas, células de 100 x 100 e margem de 20 nas bordas, a partir da origem. */
+    private static final DesktopGrid SMALL = new DesktopGrid(0, 0, 340, 240, 100, 100);
+
+    /** Margem das bordas para células de 100 x 100. */
+    private static final int MARGIN = 20;
 
     private final DesktopLayoutPlanner planner = new DesktopLayoutPlanner();
 
@@ -41,7 +44,7 @@ class DesktopLayoutPlannerTest {
     void leftFillsColumnsFromTheLeftEdge() {
         DesktopLayoutPlan plan = planner.plan(icons("a", "b", "c", "d", "e"), SMALL, DesktopLayout.LEFT);
 
-        assertEquals(List.of(at("a", 0, 0), at("b", 0, 100), at("c", 100, 0), at("d", 100, 100), at("e", 200, 0)),
+        assertEquals(List.of(at("a", 20, 20), at("b", 20, 120), at("c", 120, 20), at("d", 120, 120), at("e", 220, 20)),
                 plan.placements());
         assertTrue(plan.leftOut().isEmpty());
     }
@@ -50,7 +53,7 @@ class DesktopLayoutPlannerTest {
     void rightFillsColumnsFromTheRightEdge() {
         DesktopLayoutPlan plan = planner.plan(icons("a", "b", "c", "d", "e"), SMALL, DesktopLayout.RIGHT);
 
-        assertEquals(List.of(at("a", 200, 0), at("b", 200, 100), at("c", 100, 0), at("d", 100, 100), at("e", 0, 0)),
+        assertEquals(List.of(at("a", 220, 20), at("b", 220, 120), at("c", 120, 20), at("d", 120, 120), at("e", 20, 20)),
                 plan.placements());
     }
 
@@ -58,7 +61,7 @@ class DesktopLayoutPlannerTest {
     void topFillsRowsFromTheTopEdge() {
         DesktopLayoutPlan plan = planner.plan(icons("a", "b", "c", "d", "e"), SMALL, DesktopLayout.TOP);
 
-        assertEquals(List.of(at("a", 0, 0), at("b", 100, 0), at("c", 200, 0), at("d", 0, 100), at("e", 100, 100)),
+        assertEquals(List.of(at("a", 20, 20), at("b", 120, 20), at("c", 220, 20), at("d", 20, 120), at("e", 120, 120)),
                 plan.placements());
     }
 
@@ -66,25 +69,25 @@ class DesktopLayoutPlannerTest {
     void bottomFillsRowsFromTheBottomEdge() {
         DesktopLayoutPlan plan = planner.plan(icons("a", "b", "c", "d", "e"), SMALL, DesktopLayout.BOTTOM);
 
-        assertEquals(List.of(at("a", 0, 100), at("b", 100, 100), at("c", 200, 100), at("d", 0, 0), at("e", 100, 0)),
+        assertEquals(List.of(at("a", 20, 120), at("b", 120, 120), at("c", 220, 120), at("d", 20, 20), at("e", 120, 20)),
                 plan.placements());
     }
 
     @Test
     void bordersGoClockwiseAndKeepTheCenterFree() {
-        DesktopGrid grid = new DesktopGrid(0, 0, 400, 300, 100, 100);
+        DesktopGrid grid = new DesktopGrid(0, 0, 440, 340, 100, 100);
 
         DesktopLayoutPlan plan = planner.plan(
                 icons("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"), grid, DesktopLayout.BORDERS);
 
-        assertEquals(List.of(at("a", 0, 0), at("b", 100, 0), at("c", 200, 0), at("d", 300, 0),
-                at("e", 300, 100), at("f", 300, 200),
-                at("g", 200, 200), at("h", 100, 200), at("i", 0, 200),
-                at("j", 0, 100)), plan.placements());
+        assertEquals(List.of(at("a", 20, 20), at("b", 120, 20), at("c", 220, 20), at("d", 320, 20),
+                at("e", 320, 120), at("f", 320, 220),
+                at("g", 220, 220), at("h", 120, 220), at("i", 20, 220),
+                at("j", 20, 120)), plan.placements());
         assertEquals(icons("k", "l"), plan.leftOut());
         for (DesktopIcon placed : plan.placements()) {
-            assertTrue(placed.position().x() == 0 || placed.position().x() == 300
-                    || placed.position().y() == 0 || placed.position().y() == 200);
+            assertTrue(placed.position().x() == 20 || placed.position().x() == 320
+                    || placed.position().y() == 20 || placed.position().y() == 220);
         }
     }
 
@@ -99,84 +102,84 @@ class DesktopLayoutPlannerTest {
 
     @Test
     void bordersOnASingleRowFollowTheTopOrder() {
-        DesktopGrid grid = new DesktopGrid(0, 0, 300, 100, 100, 100);
+        DesktopGrid grid = new DesktopGrid(0, 0, 340, 140, 100, 100);
 
         DesktopLayoutPlan plan = planner.plan(icons("a", "b", "c", "d"), grid, DesktopLayout.BORDERS);
 
-        assertEquals(List.of(at("a", 0, 0), at("b", 100, 0), at("c", 200, 0)), plan.placements());
+        assertEquals(List.of(at("a", 20, 20), at("b", 120, 20), at("c", 220, 20)), plan.placements());
         assertEquals(icons("d"), plan.leftOut());
     }
 
     @Test
     void anchorsTheGridToTheEdgeOfTheLayoutWhenTheAreaIsNotAMultipleOfTheCell() {
-        DesktopGrid grid = new DesktopGrid(1000, 10, 350, 250, 100, 100);
+        DesktopGrid grid = new DesktopGrid(1000, 10, 390, 290, 100, 100);
 
-        assertEquals(at("a", 1250, 10), planner.plan(icons("a"), grid, DesktopLayout.RIGHT).placements().get(0));
-        assertEquals(at("a", 1000, 160), planner.plan(icons("a"), grid, DesktopLayout.BOTTOM).placements().get(0));
-        assertEquals(at("a", 1000, 10), planner.plan(icons("a"), grid, DesktopLayout.LEFT).placements().get(0));
-        assertEquals(at("a", 1000, 10), planner.plan(icons("a"), grid, DesktopLayout.TOP).placements().get(0));
+        assertEquals(at("a", 1270, 30), planner.plan(icons("a"), grid, DesktopLayout.RIGHT).placements().get(0));
+        assertEquals(at("a", 1020, 180), planner.plan(icons("a"), grid, DesktopLayout.BOTTOM).placements().get(0));
+        assertEquals(at("a", 1020, 30), planner.plan(icons("a"), grid, DesktopLayout.LEFT).placements().get(0));
+        assertEquals(at("a", 1020, 30), planner.plan(icons("a"), grid, DesktopLayout.TOP).placements().get(0));
     }
 
     @Test
     void bordersTouchTheRightAndBottomEdgesWhenTheAreaIsNotAMultipleOfTheCell() {
-        DesktopGrid grid = new DesktopGrid(1000, 10, 350, 250, 100, 100);
+        DesktopGrid grid = new DesktopGrid(1000, 10, 390, 290, 100, 100);
 
         DesktopLayoutPlan plan = planner.plan(icons("a", "b", "c", "d", "e", "f"), grid, DesktopLayout.BORDERS);
 
-        assertEquals(List.of(at("a", 1000, 10), at("b", 1100, 10), at("c", 1250, 10),
-                at("d", 1250, 160), at("e", 1100, 160), at("f", 1000, 160)), plan.placements());
+        assertEquals(List.of(at("a", 1020, 30), at("b", 1120, 30), at("c", 1270, 30),
+                at("d", 1270, 180), at("e", 1120, 180), at("f", 1020, 180)), plan.placements());
     }
 
     @Test
     void honorsAnOffsetThatIsNegative() {
-        DesktopGrid grid = new DesktopGrid(-1920, 0, 300, 200, 100, 100);
+        DesktopGrid grid = new DesktopGrid(-1920, 0, 340, 240, 100, 100);
 
         DesktopLayoutPlan plan = planner.plan(icons("a", "b"), grid, DesktopLayout.TOP);
 
-        assertEquals(List.of(at("a", -1920, 0), at("b", -1820, 0)), plan.placements());
+        assertEquals(List.of(at("a", -1900, 20), at("b", -1800, 20)), plan.placements());
     }
 
     @Test
     void byTypePutsEachGroupInItsOwnColumnFromTheLeft() {
-        DesktopGrid grid = new DesktopGrid(0, 0, 500, 200, 100, 100);
+        DesktopGrid grid = new DesktopGrid(0, 0, 540, 240, 100, 100);
 
         DesktopLayoutPlan plan = planner.plan(icons("Steam", "App.lnk", "foto.PNG", "doc.pdf", "x.exe", "a.xyz",
                 "b.jpg"), grid, DesktopLayout.BY_TYPE_LEFT);
 
-        assertEquals(List.of(at("App.lnk", 0, 0), at("Steam", 0, 100),
-                at("doc.pdf", 100, 0),
-                at("x.exe", 200, 0),
-                at("b.jpg", 300, 0), at("foto.PNG", 300, 100),
-                at("a.xyz", 400, 0)), plan.placements());
+        assertEquals(List.of(at("App.lnk", 20, 20), at("Steam", 20, 120),
+                at("doc.pdf", 120, 20),
+                at("x.exe", 220, 20),
+                at("b.jpg", 320, 20), at("foto.PNG", 320, 120),
+                at("a.xyz", 420, 20)), plan.placements());
         assertTrue(plan.leftOut().isEmpty());
     }
 
     @Test
     void byTypeSkipsEmptyGroupsAndTreatsUrlAsShortcut() {
-        DesktopGrid grid = new DesktopGrid(0, 0, 500, 200, 100, 100);
+        DesktopGrid grid = new DesktopGrid(0, 0, 540, 240, 100, 100);
 
         DesktopLayoutPlan plan = planner.plan(icons("video.mp4", "site.url"), grid, DesktopLayout.BY_TYPE_LEFT);
 
-        assertEquals(List.of(at("site.url", 0, 0), at("video.mp4", 100, 0)), plan.placements());
+        assertEquals(List.of(at("site.url", 20, 20), at("video.mp4", 120, 20)), plan.placements());
     }
 
     @Test
     void byTypeContinuesInTheNextColumnWhenAGroupHasMoreIconsThanRows() {
-        DesktopGrid grid = new DesktopGrid(0, 0, 400, 200, 100, 100);
+        DesktopGrid grid = new DesktopGrid(0, 0, 440, 240, 100, 100);
 
         DesktopLayoutPlan plan = planner.plan(icons("A", "B", "C", "foto.jpg"), grid, DesktopLayout.BY_TYPE_LEFT);
 
-        assertEquals(List.of(at("A", 0, 0), at("B", 0, 100), at("C", 100, 0), at("foto.jpg", 200, 0)),
+        assertEquals(List.of(at("A", 20, 20), at("B", 20, 120), at("C", 120, 20), at("foto.jpg", 220, 20)),
                 plan.placements());
     }
 
     @Test
     void byTypeReportsWhatDoesNotFit() {
-        DesktopGrid grid = new DesktopGrid(0, 0, 100, 200, 100, 100);
+        DesktopGrid grid = new DesktopGrid(0, 0, 140, 240, 100, 100);
 
         DesktopLayoutPlan plan = planner.plan(icons("A", "B", "C", "doc.pdf"), grid, DesktopLayout.BY_TYPE_LEFT);
 
-        assertEquals(List.of(at("A", 0, 0), at("B", 0, 100)), plan.placements());
+        assertEquals(List.of(at("A", 20, 20), at("B", 20, 120)), plan.placements());
         assertEquals(icons("C", "doc.pdf"), plan.leftOut());
     }
 
@@ -184,11 +187,11 @@ class DesktopLayoutPlannerTest {
     void byTypeUsesTheCategoriesGiven() {
         FileCategory music = new FileCategory("Música", "Música", Set.of(new FileExtension("mp3")));
         DesktopLayoutPlanner custom = new DesktopLayoutPlanner(List.of(music));
-        DesktopGrid grid = new DesktopGrid(0, 0, 300, 100, 100, 100);
+        DesktopGrid grid = new DesktopGrid(0, 0, 340, 140, 100, 100);
 
         DesktopLayoutPlan plan = custom.plan(icons("a.txt", "b.mp3"), grid, DesktopLayout.BY_TYPE_LEFT);
 
-        assertEquals(List.of(at("b.mp3", 0, 0), at("a.txt", 100, 0)), plan.placements());
+        assertEquals(List.of(at("b.mp3", 20, 20), at("a.txt", 120, 20)), plan.placements());
     }
 
     @Test
@@ -203,7 +206,7 @@ class DesktopLayoutPlannerTest {
     void duplicatedNamesAreBothPlaced() {
         DesktopLayoutPlan plan = planner.plan(icons("Chrome", "Chrome"), SMALL, DesktopLayout.TOP);
 
-        assertEquals(List.of(at("Chrome", 0, 0), at("Chrome", 100, 0)), plan.placements());
+        assertEquals(List.of(at("Chrome", 20, 20), at("Chrome", 120, 20)), plan.placements());
     }
 
     @Test
@@ -234,10 +237,11 @@ class DesktopLayoutPlannerTest {
             List<IconPosition> positions = positionsOf(plan);
             assertEquals(positions.size(), new HashSet<>(positions).size(), layout.name());
             for (IconPosition position : positions) {
-                assertTrue(position.x() >= grid.left() && position.x() + grid.cellWidth() <= grid.left() + grid.width(),
-                        layout.name());
-                assertTrue(position.y() >= grid.top() && position.y() + grid.cellHeight() <= grid.top() + grid.height(),
-                        layout.name());
+                int margin = Math.min(grid.cellWidth(), grid.cellHeight()) / 5;
+                assertTrue(position.x() >= grid.left() + margin
+                        && position.x() + grid.cellWidth() <= grid.left() + grid.width() - margin, layout.name());
+                assertTrue(position.y() >= grid.top() + margin
+                        && position.y() + grid.cellHeight() <= grid.top() + grid.height() - margin, layout.name());
             }
             for (int i = 0; i < positions.size(); i++) {
                 for (int j = i + 1; j < positions.size(); j++) {
@@ -249,15 +253,67 @@ class DesktopLayoutPlannerTest {
         }
     }
 
+    /** Reproduz a issue 84: nenhum layout pode encostar os ícones nas bordas da área visível. */
+    @Test
+    void everyLayoutKeepsAMarginFromTheEdgesOfTheVisibleArea() {
+        DesktopGrid grid = new DesktopGrid(1941, 0, 2560, 1392, 75, 87);
+        List<DesktopIcon> many = new ArrayList<>();
+        for (int i = 0; i < 400; i++) {
+            many.add(icon("Item " + i + (i % 2 == 0 ? ".pdf" : ".png")));
+        }
+        int margin = 75 / 5;
+        for (DesktopLayout layout : DesktopLayout.values()) {
+            for (DesktopIcon placed : planner.plan(many, grid, layout).placements()) {
+                IconPosition p = placed.position();
+                assertTrue(p.x() >= grid.left() + margin, layout.name());
+                assertTrue(p.y() >= grid.top() + margin, layout.name());
+                assertTrue(p.x() + grid.cellWidth() <= grid.left() + grid.width() - margin, layout.name());
+                assertTrue(p.y() + grid.cellHeight() <= grid.top() + grid.height() - margin, layout.name());
+            }
+        }
+    }
+
+    @Test
+    void firstIconOfEachLayoutIsAwayFromItsCornerByTheMargin() {
+        List<DesktopIcon> one = icons("a");
+
+        assertEquals(at("a", MARGIN, MARGIN), planner.plan(one, SMALL, DesktopLayout.LEFT).placements().get(0));
+        assertEquals(at("a", 220, MARGIN), planner.plan(one, SMALL, DesktopLayout.RIGHT).placements().get(0));
+        assertEquals(at("a", MARGIN, MARGIN), planner.plan(one, SMALL, DesktopLayout.TOP).placements().get(0));
+        assertEquals(at("a", MARGIN, 120), planner.plan(one, SMALL, DesktopLayout.BOTTOM).placements().get(0));
+        assertEquals(at("a", MARGIN, MARGIN), planner.plan(one, SMALL, DesktopLayout.BORDERS).placements().get(0));
+        assertEquals(at("a.pdf", MARGIN, MARGIN),
+                planner.plan(icons("a.pdf"), SMALL, DesktopLayout.BY_TYPE_LEFT).placements().get(0));
+    }
+
+    @Test
+    void marginTakesCellsAwayWhenTheAreaIsJustBigEnough() {
+        DesktopGrid grid = new DesktopGrid(0, 0, 300, 200, 100, 100);
+
+        DesktopLayoutPlan plan = planner.plan(icons("a", "b", "c", "d", "e", "f"), grid, DesktopLayout.TOP);
+
+        assertEquals(List.of(at("a", 20, 20), at("b", 120, 20)), plan.placements());
+        assertEquals(4, plan.leftOut().size());
+    }
+
+    @Test
+    void marginScalesWithTheSmallerSideOfTheCell() {
+        DesktopGrid grid = new DesktopGrid(0, 0, 1000, 1000, 150, 100);
+
+        DesktopLayoutPlan plan = planner.plan(icons("a"), grid, DesktopLayout.LEFT);
+
+        assertEquals(List.of(at("a", 20, 20)), plan.placements());
+    }
+
     @Test
     void placedIconsKeepTheirNamesAndTheOnesLeftOutKeepTheirPosition() {
-        DesktopGrid grid = new DesktopGrid(0, 0, 100, 100, 100, 100);
+        DesktopGrid grid = new DesktopGrid(0, 0, 140, 140, 100, 100);
         DesktopIcon first = at("a", 5, 6);
         DesktopIcon second = at("b", 7, 8);
 
         DesktopLayoutPlan plan = planner.plan(List.of(second, first), grid, DesktopLayout.LEFT);
 
-        assertEquals(List.of(at("a", 0, 0)), plan.placements());
+        assertEquals(List.of(at("a", 20, 20)), plan.placements());
         assertEquals(List.of(second), plan.leftOut());
     }
 

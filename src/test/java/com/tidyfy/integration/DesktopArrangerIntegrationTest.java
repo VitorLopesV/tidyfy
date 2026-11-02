@@ -46,8 +46,8 @@ class DesktopArrangerIntegrationTest {
         assertEquals(List.of(new HelperAction(ActionType.ARRANGED, null, null, "2 ícones")), record.actions());
         assertEquals(List.of("abacate.txt", "Zebra.txt"),
                 stack.desktopIcons().moved().stream().map(DesktopIcon::name).toList());
-        assertEquals(new IconPosition(0, 0), stack.desktopIcons().moved().get(0).position());
-        assertEquals(new IconPosition(0, 100), stack.desktopIcons().moved().get(1).position());
+        assertEquals(new IconPosition(20, 20), stack.desktopIcons().moved().get(0).position());
+        assertEquals(new IconPosition(20, 120), stack.desktopIcons().moved().get(1).position());
         assertEquals(record, stack.listHistory().execute(helper.id()).get(0));
     }
 
@@ -57,13 +57,13 @@ class DesktopArrangerIntegrationTest {
 
         stack.run(helper);
 
-        assertEquals(new IconPosition(0, 0), stack.desktopIcons().moved().get(0).position());
-        assertEquals(new IconPosition(100, 0), stack.desktopIcons().moved().get(1).position());
+        assertEquals(new IconPosition(20, 20), stack.desktopIcons().moved().get(0).position());
+        assertEquals(new IconPosition(120, 20), stack.desktopIcons().moved().get(1).position());
     }
 
     @Test
     void iconsThatDoNotFitAreRecordedAsFailure() {
-        stack.desktopIcons().withGrid(new DesktopGrid(0, 0, 100, 100, 100, 100));
+        stack.desktopIcons().withGrid(new DesktopGrid(0, 0, 140, 140, 100, 100));
         DesktopArrangerHelper helper = stack.saveDesktopArranger(DesktopLayout.LEFT);
 
         ExecutionRecord record = stack.run(helper).orElseThrow();

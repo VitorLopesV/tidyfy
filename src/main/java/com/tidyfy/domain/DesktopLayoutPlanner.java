@@ -10,8 +10,10 @@ import java.util.Set;
 /**
  * Calcula a posição de cada ícone da área de trabalho para um {@link DesktopLayout}. É uma função pura:
  * não acessa o Windows nem o disco, só recebe os ícones, a área visível com a grade e o layout.
- * A grade tem {@code largura / célula} colunas e {@code altura / célula} linhas. As posições ficam sempre
- * dentro da área visível e cada ícone ocupa uma célula própria. A grade parte da borda do layout: de
+ * Os ícones respeitam uma margem das bordas da área visível ({@code menor célula / 5}, que acompanha a escala
+ * da tela): sem ela os ícones ficam colados no canto e o Windows os recoloca ao atualizar a área de trabalho.
+ * A grade tem {@code (largura - 2 * margem) / célula} colunas e {@code (altura - 2 * margem) / célula}
+ * linhas. As posições ficam sempre dentro da área visível e cada ícone ocupa uma célula própria. A grade parte da borda do layout: de
  * esquerda e de cima nos layouts à esquerda, no topo e por tipo; da direita no layout à direita; de baixo no
  * layout de base. Nas bordas, a última coluna encosta na direita e a última linha na base.
  * A ordem é estável e determinística: por nome sem diferenciar maiúsculas de minúsculas (empate: nome
@@ -36,6 +38,9 @@ public final class DesktopLayoutPlanner {
 
     /** Posição do grupo dos atalhos no layout por tipo. */
     private static final int SHORTCUTS_GROUP = 0;
+
+    /** Divisor da menor medida da célula que dá a margem das bordas da área visível. */
+    private static final int EDGE_MARGIN_DIVISOR = 5;
 
     /** Quantidade mínima de colunas e de linhas para o layout de bordas ter centro livre. */
     private static final int MIN_BORDER_SIZE = 2;
@@ -87,8 +92,8 @@ public final class DesktopLayoutPlanner {
         Objects.requireNonNull(icons, ICONS_NAME);
         Objects.requireNonNull(grid, GRID_NAME);
         Objects.requireNonNull(layout, LAYOUT_NAME);
-        int columns = grid.width() / grid.cellWidth();
-        int rows = grid.height() / grid.cellHeight();
+        int columns = (grid.width() - 2 * margin(grid)) / grid.cellWidth();
+        int rows = (grid.height() - 2 * margin(grid)) / grid.cellHeight();
         List<DesktopIcon> ordered = new ArrayList<>(icons);
         ordered.sort(BY_NAME);
         if (layout == DesktopLayout.BY_TYPE_LEFT) {
@@ -265,7 +270,7 @@ public final class DesktopLayoutPlanner {
      * @return a coordenada x
      */
     private static int fromLeft(DesktopGrid grid, int column) {
-        return grid.left() + column * grid.cellWidth();
+        return grid.left() + margin(grid) + column * grid.cellWidth();
     }
 
     /**
@@ -276,7 +281,7 @@ public final class DesktopLayoutPlanner {
      * @return a coordenada x
      */
     private static int fromRight(DesktopGrid grid, int column) {
-        return grid.left() + grid.width() - (column + 1) * grid.cellWidth();
+        return grid.left() + grid.width() - margin(grid) - (column + 1) * grid.cellWidth();
     }
 
     /**
@@ -287,7 +292,7 @@ public final class DesktopLayoutPlanner {
      * @return a coordenada y
      */
     private static int fromTop(DesktopGrid grid, int row) {
-        return grid.top() + row * grid.cellHeight();
+        return grid.top() + margin(grid) + row * grid.cellHeight();
     }
 
     /**
@@ -298,6 +303,16 @@ public final class DesktopLayoutPlanner {
      * @return a coordenada y
      */
     private static int fromBottom(DesktopGrid grid, int row) {
-        return grid.top() + grid.height() - (row + 1) * grid.cellHeight();
+        return grid.top() + grid.height() - margin(grid) - (row + 1) * grid.cellHeight();
+    }
+
+    /**
+     * Margem entre os ícones e as bordas da área visível, proporcional à célula (e, portanto, à escala da tela).
+     *
+     * @param grid a área visível e a grade
+     * @return a margem, em pixels
+     */
+    private static int margin(DesktopGrid grid) {
+        return Math.min(grid.cellWidth(), grid.cellHeight()) / EDGE_MARGIN_DIVISOR;
     }
 }

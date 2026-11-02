@@ -60,7 +60,7 @@ class ArrangeDesktopUseCaseTest {
         assertEquals("2 ícones", actions.get(0).message());
         assertEquals(2, desktop.moved().size());
         assertEquals("a.txt", desktop.moved().get(0).name());
-        assertEquals(new IconPosition(0, 0), desktop.moved().get(0).position());
+        assertEquals(new IconPosition(20, 20), desktop.moved().get(0).position());
     }
 
     @Test
@@ -80,7 +80,7 @@ class ArrangeDesktopUseCaseTest {
 
     @Test
     void recordsAFailureForIconsThatDidNotFit() {
-        desktop.withGrid(new DesktopGrid(0, 0, 100, 100, 100, 100))
+        desktop.withGrid(new DesktopGrid(0, 0, 140, 140, 100, 100))
                 .with(icon("a.txt", 1, 1)).with(icon("b.txt", 2, 2));
 
         List<HelperAction> actions = useCase.execute(helper(DesktopLayout.LEFT));
