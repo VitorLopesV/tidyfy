@@ -98,7 +98,7 @@ class HelperEditingRoundTripTest {
             assertTrue(toggle(view, "folderChoice").isSelected());
             assertEquals(tempDir.resolve("Temp"), ((FolderField) view.lookup("#folderField")).getFolder());
             assertTrue(toggle(view, "olderChoice").isSelected());
-            assertEquals("30", label(view, "ageDaysLabel").getText());
+            assertEquals("30", ((javafx.scene.control.TextField) view.lookup("#ageAmountField")).getText());
             assertTrue(toggle(view, "createdChoice").isSelected());
 
             save(view).fire();
@@ -118,7 +118,7 @@ class HelperEditingRoundTripTest {
             assertCommonFields(view, original, true);
             assertTrue(toggle(view, "binChoice").isSelected());
             assertTrue(toggle(view, "olderChoice").isSelected());
-            assertEquals("7", label(view, "ageDaysLabel").getText());
+            assertEquals("7", ((javafx.scene.control.TextField) view.lookup("#ageAmountField")).getText());
 
             save(view).fire();
 

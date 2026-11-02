@@ -172,9 +172,9 @@ Campos por tipo:
 - `DESKTOP_ARRANGER`: `layout`, um de `LEFT`, `RIGHT`, `TOP`, `BOTTOM`, `BORDERS` ou `BY_TYPE_LEFT` (sem `folder`). O tipo foi acrescentado sem mudar a `version` (continua `1`): arquivos antigos seguem legíveis, e só uma versão antiga do Tidyfy não entenderia o tipo novo.
 
 - `FOLDER_ORGANIZER`: `folder`, o caminho da pasta em texto (barras invertidas escapadas: `C:\\Users\\ana\\Downloads`).
-- `CLEANER`: `target` e `ageLimitDays`.
+- `CLEANER`: `target` e o limite de idade (`ageLimitAmount` e `ageLimitUnit`).
   - `target` é `{"type": "FOLDER", "folder": "...", "ageReference": "CREATED" | "MODIFIED"}` ou `{"type": "RECYCLE_BIN"}`.
-  - `ageLimitDays` é um inteiro ≥ 1 (só limpa o que é mais antigo que isso). `null` ou ausente significa limpar tudo.
+  - `ageLimitAmount` é um inteiro ≥ 1 e `ageLimitUnit` é `DAY`, `WEEK` (7 dias), `MONTH` (30 dias) ou `YEAR` (365 dias): só limpa o que é mais antigo que `ageLimitAmount` unidades. `null` ou ausentes significam limpar tudo. A unidade é obrigatória quando há quantidade. Arquivos antigos com o campo `ageLimitDays` (inteiro ≥ 1, em dias) continuam sendo lidos como dias; ao salvar, o ajudante passa a usar `ageLimitAmount` e `ageLimitUnit`. O campo foi acrescentado sem mudar a `version`.
 
 Organização de pasta:
 
@@ -217,7 +217,8 @@ Limpeza de pasta com limite de idade (item da lista `helpers`):
   "enabled": true,
   "schedule": {"intervalDays": 7, "times": ["20:30"], "startDate": "2026-10-14"},
   "target": {"type": "FOLDER", "folder": "C:\\Users\\ana\\Temp", "ageReference": "MODIFIED"},
-  "ageLimitDays": 30
+  "ageLimitAmount": 30,
+  "ageLimitUnit": "DAY"
 }
 ```
 
@@ -231,7 +232,8 @@ Limpeza da lixeira sem limite, limpa tudo (item da lista `helpers`):
   "enabled": false,
   "schedule": {"intervalDays": 3, "times": ["12:00"], "startDate": "2026-10-14"},
   "target": {"type": "RECYCLE_BIN"},
-  "ageLimitDays": null
+  "ageLimitAmount": null,
+  "ageLimitUnit": null
 }
 ```
 
@@ -324,7 +326,7 @@ Todas as regras são validadas no domínio, não só na UI.
 **Limpeza**
 - O alvo (`CleanupTarget`) é a lixeira (`RecycleBinTarget`) **ou** uma pasta (`FolderTarget`).
 - Limpar a **lixeira** remove os arquivos de forma **permanente**; limpar uma **pasta** **move** os arquivos para a lixeira.
-- Nos dois casos o usuário configura o **quanto limpar**: tudo, ou só o que é mais antigo que X dias. Para pasta, o usuário também escolhe se a idade conta da **criação** ou da **última modificação**; na lixeira, conta do dia em que o arquivo foi para lá.
+- Nos dois casos o usuário configura o **quanto limpar**: tudo, ou só o que é mais antigo que N dias, semanas, meses (30 dias) ou anos (365 dias); o N é ajustado pelas setinhas ou digitado. Para pasta, o usuário também escolhe se a idade conta da **criação** ou da **última modificação**; na lixeira, conta do dia em que o arquivo foi para lá.
 - A limpeza de pasta atua **só nos arquivos soltos**; subpastas não são tocadas.
 
 **Organizador da área de trabalho**

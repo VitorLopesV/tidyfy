@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tidyfy.domain.AgeLimit;
+import com.tidyfy.domain.AgeUnit;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.CleanupTarget;
@@ -88,6 +89,12 @@ public final class HelperJsonMapper {
 
     /** Campo do limite de idade em dias. */
     private static final String AGE_LIMIT_DAYS_FIELD = "ageLimitDays";
+
+    /** Nome do campo da quantidade do limite de idade. */
+    private static final String AGE_LIMIT_AMOUNT_FIELD = "ageLimitAmount";
+
+    /** Nome do campo da unidade do limite de idade. */
+    private static final String AGE_LIMIT_UNIT_FIELD = "ageLimitUnit";
 
     /** Tipo de ajudante que organiza uma pasta. */
     private static final String FOLDER_ORGANIZER_TYPE = "FOLDER_ORGANIZER";
@@ -217,9 +224,11 @@ public final class HelperJsonMapper {
                 writeCommon(node, helper);
                 node.set(TARGET_FIELD, targetToNode(cleaner.target()));
                 if (cleaner.ageLimit() == null) {
-                    node.putNull(AGE_LIMIT_DAYS_FIELD);
+                    node.putNull(AGE_LIMIT_AMOUNT_FIELD);
+                    node.putNull(AGE_LIMIT_UNIT_FIELD);
                 } else {
-                    node.put(AGE_LIMIT_DAYS_FIELD, cleaner.ageLimit().days());
+                    node.put(AGE_LIMIT_AMOUNT_FIELD, cleaner.ageLimit().amount());
+                    node.put(AGE_LIMIT_UNIT_FIELD, cleaner.ageLimit().unit().name());
                 }
             }
             case DesktopArrangerHelper desktop -> {
@@ -286,7 +295,7 @@ public final class HelperJsonMapper {
             case FOLDER_ORGANIZER_TYPE ->
                     new FolderOrganizerHelper(id, name, schedule, enabled, Path.of(text(node, FOLDER_FIELD)));
             case CLEANER_TYPE -> new CleanerHelper(id, name, schedule, enabled,
-                    toTarget(object(node, TARGET_FIELD)), toAgeLimit(node.get(AGE_LIMIT_DAYS_FIELD)));
+                    toTarget(object(node, TARGET_FIELD)), toAgeLimit(node));
             case DESKTOP_ARRANGER_TYPE ->
                     new DesktopArrangerHelper(id, name, schedule, enabled, DesktopLayout.valueOf(text(node, LAYOUT_FIELD)));
             default -> throw new HelperJsonException(String.format(UNKNOWN_TYPE, TYPE_FIELD, type));
@@ -327,19 +336,53 @@ public final class HelperJsonMapper {
     }
 
     /**
-     * Converte o nó do limite de idade; ausente ou nulo significa sem limite.
+     * Converte o limite de idade do ajudante. Lê {@code ageLimitAmount} e {@code ageLimitUnit}; se não
+     * existirem, usa o campo antigo {@code ageLimitDays} (em dias). Ausente ou nulo significa sem limite.
      *
-     * @param node nó, possivelmente nulo
+     * @param node nó do ajudante
      * @return o limite, ou {@code null} se não houver
      */
     private AgeLimit toAgeLimit(JsonNode node) {
-        if (node == null || node.isNull()) {
+        JsonNode amount = node.get(AGE_LIMIT_AMOUNT_FIELD);
+        if (amount != null && !amount.isNull()) {
+            return new AgeLimit(intValue(amount, AGE_LIMIT_AMOUNT_FIELD), toAgeUnit(node.get(AGE_LIMIT_UNIT_FIELD)));
+        }
+        JsonNode days = node.get(AGE_LIMIT_DAYS_FIELD);
+        if (days == null || days.isNull()) {
             return null;
         }
+        return new AgeLimit(intValue(days, AGE_LIMIT_DAYS_FIELD));
+    }
+
+    /**
+     * Lê um campo inteiro do limite de idade.
+     *
+     * @param node  nó do valor
+     * @param field nome do campo, para a mensagem de erro
+     * @return o valor
+     */
+    private int intValue(JsonNode node, String field) {
         if (!node.isInt()) {
-            throw new HelperJsonException(String.format(INVALID_FIELD, AGE_LIMIT_DAYS_FIELD));
+            throw new HelperJsonException(String.format(INVALID_FIELD, field));
         }
-        return new AgeLimit(node.intValue());
+        return node.intValue();
+    }
+
+    /**
+     * Converte o nó da unidade do limite de idade.
+     *
+     * @param node nó da unidade
+     * @return a unidade
+     */
+    private AgeUnit toAgeUnit(JsonNode node) {
+        if (node == null || !node.isTextual()) {
+            throw new HelperJsonException(String.format(INVALID_FIELD, AGE_LIMIT_UNIT_FIELD));
+        }
+        try {
+            return AgeUnit.valueOf(node.textValue());
+        } catch (IllegalArgumentException e) {
+            throw new HelperJsonException(String.format(INVALID_FIELD, AGE_LIMIT_UNIT_FIELD));
+        }
     }
 
     /**

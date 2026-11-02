@@ -87,7 +87,7 @@ Nos dois casos o usuário escolhe **quanto limpar**: tudo, ou só o que está l�
 
 - **Nome do ajudante.**
 - **O que limpar:** a lixeira ou uma pasta (apenas uma).
-- **Quanto limpar:** tudo, ou só o que é mais antigo que X dias. Para uma pasta, o usuário também escolhe se a idade conta a partir da **criação** ou da **última modificação** do arquivo; na lixeira, conta a partir do dia em que o arquivo foi para lá.
+- **Quanto limpar:** tudo, ou só o que é mais antigo que N dias, semanas, meses ou anos (o valor pode ser ajustado pelas setinhas ou digitado). Para uma pasta, o usuário também escolhe se a idade conta a partir da **criação** ou da **última modificação** do arquivo; na lixeira, conta a partir do dia em que o arquivo foi para lá.
 - **Com que frequência a limpeza acontece.**
 - **Se o ajudante está ligado ou não.**
 

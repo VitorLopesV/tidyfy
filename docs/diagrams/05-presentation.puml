@@ -181,7 +181,7 @@ package "com.tidyfy.presentation.model" {
     + enabled : boolean
     + nextRun : String
     + nextRunProgress : double
-    + ageLimitDays : Integer
+    + ageLimit : AgeLimit
     + ageReference : HelperAgeReference
     + startDate : LocalDate
     + desktopLayout : DesktopLayout

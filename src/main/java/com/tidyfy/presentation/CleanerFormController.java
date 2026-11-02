@@ -3,6 +3,7 @@ package com.tidyfy.presentation;
 import com.tidyfy.application.usecase.SaveHelperUseCase;
 import com.tidyfy.domain.AgeLimit;
 import com.tidyfy.domain.AgeReference;
+import com.tidyfy.domain.AgeUnit;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.CleanupTarget;
 import com.tidyfy.domain.FolderTarget;
@@ -21,11 +22,16 @@ import java.time.Clock;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
+import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
@@ -70,16 +76,25 @@ public class CleanerFormController extends HelperFormController {
     /** Opção de limpar só o que passou de N dias. */
     @FXML private ToggleButton olderChoice;
 
-    /** Linha do contador de dias, ativa só em «mais de N dias». */
+    /** Linha do contador e da unidade, ativa só em «mais de N». */
     @FXML private HBox ageStepperRow;
 
-    /** Valor do contador de dias. */
-    @FXML private Label ageDaysLabel;
+    /** Campo da quantidade do limite, editável por digitação. */
+    @FXML private TextField ageAmountField;
 
-    /** Unidade ao lado do contador ("dia" ou "dias"). */
-    @FXML private Label ageUnitLabel;
+    /** Opção de contar o limite em dias. */
+    @FXML private ToggleButton dayUnit;
 
-    /** Botão de diminuir os dias. */
+    /** Opção de contar o limite em semanas. */
+    @FXML private ToggleButton weekUnit;
+
+    /** Opção de contar o limite em meses. */
+    @FXML private ToggleButton monthUnit;
+
+    /** Opção de contar o limite em anos. */
+    @FXML private ToggleButton yearUnit;
+
+    /** Botão de diminuir a quantidade. */
     @FXML private Button decreaseAge;
 
     /** Dica sobre a idade na lixeira. */
@@ -109,19 +124,38 @@ public class CleanerFormController extends HelperFormController {
     /** Grupo da data de referência: sempre há uma opção escolhida. */
     private final ToggleGroup reference = new ToggleGroup();
 
-    /** Número de dias do limite de idade (mínimo 1). */
-    private final IntegerProperty ageDays = new SimpleIntegerProperty(this, PROPERTY_AGE_DAYS, DEFAULT_AGE_DAYS);
+    /** Grupo da unidade do limite: sempre há uma opção escolhida. */
+    private final ToggleGroup unit = new ToggleGroup();
+
+    /** Quantidade do limite de idade (mínimo 1), na unidade escolhida. */
+    private final IntegerProperty ageAmount = new SimpleIntegerProperty(this, PROPERTY_AGE_AMOUNT, DEFAULT_AGE_AMOUNT);
+
+    /** Unidade do limite de idade. */
+    private final ObjectProperty<AgeUnit> ageUnit =
+            new SimpleObjectProperty<>(this, PROPERTY_AGE_UNIT, DEFAULT_AGE_UNIT);
 
     // Constantes
 
-    /** Nome da propriedade dos dias do limite. */
-    private static final String PROPERTY_AGE_DAYS = "ageDays";
+    /** Nome da propriedade da quantidade do limite. */
+    private static final String PROPERTY_AGE_AMOUNT = "ageAmount";
 
-    /** Dias do limite quando o usuário não escolheu outro. */
-    private static final int DEFAULT_AGE_DAYS = 30;
+    /** Nome da propriedade da unidade do limite. */
+    private static final String PROPERTY_AGE_UNIT = "ageUnit";
 
-    /** Menor número de dias do limite. */
-    private static final int MIN_AGE_DAYS = 1;
+    /** Quantidade do limite quando o usuário não escolheu outra. */
+    private static final int DEFAULT_AGE_AMOUNT = 30;
+
+    /** Unidade do limite quando o usuário não escolheu outra. */
+    private static final AgeUnit DEFAULT_AGE_UNIT = AgeUnit.DAY;
+
+    /** Menor quantidade do limite. */
+    private static final int MIN_AGE_AMOUNT = 1;
+
+    /** Quantidade máxima de dígitos do campo da quantidade. */
+    private static final int MAX_AMOUNT_DIGITS = 4;
+
+    /** Expressão do texto aceito no campo da quantidade: só dígitos, até o máximo. */
+    private static final String AMOUNT_PATTERN = "\\d{0," + MAX_AMOUNT_DIGITS + "}";
 
     /** Resumo na prévia quando o ajudante limpa tudo. */
     private static final String SUMMARY_ALL = "Remove tudo, sem olhar a idade.";
@@ -166,7 +200,7 @@ public class CleanerFormController extends HelperFormController {
     @Override
     protected Helper buildHelper(HelperId id, HelperName name, Schedule schedule, boolean enabled,
                                  HelperItem editing) {
-        AgeLimit ageLimit = olderChoice.isSelected() ? new AgeLimit(ageDays.get()) : null;
+        AgeLimit ageLimit = olderChoice.isSelected() ? new AgeLimit(ageAmount.get(), ageUnit.get()) : null;
         AgeReference ageReference = createdChoice.isSelected() ? AgeReference.CREATED : AgeReference.MODIFIED;
         CleanupTarget cleanupTarget = folderChoice.isSelected()
                 ? new FolderTarget(folderField.getFolder(), ageReference)
@@ -175,19 +209,19 @@ public class CleanerFormController extends HelperFormController {
     }
 
     /**
-     * Diminui os dias do limite, sem passar do mínimo.
+     * Diminui a quantidade do limite, sem passar do mínimo.
      */
     @FXML
     private void onDecreaseAge() {
-        ageDays.set(Math.max(MIN_AGE_DAYS, ageDays.get() - 1));
+        ageAmount.set(Math.max(MIN_AGE_AMOUNT, ageAmount.get() - 1));
     }
 
     /**
-     * Aumenta os dias do limite.
+     * Aumenta a quantidade do limite.
      */
     @FXML
     private void onIncreaseAge() {
-        ageDays.set(ageDays.get() + 1);
+        ageAmount.set(ageAmount.get() + 1);
     }
 
     /**
@@ -242,10 +276,11 @@ public class CleanerFormController extends HelperFormController {
      * @param item ajudante em edição
      */
     private void showAgeOf(HelperItem item) {
-        if (item.ageLimitDays() == null) {
+        if (item.ageLimit() == null) {
             amount.selectToggle(allChoice);
         } else {
-            ageDays.set(Math.max(MIN_AGE_DAYS, item.ageLimitDays()));
+            ageAmount.set(item.ageLimit().amount());
+            unit.selectToggle(toggleOf(item.ageLimit().unit()));
             amount.selectToggle(olderChoice);
         }
         reference.selectToggle(item.ageReference() == HelperAgeReference.CREATED ? createdChoice : modifiedChoice);
@@ -279,17 +314,17 @@ public class CleanerFormController extends HelperFormController {
         reference.selectToggle(modifiedChoice);
         keepOneSelected(amount);
         keepOneSelected(reference);
-        ageDaysLabel.textProperty().bind(ageDays.asString());
-        ageUnitLabel.textProperty().bind(Bindings.createStringBinding(
-                () -> SchedulePreview.unit(ageDays.get()), ageDays));
-        decreaseAge.disableProperty().bind(ageDays.lessThanOrEqualTo(MIN_AGE_DAYS));
+        setupAgeAmount();
+        setupAgeUnit();
+        decreaseAge.disableProperty().bind(ageAmount.lessThanOrEqualTo(MIN_AGE_AMOUNT));
         ageStepperRow.disableProperty().bind(olderChoice.selectedProperty().not());
         ageHelp.setText(BIN_AGE_HELP);
 
         super.initialize();
 
         amount.selectedToggleProperty().addListener((obs, old, now) -> showAge());
-        ageDays.addListener((obs, old, now) -> showAge());
+        ageAmount.addListener((obs, old, now) -> showAge());
+        ageUnit.addListener((obs, old, now) -> showAge());
         showTargetChoice(false);
         previewFolderName.textProperty().bind(Bindings.createStringBinding(
                 () -> folderField.getFolder() == null
@@ -301,6 +336,78 @@ public class CleanerFormController extends HelperFormController {
     }
 
     /**
+     * Liga o campo da quantidade à propriedade: aceita só dígitos, só atualiza a propriedade com valores
+     * válidos (inteiro maior ou igual a 1) e, ao perder o foco, volta ao último valor válido.
+     */
+    private void setupAgeAmount() {
+        ageAmountField.setTextFormatter(new TextFormatter<String>(
+                change -> change.getControlNewText().matches(AMOUNT_PATTERN) ? change : null));
+        ageAmountField.setText(String.valueOf(ageAmount.get()));
+        ageAmountField.textProperty().addListener((obs, old, now) -> {
+            if (!now.isEmpty() && Integer.parseInt(now) >= MIN_AGE_AMOUNT) {
+                ageAmount.set(Integer.parseInt(now));
+            }
+        });
+        ageAmount.addListener((obs, old, now) -> {
+            String text = String.valueOf(now.intValue());
+            if (!text.equals(ageAmountField.getText())) {
+                ageAmountField.setText(text);
+            }
+        });
+        ageAmountField.focusedProperty().addListener((obs, old, now) -> {
+            if (!now) {
+                ageAmountField.setText(String.valueOf(ageAmount.get()));
+            }
+        });
+    }
+
+    /**
+     * Liga as opções de unidade à propriedade da unidade. Sempre há uma unidade escolhida.
+     */
+    private void setupAgeUnit() {
+        for (AgeUnit each : AgeUnit.values()) {
+            toggleOf(each).setToggleGroup(unit);
+        }
+        unit.selectToggle(toggleOf(ageUnit.get()));
+        keepOneSelected(unit);
+        unit.selectedToggleProperty().addListener((obs, old, now) -> {
+            if (now != null) {
+                ageUnit.set(unitOf(now));
+            }
+        });
+    }
+
+    /**
+     * Devolve a opção da tela de uma unidade.
+     *
+     * @param value unidade do limite
+     * @return o botão correspondente
+     */
+    private ToggleButton toggleOf(AgeUnit value) {
+        return switch (value) {
+            case DAY -> dayUnit;
+            case WEEK -> weekUnit;
+            case MONTH -> monthUnit;
+            case YEAR -> yearUnit;
+        };
+    }
+
+    /**
+     * Devolve a unidade de uma opção da tela.
+     *
+     * @param toggle opção escolhida
+     * @return a unidade correspondente
+     */
+    private AgeUnit unitOf(Toggle toggle) {
+        for (AgeUnit each : AgeUnit.values()) {
+            if (toggleOf(each) == toggle) {
+                return each;
+            }
+        }
+        return DEFAULT_AGE_UNIT;
+    }
+
+    /**
      * Atualiza a visibilidade da referência, a dica da lixeira e os resumos das prévias.
      */
     private void showAge() {
@@ -309,7 +416,7 @@ public class CleanerFormController extends HelperFormController {
         Nodes.setShown(referenceSection, folder && limited);
         Nodes.setShown(ageHelp, !folder);
         String summary = limited
-                ? SUMMARY_OLDER.formatted(ageDays.get(), SchedulePreview.unit(ageDays.get()))
+                ? SUMMARY_OLDER.formatted(ageAmount.get(), SchedulePreview.ageUnit(ageUnit.get(), ageAmount.get()))
                 : SUMMARY_ALL;
         folderAgeSummary.setText(summary);
         binAgeSummary.setText(summary);

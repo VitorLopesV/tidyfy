@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tidyfy.domain.AgeLimit;
+import com.tidyfy.domain.AgeUnit;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.DesktopArrangerHelper;
@@ -182,6 +183,48 @@ class HelperJsonMapperTest {
         CleanerHelper binCleaner = (CleanerHelper) helpers.get(2);
         assertEquals(new RecycleBinTarget(), binCleaner.target());
         assertNull(binCleaner.ageLimit());
+    }
+
+    /**
+     * O limite com unidade é gravado em ageLimitAmount e ageLimitUnit e lido de volta igual.
+     */
+    @Test
+    void roundTripsEveryAgeUnit() {
+        for (AgeUnit unit : AgeUnit.values()) {
+            CleanerHelper helper = new CleanerHelper(HelperId.newId(), new HelperName("Limpar"),
+                    new Schedule(1, List.of(LocalTime.of(9, 0)), LocalDate.of(2026, 10, 14)), true,
+                    new RecycleBinTarget(), new AgeLimit(3, unit));
+
+            String json = mapper.toJson(List.of(helper));
+
+            assertTrue(json.contains("\"ageLimitAmount\""));
+            assertTrue(json.contains("\"" + unit.name() + "\""));
+            assertEquals(helper, mapper.fromJson(json).get(0));
+        }
+    }
+
+    /**
+     * Unidade desconhecida ou ausente com quantidade informada é erro, assim como quantidade menor que 1.
+     */
+    @Test
+    void rejectsMissingOrUnknownAgeUnit() {
+        String noUnit = document(1, cleaner("{\"type\": \"RECYCLE_BIN\"}", ", \"ageLimitAmount\": 2"));
+        String badUnit = document(1, cleaner("{\"type\": \"RECYCLE_BIN\"}",
+                ", \"ageLimitAmount\": 2, \"ageLimitUnit\": \"DECADE\""));
+        String zeroAmount = document(1, cleaner("{\"type\": \"RECYCLE_BIN\"}",
+                ", \"ageLimitAmount\": 0, \"ageLimitUnit\": \"WEEK\""));
+        assertThrows(HelperJsonException.class, () -> mapper.fromJson(noUnit));
+        assertThrows(HelperJsonException.class, () -> mapper.fromJson(badUnit));
+        assertThrows(HelperJsonException.class, () -> mapper.fromJson(zeroAmount));
+    }
+
+    /**
+     * O campo antigo ageLimitDays continua sendo lido, em dias.
+     */
+    @Test
+    void readsLegacyAgeLimitDaysAsDays() {
+        String json = document(1, cleaner("{\"type\": \"RECYCLE_BIN\"}", ", \"ageLimitDays\": 12"));
+        assertEquals(new AgeLimit(12, AgeUnit.DAY), ((CleanerHelper) mapper.fromJson(json).get(0)).ageLimit());
     }
 
     /**

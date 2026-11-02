@@ -100,15 +100,20 @@
                             </HBox>
                             <HBox fx:id="ageStepperRow" alignment="CENTER_LEFT" spacing="10">
                                 <HBox styleClass="stepper" alignment="CENTER" spacing="2">
-                                    <Button fx:id="decreaseAge" styleClass="icon-btn" accessibleText="Diminuir dias" onAction="#onDecreaseAge">
+                                    <Button fx:id="decreaseAge" styleClass="icon-btn" accessibleText="Diminuir quantidade" onAction="#onDecreaseAge">
                                         <graphic><Icon glyph="MINUS" size="18"/></graphic>
                                     </Button>
-                                    <Label fx:id="ageDaysLabel" styleClass="stepper-value"/>
-                                    <Button fx:id="increaseAge" styleClass="icon-btn" accessibleText="Aumentar dias" onAction="#onIncreaseAge">
+                                    <TextField fx:id="ageAmountField" styleClass="stepper-value" accessibleText="Quantidade"/>
+                                    <Button fx:id="increaseAge" styleClass="icon-btn" accessibleText="Aumentar quantidade" onAction="#onIncreaseAge">
                                         <graphic><Icon glyph="PLUS" size="18"/></graphic>
                                     </Button>
                                 </HBox>
-                                <Label fx:id="ageUnitLabel" styleClass="field-label"/>
+                                <HBox styleClass="segmented" alignment="CENTER_LEFT" spacing="4">
+                                    <ToggleButton fx:id="dayUnit" text="Dias" styleClass="seg, age-choice"/>
+                                    <ToggleButton fx:id="weekUnit" text="Semanas" styleClass="seg, age-choice"/>
+                                    <ToggleButton fx:id="monthUnit" text="Meses" styleClass="seg, age-choice"/>
+                                    <ToggleButton fx:id="yearUnit" text="Anos" styleClass="seg, age-choice"/>
+                                </HBox>
                             </HBox>
                         </HBox>
                         <Label fx:id="ageHelp" styleClass="help" wrapText="true"/>

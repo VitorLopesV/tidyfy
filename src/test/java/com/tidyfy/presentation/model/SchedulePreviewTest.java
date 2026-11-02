@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.tidyfy.domain.AgeUnit;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
@@ -81,5 +82,17 @@ class SchedulePreviewTest {
         assertEquals("seg", SchedulePreview.weekday(DayOfWeek.MONDAY));
         assertEquals("sáb", SchedulePreview.weekday(DayOfWeek.SATURDAY));
         assertEquals("dom", SchedulePreview.weekday(DayOfWeek.SUNDAY));
+    }
+
+    @Test
+    void ageUnitsAreSingularOnlyForOne() {
+        assertEquals("dia", SchedulePreview.ageUnit(AgeUnit.DAY, 1));
+        assertEquals("dias", SchedulePreview.ageUnit(AgeUnit.DAY, 2));
+        assertEquals("semana", SchedulePreview.ageUnit(AgeUnit.WEEK, 1));
+        assertEquals("semanas", SchedulePreview.ageUnit(AgeUnit.WEEK, 3));
+        assertEquals("mês", SchedulePreview.ageUnit(AgeUnit.MONTH, 1));
+        assertEquals("meses", SchedulePreview.ageUnit(AgeUnit.MONTH, 4));
+        assertEquals("ano", SchedulePreview.ageUnit(AgeUnit.YEAR, 1));
+        assertEquals("anos", SchedulePreview.ageUnit(AgeUnit.YEAR, 2));
     }
 }

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tidyfy.domain.AgeLimit;
+import com.tidyfy.domain.AgeUnit;
 import com.tidyfy.domain.AgeReference;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.CleanupTarget;
@@ -55,7 +56,7 @@ class HelperItemMapperTest {
         assertEquals(1, item.intervalDays());
         assertEquals(List.of(LocalTime.of(9, 0), LocalTime.of(18, 0)), item.times());
         assertTrue(item.enabled());
-        assertNull(item.ageLimitDays());
+        assertNull(item.ageLimit());
         assertNull(item.ageReference());
         assertEquals(START, item.startDate());
     }
@@ -96,8 +97,15 @@ class HelperItemMapperTest {
 
         assertEquals(HelperKind.CLEANER, item.kind());
         assertEquals(Path.of("C:\\Temp"), item.folder());
-        assertEquals(30, item.ageLimitDays());
+        assertEquals(new AgeLimit(30), item.ageLimit());
         assertEquals(HelperAgeReference.MODIFIED, item.ageReference());
+    }
+
+    @Test
+    void keepsTheUnitOfTheAgeLimit() {
+        CleanerHelper helper = cleaner(new RecycleBinTarget(), new AgeLimit(2, AgeUnit.MONTH), true);
+
+        assertEquals(new AgeLimit(2, AgeUnit.MONTH), mapper.toItem(helper).ageLimit());
     }
 
     @Test
@@ -106,7 +114,7 @@ class HelperItemMapperTest {
 
         HelperItem item = mapper.toItem(helper);
 
-        assertNull(item.ageLimitDays());
+        assertNull(item.ageLimit());
         assertEquals(HelperAgeReference.CREATED, item.ageReference());
     }
 
@@ -119,7 +127,7 @@ class HelperItemMapperTest {
         assertEquals(HelperKind.CLEANER, item.kind());
         assertNull(item.folder());
         assertTrue(item.targetsRecycleBin());
-        assertEquals(7, item.ageLimitDays());
+        assertEquals(new AgeLimit(7), item.ageLimit());
         assertNull(item.ageReference());
     }
 

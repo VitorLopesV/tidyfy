@@ -11,6 +11,7 @@ import com.tidyfy.application.fake.FakeTaskScheduler;
 import com.tidyfy.application.usecase.SaveHelperUseCase;
 import com.tidyfy.domain.AgeLimit;
 import com.tidyfy.domain.AgeReference;
+import com.tidyfy.domain.AgeUnit;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.FolderTarget;
 import com.tidyfy.domain.Helper;
@@ -83,7 +84,7 @@ class CleanerAgeLimitTest {
             toggle(view, "olderChoice").fire();
 
             assertFalse(view.lookup("#ageStepperRow").isDisabled());
-            assertEquals("30", label(view, "ageDaysLabel").getText());
+            assertEquals("30", amount(view).getText());
             save(view).fire();
             assertEquals(new AgeLimit(30), saved().ageLimit());
         });
@@ -98,16 +99,16 @@ class CleanerAgeLimitTest {
             toggle(view, "olderChoice").fire();
 
             button(view, "increaseAge").fire();
-            assertEquals("31", label(view, "ageDaysLabel").getText());
+            assertEquals("31", amount(view).getText());
             for (int i = 0; i < 40; i++) {
                 if (!button(view, "decreaseAge").isDisabled()) {
                     button(view, "decreaseAge").fire();
                 }
             }
 
-            assertEquals("1", label(view, "ageDaysLabel").getText());
+            assertEquals("1", amount(view).getText());
             assertTrue(button(view, "decreaseAge").isDisabled());
-            assertEquals("dia", label(view, "ageUnitLabel").getText());
+            assertTrue(toggle(view, "dayUnit").isSelected());
             save(view).fire();
             assertEquals(new AgeLimit(1), saved().ageLimit());
         });
@@ -199,7 +200,7 @@ class CleanerAgeLimitTest {
             Parent view = form(new HelperItemMapper(CLOCK).toItem(original));
 
             assertTrue(toggle(view, "olderChoice").isSelected());
-            assertEquals("12", label(view, "ageDaysLabel").getText());
+            assertEquals("12", amount(view).getText());
             assertTrue(toggle(view, "createdChoice").isSelected());
             assertTrue(view.lookup("#referenceSection").isVisible());
             save(view).fire();
@@ -218,7 +219,7 @@ class CleanerAgeLimitTest {
 
             assertTrue(toggle(view, "allChoice").isSelected());
             assertTrue(toggle(view, "modifiedChoice").isSelected());
-            assertEquals("30", label(view, "ageDaysLabel").getText());
+            assertEquals("30", amount(view).getText());
         });
     }
 
@@ -231,6 +232,105 @@ class CleanerAgeLimitTest {
 
             assertTrue(toggle(view, "allChoice").isSelected());
         });
+    }
+
+    @Test
+    void typingTheAmountChangesTheSavedLimit() {
+        JavaFx.run(() -> {
+            Parent view = form(null);
+            name(view).setText("Limpar");
+            folder(view).setFolder(tempDir.resolve("Temp"));
+            toggle(view, "olderChoice").fire();
+
+            amount(view).setText("45");
+
+            assertEquals("Remove só o que tem mais de 45 dias.", label(view, "folderAgeSummary").getText());
+            save(view).fire();
+            assertEquals(new AgeLimit(45), saved().ageLimit());
+        });
+    }
+
+    @Test
+    void typingIgnoresNonDigitsAndAmountsBelowOne() {
+        JavaFx.run(() -> {
+            Parent view = form(null);
+            toggle(view, "olderChoice").fire();
+
+            amount(view).setText("abc");
+            assertEquals("30", amount(view).getText());
+
+            amount(view).setText("0");
+            assertEquals("Remove só o que tem mais de 30 dias.", label(view, "folderAgeSummary").getText());
+            amount(view).setText("");
+            assertEquals("Remove só o que tem mais de 30 dias.", label(view, "folderAgeSummary").getText());
+            button(view, "increaseAge").fire();
+            assertEquals("31", amount(view).getText());
+        });
+    }
+
+    @Test
+    void stepperButtonsUpdateTheTypedField() {
+        JavaFx.run(() -> {
+            Parent view = form(null);
+            toggle(view, "olderChoice").fire();
+
+            button(view, "decreaseAge").fire();
+
+            assertEquals("29", amount(view).getText());
+        });
+    }
+
+    @Test
+    void choosingAUnitIsSavedAndDescribedInThePreview() {
+        JavaFx.run(() -> {
+            Parent view = form(null);
+            name(view).setText("Limpar");
+            folder(view).setFolder(tempDir.resolve("Temp"));
+            toggle(view, "olderChoice").fire();
+
+            amount(view).setText("2");
+            toggle(view, "monthUnit").fire();
+
+            assertEquals("Remove só o que tem mais de 2 meses.", label(view, "folderAgeSummary").getText());
+            save(view).fire();
+            assertEquals(new AgeLimit(2, AgeUnit.MONTH), saved().ageLimit());
+        });
+    }
+
+    @Test
+    void everyUnitCanBeChosenAndTheSelectedOneStaysOn() {
+        JavaFx.run(() -> {
+            Parent view = form(null);
+            toggle(view, "olderChoice").fire();
+
+            for (String id : List.of("weekUnit", "yearUnit", "dayUnit")) {
+                toggle(view, id).fire();
+                assertTrue(toggle(view, id).isSelected());
+            }
+            toggle(view, "dayUnit").fire();
+            assertTrue(toggle(view, "dayUnit").isSelected());
+        });
+    }
+
+    @Test
+    void editingLoadsTheUnitOfTheLimit() {
+        Helper original = new CleanerHelper(HelperId.newId(), new HelperName("Limpar"),
+                new Schedule(7, List.of(LocalTime.of(20, 0)), LocalDate.of(2026, 1, 5)), true,
+                new RecycleBinTarget(), new AgeLimit(3, AgeUnit.WEEK));
+        repository.with(original);
+        JavaFx.run(() -> {
+            Parent view = form(new HelperItemMapper(CLOCK).toItem(original));
+
+            assertEquals("3", amount(view).getText());
+            assertTrue(toggle(view, "weekUnit").isSelected());
+            save(view).fire();
+
+            assertEquals(new AgeLimit(3, AgeUnit.WEEK), ((CleanerHelper) repository.findAll().get(0)).ageLimit());
+        });
+    }
+
+    private static TextField amount(Parent view) {
+        return (TextField) view.lookup("#ageAmountField");
     }
 
     private CleanerHelper saved() {

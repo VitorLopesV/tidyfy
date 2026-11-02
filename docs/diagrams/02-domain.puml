@@ -98,8 +98,17 @@ package "com.tidyfy.domain" {
   }
 
   class AgeLimit <<record>> {
-    + days : int
+    + amount : int
+    + unit : AgeUnit
+    + days() : int
     + isExceededBy(moment : Instant, now : Instant) : boolean
+  }
+
+  enum AgeUnit {
+    DAY (1 dia)
+    WEEK (7 dias)
+    MONTH (30 dias)
+    YEAR (365 dias)
   }
 
   enum AgeReference {
@@ -245,6 +254,7 @@ DesktopArrangerHelper --> "1" DesktopLayout
 DesktopIcon --> "1" IconPosition
 CleanerHelper --> "1" CleanupTarget
 CleanerHelper --> "0..1" AgeLimit
+AgeLimit --> "1" AgeUnit
 CleanupTarget <|.. RecycleBinTarget
 CleanupTarget <|.. FolderTarget
 FolderTarget --> "1" AgeReference
@@ -305,7 +315,9 @@ end note
 note bottom of AgeLimit
   "Quanto limpar": sem AgeLimit limpa tudo;
   com AgeLimit só o que é mais antigo que
-  days (>= 1). Na pasta, a idade conta da
+  amount (>= 1) na unidade escolhida (AgeUnit:
+  dia, semana, mês de 30 dias ou ano de 365
+  dias). Na pasta, a idade conta da
   criação ou da última modificação
   (AgeReference, escolha do usuário).
   Na lixeira, conta do dia em que o

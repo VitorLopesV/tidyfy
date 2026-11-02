@@ -1,5 +1,6 @@
 package com.tidyfy.presentation.model;
 
+import com.tidyfy.domain.AgeLimit;
 import com.tidyfy.domain.DesktopLayout;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -19,7 +20,7 @@ import java.util.Objects;
  * @param enabled         {@code true} quando o ajudante está ligado
  * @param nextRun         texto da próxima execução (ex.: "Hoje, 18:00"); {@code null} quando desconhecida
  * @param nextRunProgress quanto do intervalo até a próxima execução já passou, de 0 a 1
- * @param ageLimitDays    idade máxima, em dias, dos arquivos mantidos na limpeza; {@code null} quando limpa tudo
+ * @param ageLimit        idade máxima (quantidade e unidade) dos arquivos mantidos na limpeza; {@code null} quando limpa tudo
  *                        ou quando o ajudante não é uma limpeza
  * @param ageReference    data do arquivo usada para medir a idade; {@code null} quando não se aplica
  *                        (organização e lixeira)
@@ -36,7 +37,7 @@ public record HelperItem(
         boolean enabled,
         String nextRun,
         double nextRunProgress,
-        Integer ageLimitDays,
+        AgeLimit ageLimit,
         HelperAgeReference ageReference,
         LocalDate startDate,
         DesktopLayout desktopLayout) {
@@ -82,14 +83,14 @@ public record HelperItem(
      * @param enabled         se o ajudante está ligado
      * @param nextRun         texto da próxima execução; {@code null} quando desconhecida
      * @param nextRunProgress progresso até a próxima execução, de 0 a 1
-     * @param ageLimitDays    idade máxima em dias; {@code null} quando limpa tudo ou não se aplica
+     * @param ageLimit        idade máxima; {@code null} quando limpa tudo ou não se aplica
      * @param ageReference    data de referência da idade; {@code null} quando não se aplica
      * @param startDate       dia de onde se conta o intervalo; {@code null} quando desconhecido
      */
     public HelperItem(String id, String name, HelperKind kind, Path folder, int intervalDays,
                       List<LocalTime> times, boolean enabled, String nextRun, double nextRunProgress,
-                      Integer ageLimitDays, HelperAgeReference ageReference, LocalDate startDate) {
-        this(id, name, kind, folder, intervalDays, times, enabled, nextRun, nextRunProgress, ageLimitDays,
+                      AgeLimit ageLimit, HelperAgeReference ageReference, LocalDate startDate) {
+        this(id, name, kind, folder, intervalDays, times, enabled, nextRun, nextRunProgress, ageLimit,
                 ageReference, startDate, null);
     }
 
@@ -105,13 +106,13 @@ public record HelperItem(
      * @param enabled         se o ajudante está ligado
      * @param nextRun         texto da próxima execução; {@code null} quando desconhecida
      * @param nextRunProgress progresso até a próxima execução, de 0 a 1
-     * @param ageLimitDays    idade máxima em dias; {@code null} quando limpa tudo ou não se aplica
+     * @param ageLimit        idade máxima; {@code null} quando limpa tudo ou não se aplica
      * @param ageReference    data de referência da idade; {@code null} quando não se aplica
      */
     public HelperItem(String id, String name, HelperKind kind, Path folder, int intervalDays,
                       List<LocalTime> times, boolean enabled, String nextRun, double nextRunProgress,
-                      Integer ageLimitDays, HelperAgeReference ageReference) {
-        this(id, name, kind, folder, intervalDays, times, enabled, nextRun, nextRunProgress, ageLimitDays,
+                      AgeLimit ageLimit, HelperAgeReference ageReference) {
+        this(id, name, kind, folder, intervalDays, times, enabled, nextRun, nextRunProgress, ageLimit,
                 ageReference, null);
     }
 
@@ -151,6 +152,6 @@ public record HelperItem(
      */
     public HelperItem withEnabled(boolean value) {
         return new HelperItem(id, name, kind, folder, intervalDays, times, value, nextRun, nextRunProgress,
-                ageLimitDays, ageReference, startDate, desktopLayout);
+                ageLimit, ageReference, startDate, desktopLayout);
     }
 }

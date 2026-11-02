@@ -71,4 +71,54 @@ class AgeLimitTest {
         assertEquals(AgeReference.CREATED, AgeReference.valueOf("CREATED"));
         assertEquals(AgeReference.MODIFIED, AgeReference.valueOf("MODIFIED"));
     }
+
+    @Test
+    void convertsEachUnitToDays() {
+        assertEquals(3, new AgeLimit(3, AgeUnit.DAY).days());
+        assertEquals(14, new AgeLimit(2, AgeUnit.WEEK).days());
+        assertEquals(90, new AgeLimit(3, AgeUnit.MONTH).days());
+        assertEquals(730, new AgeLimit(2, AgeUnit.YEAR).days());
+    }
+
+    @Test
+    void unitsHaveTheirLengthInDays() {
+        assertEquals(1, AgeUnit.DAY.days());
+        assertEquals(7, AgeUnit.WEEK.days());
+        assertEquals(30, AgeUnit.MONTH.days());
+        assertEquals(365, AgeUnit.YEAR.days());
+    }
+
+    @Test
+    void daysConstructorUsesTheDayUnit() {
+        AgeLimit limit = new AgeLimit(5);
+
+        assertEquals(5, limit.amount());
+        assertEquals(AgeUnit.DAY, limit.unit());
+    }
+
+    @Test
+    void rejectsAmountBelowOneInAnyUnit() {
+        for (AgeUnit unit : AgeUnit.values()) {
+            assertThrows(IllegalArgumentException.class, () -> new AgeLimit(0, unit));
+            assertThrows(IllegalArgumentException.class, () -> new AgeLimit(-1, unit));
+        }
+    }
+
+    @Test
+    void rejectsNullUnit() {
+        assertThrows(NullPointerException.class, () -> new AgeLimit(1, null));
+    }
+
+    @Test
+    void rejectsAmountThatOverflowsDays() {
+        assertThrows(IllegalArgumentException.class, () -> new AgeLimit(Integer.MAX_VALUE, AgeUnit.YEAR));
+    }
+
+    @Test
+    void weekLimitIsExceededOnlyAfterFullWeeks() {
+        AgeLimit limit = new AgeLimit(2, AgeUnit.WEEK);
+
+        assertFalse(limit.isExceededBy(Instant.parse("2026-01-17T12:00:00Z"), NOW));
+        assertTrue(limit.isExceededBy(Instant.parse("2026-01-17T11:59:59Z"), NOW));
+    }
 }

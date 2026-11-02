@@ -1057,6 +1057,14 @@
     -fx-alignment: center;
 }
 
+.text-field.stepper-value {
+    -fx-background-color: transparent;
+    -fx-text-fill: -tf-ink;
+    -fx-padding: 0;
+    -fx-pref-width: 64;
+    -fx-min-width: 64;
+}
+
 .time-chip-editable {
     -fx-background-color: -tf-line-strong, -tf-surface-2;
     -fx-background-insets: 0, 1;

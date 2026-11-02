@@ -1,5 +1,6 @@
 package com.tidyfy.presentation.model;
 
+import com.tidyfy.domain.AgeUnit;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +36,24 @@ public final class SchedulePreview {
 
     /** Unidade no plural. */
     private static final String UNIT_MANY = "dias";
+
+    /** Semana no singular. */
+    private static final String WEEK_ONE = "semana";
+
+    /** Semana no plural. */
+    private static final String WEEK_MANY = "semanas";
+
+    /** Mês no singular. */
+    private static final String MONTH_ONE = "mês";
+
+    /** Mês no plural. */
+    private static final String MONTH_MANY = "meses";
+
+    /** Ano no singular. */
+    private static final String YEAR_ONE = "ano";
+
+    /** Ano no plural. */
+    private static final String YEAR_MANY = "anos";
 
     /** Modelo do resumo sem horários; recebe a frequência. */
     private static final String SUMMARY_WITHOUT_TIMES = "%s.";
@@ -78,6 +97,23 @@ public final class SchedulePreview {
      */
     public static String unit(int intervalDays) {
         return intervalDays == 1 ? UNIT_ONE : UNIT_MANY;
+    }
+
+    /**
+     * Devolve o nome da unidade do limite de idade, no singular ou no plural.
+     *
+     * @param unit   unidade do limite
+     * @param amount quantidade de unidades
+     * @return ex.: "semana" para 1 e "semanas" para 2
+     */
+    public static String ageUnit(AgeUnit unit, int amount) {
+        boolean one = amount == 1;
+        return switch (unit) {
+            case DAY -> one ? UNIT_ONE : UNIT_MANY;
+            case WEEK -> one ? WEEK_ONE : WEEK_MANY;
+            case MONTH -> one ? MONTH_ONE : MONTH_MANY;
+            case YEAR -> one ? YEAR_ONE : YEAR_MANY;
+        };
     }
 
     /**

@@ -109,14 +109,14 @@ public final class HelperItemMapper {
     private HelperItem toCleanerItem(CleanerHelper cleaner, String id, String name, String nextRun,
                                      double progress) {
         Schedule schedule = cleaner.schedule();
-        Integer ageLimitDays = cleaner.findAgeLimit().map(AgeLimit::days).orElse(null);
+        AgeLimit ageLimit = cleaner.findAgeLimit().orElse(null);
         return switch (cleaner.target()) {
             case FolderTarget folder -> new HelperItem(id, name, HelperKind.CLEANER, folder.folder(),
                     schedule.intervalDays(), schedule.times(), cleaner.enabled(), nextRun, progress,
-                    ageLimitDays, toReference(folder.ageReference()), schedule.startDate());
+                    ageLimit, toReference(folder.ageReference()), schedule.startDate());
             case RecycleBinTarget recycleBin -> new HelperItem(id, name, HelperKind.CLEANER, null,
                     schedule.intervalDays(), schedule.times(), cleaner.enabled(), nextRun, progress,
-                    ageLimitDays, null, schedule.startDate());
+                    ageLimit, null, schedule.startDate());
         };
     }
 

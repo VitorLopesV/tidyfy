@@ -8,6 +8,7 @@ import com.tidyfy.application.fake.FakeFileSystem;
 import com.tidyfy.application.fake.FakeRecycleBin;
 import com.tidyfy.domain.ActionType;
 import com.tidyfy.domain.AgeLimit;
+import com.tidyfy.domain.AgeUnit;
 import com.tidyfy.domain.CleanerHelper;
 import com.tidyfy.domain.HelperAction;
 import com.tidyfy.domain.HelperId;
@@ -74,6 +75,16 @@ class CleanupUseCaseRecycleBinTest {
 
         assertEquals(List.of(NOW.minus(Duration.ofDays(30))), bin.cutoffs());
         assertEquals(0, bin.emptyAllCalls());
+    }
+
+    @Test
+    void withAgeLimitInWeeksMonthsAndYearsUsesTheUnitInTheCutoff() {
+        useCase.execute(helper(new AgeLimit(2, AgeUnit.WEEK)));
+        useCase.execute(helper(new AgeLimit(1, AgeUnit.MONTH)));
+        useCase.execute(helper(new AgeLimit(1, AgeUnit.YEAR)));
+
+        assertEquals(List.of(NOW.minus(Duration.ofDays(14)), NOW.minus(Duration.ofDays(30)),
+            NOW.minus(Duration.ofDays(365))), bin.cutoffs());
     }
 
     @Test
