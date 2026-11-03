@@ -40,12 +40,16 @@ class PowerShellRecycleBinEmptyAllTest {
     }
 
     @Test
-    void buildsTheClearCommandWithForce() {
+    void buildsTheClearCommandWithoutConfirmationProgressOrSound() {
         List<String> command = bin.clearCommand();
 
         assertEquals("powershell.exe", command.get(0));
         assertEquals("-Command", command.get(5));
-        assertEquals("Clear-RecycleBin -Force -ErrorAction SilentlyContinue", command.get(6));
+        assertTrue(command.get(6).contains("SHEmptyRecycleBin"));
+        assertTrue(command.get(6).contains("[NullString]::Value, 7)"));
+        assertTrue(command.get(6).contains("exit 1"));
+        assertTrue(!command.get(6).contains("Clear-RecycleBin"));
+        assertTrue(command.get(6).indexOf('"') < 0);
     }
 
     @Test

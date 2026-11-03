@@ -64,8 +64,19 @@ public final class PowerShellRecycleBin implements RecycleBin {
             "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
                     + "Write-Output ((New-Object -ComObject Shell.Application).Namespace(0xA).Items().Count)";
 
-    /** Script que esvazia a lixeira sem pedir confirmação. */
-    private static final String CLEAR_SCRIPT = "Clear-RecycleBin -Force -ErrorAction SilentlyContinue";
+    /**
+     * Script que esvazia a lixeira com {@code SHEmptyRecycleBin} (flags 7: sem confirmação, sem janela de
+     * progresso e sem som). O {@code Clear-RecycleBin} travava sem sessão interativa (estourava o tempo
+     * limite). As aspas do C# vêm de {@code [char]34} para o script não conter aspas duplas; o HRESULT
+     * negativo vira código de saída 1 com o valor na saída.
+     */
+    private static final String CLEAR_SCRIPT =
+            "$q = [char]34; "
+                    + "Add-Type -Namespace Tidyfy -Name RecycleBinNative -MemberDefinition "
+                    + "('[DllImport(' + $q + 'shell32.dll' + $q + ')] "
+                    + "public static extern int SHEmptyRecycleBin(IntPtr hwnd, string root, uint flags);'); "
+                    + "$result = [Tidyfy.RecycleBinNative]::SHEmptyRecycleBin([IntPtr]::Zero, [NullString]::Value, 7); "
+                    + "if ($result -lt 0) { Write-Output ('HRESULT 0x{0:X8}' -f $result); exit 1 }";
 
     /** Separador de linhas aceito na saída. */
     private static final String LINE_SEPARATOR_REGEX = "\\R";
